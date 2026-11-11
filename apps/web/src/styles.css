@@ -13,13 +13,11 @@ h1 { max-width: 8ch; margin: 0; color: #f1d56d; font-family: Copperplate, "Aveni
 .play-button:hover { box-shadow: 2px 2px 0 #a64b43; transform: translate(3px, 3px); }
 .play-button:focus-visible, .quiet-button:focus-visible, .exit-run:focus-visible { outline: 3px solid #7fc6ae; outline-offset: 4px; }
 .microcopy { margin: 1.1rem 0 0; color: #879a96; font-size: .78rem; }
-.title-art { position: relative; min-height: 54svh; overflow: hidden; background: #1b2530; border-left: 1px solid #485767; }
-.title-grid { position: absolute; inset: 0; background-image: linear-gradient(#283746 1px, transparent 1px), linear-gradient(90deg, #283746 1px, transparent 1px); background-size: 28px 28px; transform: perspective(500px) rotateX(59deg) scale(1.7) translateY(30%); transform-origin: bottom; }
-.crown-mark { position: absolute; top: 13%; left: 17%; color: #f1d56d; font-size: clamp(7rem, 18vw, 14rem); text-shadow: 7px 7px #a64b43; transform: rotate(-10deg); }
-.ghost-mark { position: absolute; top: 42%; right: 10%; z-index: 1; padding: .8rem 1.1rem; color: #f2d5c1; background: #7a3658; box-shadow: 7px 7px 0 #391e35; font-family: Copperplate, fantasy; font-size: clamp(1.2rem, 3vw, 2.25rem); font-weight: 800; line-height: .9; }
-.sentinel-mark { position: absolute; z-index: 1; right: 28%; bottom: 17%; width: 108px; height: 80px; transform: rotate(-20deg); }
-.sentinel-mark::before { position: absolute; inset: 8px 16px; content: ""; background: #f1d56d; clip-path: polygon(50% 0, 100% 100%, 50% 80%, 0 100%); }
-.sentinel-mark i { position: absolute; width: 7px; height: 46px; background: #f18955; transform: rotate(20deg); } .sentinel-mark i:nth-child(1) { left: 14px; top: -16px; } .sentinel-mark i:nth-child(2) { left: 41px; top: -31px; } .sentinel-mark i:nth-child(3) { left: 68px; top: -16px; }
+.title-art { position: relative; min-height: 54svh; overflow: hidden; background: #111722; border-left: 1px solid #485767; }
+.title-hero { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: 59% center; filter: saturate(.9) contrast(1.06); }
+.title-vignette { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(16,21,30,.34), transparent 45%), linear-gradient(0deg, rgba(9,13,19,.55), transparent 35%); }
+.ghost-mark { position: absolute; top: 9%; right: 8%; z-index: 1; padding: .65rem .8rem; color: #f2d5c1; background: rgba(65, 28, 53, .86); border: 1px solid #c97b93; box-shadow: 5px 5px 0 #211422; font-family: Copperplate, fantasy; font-size: clamp(1.05rem, 2.3vw, 1.9rem); font-weight: 800; line-height: .9; }
+.signal-readout { position: absolute; right: 8%; bottom: 7%; display: grid; gap: .3rem; color: #d2c9af; font-size: .63rem; font-weight: 850; letter-spacing: .12em; text-align: right; text-shadow: 1px 1px #10151e; }
 
 .game-page { display: grid; place-items: center; padding: 1rem; background: #161c25; }
 .arena-stage { width: min(100%, 430px); position: relative; padding: .7rem; background: #2a3541; box-shadow: 9px 9px 0 #0b0e13; }

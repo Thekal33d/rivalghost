@@ -1,6 +1,7 @@
 import { StrictMode, useCallback, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ArenaPrototype, type ArenaStats } from "./ArenaPrototype";
+import houndHero from "./assets/hound-hero-v1.jpg";
 import "./styles.css";
 
 const GAME_TITLE = "RIVALGHOST";
@@ -60,10 +61,10 @@ function App() {
         <p className="microcopy">No wallet. No CR. Just the first 60 seconds.</p>
       </section>
       <section className="title-art" aria-hidden="true">
-        <div className="crown-mark">✦</div>
+        <img className="title-hero" src={houndHero} alt="" />
+        <div className="title-vignette" />
         <div className="ghost-mark">HOUND<br />14,000</div>
-        <div className="sentinel-mark"><i /><i /><i /></div>
-        <span className="title-grid" />
+        <div className="signal-readout"><span>GHOST SIGNAL // 01</span><span>UNBEATEN</span></div>
       </section>
     </main>
   );
