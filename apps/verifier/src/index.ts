@@ -4,6 +4,10 @@ import {
   simulateArena,
   type ReplayInput,
 } from "@rivalghost/sim";
+import {
+  signSettlementCertificate,
+  type SettlementCertificate,
+} from "@rivalghost/game-data";
 
 export const VERIFIER_SERVICE_NAME = "rivalghost-verifier";
 
@@ -28,6 +32,37 @@ export interface VerifiedReplay {
   finalStateHash: string;
   score: number;
   expiresAtMs: number;
+}
+
+/**
+ * Turns a verified replay into an expiring Ed25519 certificate. The private
+ * key stays in the verifier process; callers only receive its public result.
+ */
+export async function issueSettlementCertificate(
+  verified: VerifiedReplay,
+  issuedAtMs: number,
+  signingKey: CryptoKey,
+  verifierKeyVersion = 1,
+): Promise<SettlementCertificate> {
+  if (issuedAtMs >= verified.expiresAtMs) {
+    throw new Error("Challenge expired before its certificate could be issued");
+  }
+
+  return signSettlementCertificate({
+    certificateVersion: 1,
+    challengeId: verified.challengeId,
+    crownId: verified.crownId,
+    playerId: verified.playerId,
+    rulesVersion: verified.rulesVersion,
+    seed: verified.seed,
+    loadoutHash: verified.loadoutHash,
+    replayHash: verified.replayHash,
+    finalStateHash: verified.finalStateHash,
+    score: verified.score,
+    issuedAtMs,
+    expiresAtMs: verified.expiresAtMs,
+    verifierKeyVersion,
+  }, signingKey);
 }
 
 /**

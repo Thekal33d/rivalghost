@@ -19,7 +19,12 @@
     "issuedAtMs": { "type": "integer", "minimum": 0 },
     "expiresAtMs": { "type": "integer", "minimum": 0 },
     "verifierKeyVersion": { "type": "integer", "minimum": 1, "maximum": 255 },
-    "signature": { "type": "string", "minLength": 80, "maxLength": 128 }
+    "signature": {
+      "type": "array",
+      "minItems": 64,
+      "maxItems": 64,
+      "items": { "type": "integer", "minimum": 0, "maximum": 255 }
+    }
   },
-  "$comment": "The verifier signs a canonical byte encoding of every field other than signature. Contract semantic checks bind these fields to the stored unresolved challenge before consuming the certificate."
+  "$comment": "The verifier signs a canonical UTF-8 pipe-delimited encoding of every field other than signature. The first field is RIVALGHOST-CERT-v1 and remaining fields follow required-field order. Contract semantic checks bind these fields to the stored unresolved challenge before consuming the certificate."
 }

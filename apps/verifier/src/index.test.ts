@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { RULES_VERSION, RUN_TICKS } from "@rivalghost/game-data";
-import { verifyReplay, type StoredChallenge } from "./index.js";
+import { certificateMessage } from "@rivalghost/game-data";
+import {
+  issueSettlementCertificate,
+  verifyReplay,
+  type StoredChallenge,
+} from "./index.js";
 
 const challenge: StoredChallenge = {
   id: "challenge-1",
@@ -30,6 +35,24 @@ describe("replay verifier", () => {
     });
     expect(verified.replayHash).toHaveLength(64);
     expect(verified.finalStateHash).toHaveLength(64);
+  });
+
+  it("issues a signature over the complete verified result", async () => {
+    const verified = await verifyReplay(challenge, "player.testnet", replay, 1_000);
+    const keyPair = await globalThis.crypto.subtle.generateKey(
+      { name: "Ed25519" },
+      true,
+      ["sign", "verify"],
+    );
+    const certificate = await issueSettlementCertificate(verified, 1_001, keyPair.privateKey, 4);
+
+    expect(certificate.signature).toHaveLength(64);
+    await expect(globalThis.crypto.subtle.verify(
+      { name: "Ed25519" },
+      keyPair.publicKey,
+      Uint8Array.from(certificate.signature),
+      certificateMessage(certificate),
+    )).resolves.toBe(true);
   });
 
   it("rejects a mismatched player, seed, rules version, or expired challenge", async () => {
