@@ -51,7 +51,11 @@ importers:
 
   packages/game-data: {}
 
-  packages/sim: {}
+  packages/sim:
+    dependencies:
+      '@rivalghost/game-data':
+        specifier: workspace:*
+        version: link:../game-data
 
   packages/ui: {}
 
