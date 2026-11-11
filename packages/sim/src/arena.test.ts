@@ -43,4 +43,17 @@ describe("deterministic arena core", () => {
       "Adjacent runs must be merged",
     );
   });
+
+  it("rewards four near-misses with one deterministic Surge", () => {
+    const result = simulateArena({
+      rulesVersion: RULES_VERSION,
+      seed: 3,
+      runs: [{ direction: 0, ticks: RUN_TICKS }],
+    });
+
+    expect(result.grazes).toBe(10);
+    expect(result.surgeActivations).toBe(1);
+    expect(result.events.filter((event) => event.type === "surge-started")).toHaveLength(1);
+    expect(result.events.some((event) => event.type === "surge-ended")).toBe(true);
+  });
 });

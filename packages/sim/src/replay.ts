@@ -46,7 +46,7 @@ export function canonicalResultJson(result: ArenaResult): string {
     .join(",");
   const destroyedAtTick = result.destroyedAtTick === null ? "null" : result.destroyedAtTick.toString();
 
-  return `{"rulesVersion":${result.rulesVersion},"seed":${result.seed},"tick":${result.tick},"player":{"x":${result.player.x},"y":${result.player.y},"health":${result.player.health}},"score":${result.score},"shotsFired":${result.shotsFired},"enemiesDestroyed":${result.enemiesDestroyed},"destroyedAtTick":${destroyedAtTick},"events":[${eventJson}]}`;
+  return `{"rulesVersion":${result.rulesVersion},"seed":${result.seed},"tick":${result.tick},"player":{"x":${result.player.x},"y":${result.player.y},"health":${result.player.health}},"score":${result.score},"shotsFired":${result.shotsFired},"enemiesDestroyed":${result.enemiesDestroyed},"grazes":${result.grazes},"surgeActivations":${result.surgeActivations},"destroyedAtTick":${destroyedAtTick},"events":[${eventJson}]}`;
 }
 
 export async function resultHash(result: ArenaResult): Promise<string> {

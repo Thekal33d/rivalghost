@@ -5,6 +5,8 @@ export interface EnemyDefinition {
   contactDamage: number;
   killScore: number;
   fireDelayTicks: number;
+  burstShots: number;
+  burstIntervalTicks: number;
   hitHalfWidth: number;
 }
 
@@ -15,10 +17,10 @@ export interface WaveSpawn {
 }
 
 export const ENEMIES_V1: Readonly<Record<EnemyKind, EnemyDefinition>> = {
-  skitter: { health: 1, contactDamage: 20, killScore: 100, fireDelayTicks: 3, hitHalfWidth: 18 },
-  lance: { health: 2, contactDamage: 25, killScore: 250, fireDelayTicks: 4, hitHalfWidth: 22 },
-  bulwark: { health: 6, contactDamage: 35, killScore: 700, fireDelayTicks: 12, hitHalfWidth: 26 },
-  warden: { health: 12, contactDamage: 40, killScore: 1_500, fireDelayTicks: 18, hitHalfWidth: 30 },
+  skitter: { health: 1, contactDamage: 20, killScore: 100, fireDelayTicks: 3, burstShots: 1, burstIntervalTicks: 8, hitHalfWidth: 18 },
+  lance: { health: 2, contactDamage: 25, killScore: 250, fireDelayTicks: 4, burstShots: 2, burstIntervalTicks: 8, hitHalfWidth: 22 },
+  bulwark: { health: 6, contactDamage: 35, killScore: 700, fireDelayTicks: 12, burstShots: 3, burstIntervalTicks: 8, hitHalfWidth: 26 },
+  warden: { health: 12, contactDamage: 40, killScore: 1_500, fireDelayTicks: 18, burstShots: 5, burstIntervalTicks: 8, hitHalfWidth: 30 },
 };
 
 export const WAVE_SPAWNS_V1: readonly WaveSpawn[] = [
