@@ -1,0 +1,19 @@
+{
+  "name": "rivalghost",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A deterministic arcade rivalry game built for NEAR.",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "pnpm --recursive run build",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "dev": "pnpm --filter @rivalghost/web dev",
+    "lint": "pnpm --recursive run lint",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "pnpm --recursive run typecheck"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  }
+}
