@@ -1,7 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { RIVAL_GHOST_RULES_V1, WAVE_SPAWNS_V1, type EnemyKind } from "@rivalghost/game-data";
+import {
+  RIVAL_GHOST_RULES_V1,
+  RULES_VERSION,
+  RUN_TICKS,
+  WAVE_SPAWNS_V1,
+  type EnemyKind,
+} from "@rivalghost/game-data";
+import { encodeDirections, replayHash, simulateArena, type DirectionCode } from "@rivalghost/sim";
 
-type ArenaStats = { score: number; health: number; seconds: number };
+export type ArenaStats = {
+  score: number;
+  health: number;
+  seconds: number;
+  grazes: number;
+  surgeActivations: number;
+  enemiesDestroyed: number;
+  replayHash: string;
+};
+
+type ArenaHud = Pick<ArenaStats, "score" | "health" | "seconds">;
 
 const { arena } = RIVAL_GHOST_RULES_V1;
 const RUN_SECONDS = 60;
@@ -16,7 +33,7 @@ const ENEMY_COLORS: Record<EnemyKind, string> = {
 
 export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [hud, setHud] = useState<ArenaStats>({ score: 0, health: 100, seconds: RUN_SECONDS });
+  const [hud, setHud] = useState<ArenaHud>({ score: 0, health: 100, seconds: RUN_SECONDS });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -37,29 +54,19 @@ export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => 
       y: (index * 109) % arena.height,
       size: index % 9 === 0 ? 2 : 1,
     }));
-    let start = performance.now();
-    let last = start;
-    let frame = 0;
+    let last = performance.now();
+    let accumulatedMs = 0;
+    let tick = 0;
     let animation = 0;
     let complete = false;
-    let previousHud = "";
+    let projectedScore = 0;
+    let projectedHealth = 100;
+    const directions: DirectionCode[] = [];
 
-    const movement = (delta: number) => {
-      let horizontal = 0;
-      let vertical = 0;
-      if (pressed.has("ArrowLeft") || pressed.has("a")) horizontal -= 1;
-      if (pressed.has("ArrowRight") || pressed.has("d")) horizontal += 1;
-      if (pressed.has("ArrowUp") || pressed.has("w")) vertical -= 1;
-      if (pressed.has("ArrowDown") || pressed.has("s")) vertical += 1;
-
-      if (pointer.active) {
-        horizontal = Math.sign(pointer.x - player.x);
-        vertical = Math.sign(pointer.y - player.y);
-      }
-
-      const speed = 142 * delta;
-      player.x = clamp(player.x + horizontal * speed, 18, arena.width - 18);
-      player.y = clamp(player.y + vertical * speed, 112, arena.height - 18);
+    const movePlayer = (direction: DirectionCode) => {
+      const [horizontal, vertical] = DIRECTION_VECTORS[direction];
+      player.x = clamp(player.x + horizontal, 0, arena.width);
+      player.y = clamp(player.y + vertical, 0, arena.height);
     };
 
     const toCanvasPoint = (event: PointerEvent) => {
@@ -77,12 +84,14 @@ export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => 
     const onPointerUp = () => { pointer.active = false; };
     const onKeyDown = (event: KeyboardEvent) => pressed.add(event.key.toLowerCase());
     const onKeyUp = (event: KeyboardEvent) => pressed.delete(event.key.toLowerCase());
+    const onBlur = () => pressed.clear();
 
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
     canvas.addEventListener("pointerup", onPointerUp);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
 
     const draw = (elapsed: number, score: number) => {
       context.fillStyle = "#10151e";
@@ -95,7 +104,7 @@ export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => 
         context.fillRect(star.x, y, star.size, star.size);
       }
 
-      const laneTick = Math.floor(elapsed * 60);
+      const laneTick = tick;
       const activeEnemies = WAVE_SPAWNS_V1.filter(
         (spawn) => spawn.tick <= laneTick && laneTick - spawn.tick < 270,
       ).slice(-18);
@@ -145,46 +154,67 @@ export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => 
       context.fillText(String(HOUND_SCORE), 20, 53);
       context.fillStyle = "#b7c5d3";
       context.font = "600 10px Arial Narrow, sans-serif";
-      context.fillText("YOUR SCORE", 226, 28);
+      context.fillText("PROJECTED", 226, 28);
       context.fillStyle = score > HOUND_SCORE ? "#e5c15d" : "#f7f0d1";
       context.font = "900 22px Arial Narrow, sans-serif";
       context.fillText(String(score).padStart(5, "0"), 226, 53);
 
       context.fillStyle = "#253343";
       context.fillRect(14, 82, 124, 7);
-      context.fillStyle = player.health > 35 ? "#6fba9b" : "#e05f5f";
-      context.fillRect(14, 82, Math.max(0, player.health * 1.24), 7);
+      context.fillStyle = projectedHealth > 35 ? "#6fba9b" : "#e05f5f";
+      context.fillRect(14, 82, Math.max(0, projectedHealth * 1.24), 7);
       context.fillStyle = "#b7c5d3";
       context.font = "700 9px Arial Narrow, sans-serif";
-      context.fillText(`HULL ${String(player.health).padStart(3, "0")}`, 14, 104);
-      context.fillText(`${Math.max(0, Math.ceil(RUN_SECONDS - elapsed))} SEC`, 298, 104);
+      context.fillText(`HULL ${String(projectedHealth).padStart(3, "0")}`, 14, 104);
+      context.fillText(`${Math.max(0, Math.ceil((RUN_TICKS - tick) / 60))} SEC`, 298, 104);
+    };
+
+    const updateProjection = () => {
+      const predictedDirections = directions.concat(Array<DirectionCode>(RUN_TICKS - directions.length).fill(0));
+      const projected = simulateArena(encodeDirections(RULES_VERSION, 3, predictedDirections));
+      projectedScore = projected.score;
+      projectedHealth = projected.player.health;
+      setHud({
+        score: projected.score,
+        health: projected.player.health,
+        seconds: Math.max(0, Math.ceil((RUN_TICKS - tick) / 60)),
+      });
+    };
+
+    const finishRun = async () => {
+      const replay = encodeDirections(RULES_VERSION, 3, directions);
+      const result = simulateArena(replay);
+      onFinish({
+        score: result.score,
+        health: result.player.health,
+        seconds: 0,
+        grazes: result.grazes,
+        surgeActivations: result.surgeActivations,
+        enemiesDestroyed: result.enemiesDestroyed,
+        replayHash: await replayHash(replay),
+      });
+    };
+
+    const recordTick = () => {
+      const direction = document.hidden ? 0 : inputDirection(pressed, pointer, player);
+      directions.push(direction);
+      movePlayer(direction);
+      tick += 1;
+      if (tick % 30 === 0 || tick === RUN_TICKS) updateProjection();
     };
 
     const loop = (now: number) => {
-      const delta = Math.min(0.05, (now - last) / 1000);
+      accumulatedMs += now - last;
       last = now;
-      const elapsed = Math.min(RUN_SECONDS, (now - start) / 1000);
-      movement(delta);
-
-      const nearThreats = WAVE_SPAWNS_V1.filter((spawn) => {
-        const age = elapsed * 60 - spawn.tick;
-        const x = 26 + ((spawn.tick * 29) % 308);
-        return age > 90 && age < 180 && Math.abs(x - player.x) < 20;
-      }).length;
-      if (frame % 18 === 0 && nearThreats > 0) player.health = Math.max(0, player.health - nearThreats * 4);
-      const score = Math.min(22_300, Math.floor(elapsed * 372) + (player.health > 0 ? Math.floor(elapsed / 8) * 100 : 0));
-      const stats = { score, health: player.health, seconds: Math.max(0, Math.ceil(RUN_SECONDS - elapsed)) };
-      const hudKey = `${stats.score}-${stats.health}-${stats.seconds}`;
-      if (frame % 6 === 0 && hudKey !== previousHud) {
-        previousHud = hudKey;
-        setHud(stats);
+      while (accumulatedMs >= TICK_MS && tick < RUN_TICKS) {
+        accumulatedMs -= TICK_MS;
+        recordTick();
       }
-      draw(elapsed, score);
-      frame += 1;
+      draw(tick / 60, projectedScore);
 
-      if ((elapsed >= RUN_SECONDS || player.health === 0) && !complete) {
+      if (tick === RUN_TICKS && !complete) {
         complete = true;
-        onFinish(stats);
+        void finishRun();
         return;
       }
       animation = requestAnimationFrame(loop);
@@ -198,6 +228,7 @@ export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => 
       canvas.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
     };
   }, [onFinish]);
 
@@ -208,10 +239,53 @@ export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => 
         <span>{hud.seconds.toString().padStart(2, "0")} SEC</span>
       </div>
       <canvas ref={canvasRef} className="arena-canvas" aria-label="Move with drag, mouse, WASD, or arrow keys" />
-      <p className="arena-instruction">DRAG TO DODGE · AUTO-FIRE ENGAGED</p>
+      <p className="arena-instruction">DRAG TO DODGE · AUTO-FIRE ENGAGED · LOCAL REPLAY CAPTURING</p>
     </section>
   );
 }
+
+const TICK_MS = 1_000 / 60;
+const DIRECTION_VECTORS: Record<DirectionCode, readonly [number, number]> = {
+  0: [0, 0],
+  1: [0, -3],
+  2: [2, -2],
+  3: [3, 0],
+  4: [2, 2],
+  5: [0, 3],
+  6: [-2, 2],
+  7: [-3, 0],
+  8: [-2, -2],
+};
+
+function inputDirection(
+  pressed: Set<string>,
+  pointer: { active: boolean; x: number; y: number },
+  player: { x: number; y: number },
+): DirectionCode {
+  if (pointer.active) {
+    const horizontal = pointer.x - player.x;
+    const vertical = pointer.y - player.y;
+    if (Math.abs(horizontal) < 12 && Math.abs(vertical) < 12) return 0;
+    const sector = Math.round(Math.atan2(vertical, horizontal) / (Math.PI / 4));
+    return [3, 4, 5, 6, 7, 8, 1, 2][(sector + 8) % 8] as DirectionCode;
+  }
+
+  const horizontal = Number(pressed.has("arrowright") || pressed.has("d")) - Number(pressed.has("arrowleft") || pressed.has("a"));
+  const vertical = Number(pressed.has("arrowdown") || pressed.has("s")) - Number(pressed.has("arrowup") || pressed.has("w"));
+  const key = `${horizontal},${vertical}`;
+  return KEY_DIRECTIONS[key] ?? 0;
+}
+
+const KEY_DIRECTIONS: Record<string, DirectionCode> = {
+  "0,-1": 1,
+  "1,-1": 2,
+  "1,0": 3,
+  "1,1": 4,
+  "0,1": 5,
+  "-1,1": 6,
+  "-1,0": 7,
+  "-1,-1": 8,
+};
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));

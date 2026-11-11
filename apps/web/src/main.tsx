@@ -1,14 +1,22 @@
 import { StrictMode, useCallback, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ArenaPrototype } from "./ArenaPrototype";
+import { ArenaPrototype, type ArenaStats } from "./ArenaPrototype";
 import "./styles.css";
 
 const GAME_TITLE = "RIVALGHOST";
 
 function App() {
   const [screen, setScreen] = useState<"title" | "run" | "result">("title");
-  const [result, setResult] = useState({ score: 0, health: 100, seconds: 0 });
-  const finishRun = useCallback((stats: { score: number; health: number; seconds: number }) => {
+  const [result, setResult] = useState<ArenaStats>({
+    score: 0,
+    health: 100,
+    seconds: 0,
+    grazes: 0,
+    surgeActivations: 0,
+    enemiesDestroyed: 0,
+    replayHash: "",
+  });
+  const finishRun = useCallback((stats: ArenaStats) => {
     setResult(stats);
     setScreen("result");
   }, []);
@@ -26,10 +34,16 @@ function App() {
     const beatHound = result.score > 14_000;
     return (
       <main className="result-page">
-        <p className="eyebrow">UNRANKED FIELD REPORT</p>
+        <p className="eyebrow">LOCAL REPLAY READY</p>
         <h1>{beatHound ? "YOU PASSED HOUND" : "HOUND HOLDS"}</h1>
         <div className="result-score">{result.score.toLocaleString()}</div>
-        <p>{beatHound ? "The Crown is still testnet-locked. Replay settlement comes next." : "A sharper route can still take the Crown."}</p>
+        <p>{beatHound ? "You cleared HOUND locally. This replay is ready for the verifier; Crown settlement remains testnet-locked." : "HOUND still holds. Thread the projectiles to build a Surge, then take another run."}</p>
+        <dl className="run-breakdown">
+          <div><dt>GRAZES</dt><dd>{result.grazes}</dd></div>
+          <div><dt>SURGES</dt><dd>{result.surgeActivations}</dd></div>
+          <div><dt>HOSTILES</dt><dd>{result.enemiesDestroyed}</dd></div>
+        </dl>
+        <p className="replay-id">REPLAY {result.replayHash.slice(0, 12).toUpperCase()}</p>
         <button className="play-button" type="button" onClick={() => setScreen("run")}>Run it again</button>
         <button className="quiet-button" type="button" onClick={() => setScreen("title")}>Back to title</button>
       </main>

@@ -30,6 +30,7 @@ h1 { max-width: 8ch; margin: 0; color: #f1d56d; font-family: Copperplate, "Aveni
 .result-page { display: grid; align-content: center; justify-items: start; padding: clamp(2rem, 12vw, 10rem); background: #e7dfc8; color: #19201f; }
 .result-page h1 { color: #19201f; font-size: clamp(3rem, 10vw, 7rem); }
 .result-page > p { max-width: 28rem; line-height: 1.5; }.result-score { margin: 2rem 0 .2rem; color: #a64b43; font-family: Copperplate, fantasy; font-size: clamp(4rem, 15vw, 10rem); font-weight: 900; letter-spacing: -.09em; }
+.run-breakdown { display: flex; gap: 1.5rem; margin: 1.5rem 0 0; } .run-breakdown div { min-width: 4rem; } .run-breakdown dt, .replay-id { color: #66716a; font-size: .64rem; font-weight: 850; letter-spacing: .12em; } .run-breakdown dd { margin: .25rem 0 0; color: #19201f; font-family: Copperplate, fantasy; font-size: 1.5rem; font-weight: 900; } .replay-id { margin: 1.2rem 0 0; }
 .quiet-button { margin-top: 1rem; border: 0; padding: .5rem 0; color: #5b625d; background: transparent; cursor: pointer; font-weight: 700; text-decoration: underline; }
 @media (max-width: 720px) { .title-page { grid-template-columns: 1fr; } .title-copy { min-height: 56svh; padding: 2rem 1.5rem; } .title-art { min-height: 44svh; border-top: 1px solid #485767; border-left: 0; } h1 { font-size: clamp(4rem, 20vw, 7rem); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
