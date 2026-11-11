@@ -47,6 +47,9 @@ describe("replay verifier", () => {
     const certificate = await issueSettlementCertificate(verified, 1_001, keyPair.privateKey, 4);
 
     expect(certificate.signature).toHaveLength(64);
+    expect(new TextDecoder().decode(certificateMessage(certificate))).toBe(
+      `RIVALGHOST-CERT-v1|challenge-1|crown-1|player.testnet|1|3|${"a".repeat(64)}|${certificate.replayHash}|${certificate.finalStateHash}|17000|1001|20000|4`,
+    );
     await expect(globalThis.crypto.subtle.verify(
       { name: "Ed25519" },
       keyPair.publicKey,
