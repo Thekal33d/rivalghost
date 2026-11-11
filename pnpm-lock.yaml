@@ -17,7 +17,14 @@ importers:
 
   apps/relayer: {}
 
-  apps/verifier: {}
+  apps/verifier:
+    dependencies:
+      '@rivalghost/game-data':
+        specifier: workspace:*
+        version: link:../../packages/game-data
+      '@rivalghost/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
 
   apps/web:
     dependencies:

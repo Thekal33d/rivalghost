@@ -7,5 +7,9 @@
     "build": "tsc --project tsconfig.build.json",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rivalghost/game-data": "workspace:*",
+    "@rivalghost/sim": "workspace:*"
   }
 }
