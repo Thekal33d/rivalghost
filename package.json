@@ -9,8 +9,8 @@
     "check": "pnpm typecheck && pnpm test && pnpm build",
     "dev": "pnpm --filter @rivalghost/web dev",
     "lint": "pnpm --recursive run lint",
-    "test": "pnpm --filter @rivalghost/game-data build && vitest run --passWithNoTests",
-    "typecheck": "pnpm --filter @rivalghost/game-data build && pnpm --recursive run typecheck"
+    "test": "pnpm --filter @rivalghost/sim build && vitest run --passWithNoTests",
+    "typecheck": "pnpm --filter @rivalghost/sim build && pnpm --recursive run typecheck"
   },
   "devDependencies": {
     "typescript": "5.9.3",
