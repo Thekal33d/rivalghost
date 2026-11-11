@@ -94,13 +94,17 @@ export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => 
     window.addEventListener("blur", onBlur);
 
     const draw = (elapsed: number, score: number) => {
-      context.fillStyle = "#10151e";
+      const sky = context.createLinearGradient(0, 0, 0, arena.height);
+      sky.addColorStop(0, "#17152c");
+      sky.addColorStop(.52, "#25204a");
+      sky.addColorStop(1, "#121526");
+      context.fillStyle = sky;
       context.fillRect(0, 0, arena.width, arena.height);
-      context.fillStyle = "#18202e";
-      for (let y = 22; y < arena.height; y += 44) context.fillRect(0, y, arena.width, 1);
+      context.fillStyle = "rgba(255, 143, 193, .13)";
+      for (let y = 126; y < arena.height; y += 44) context.fillRect(0, y, arena.width, 1);
       for (const star of starfield) {
         const y = (star.y + elapsed * (14 + star.size * 5)) % arena.height;
-        context.fillStyle = star.size === 2 ? "#e5c15d" : "#60738e";
+        context.fillStyle = star.size === 2 ? "#ffe17b" : "#b6a7e8";
         context.fillRect(star.x, y, star.size, star.size);
       }
 
@@ -113,57 +117,41 @@ export function ArenaPrototype({ onFinish }: { onFinish: (stats: ArenaStats) => 
         const x = 26 + ((spawn.tick * 29 + index * 47) % 308);
         const y = 88 + waveTime * 108;
         const pulse = Math.floor(elapsed * 12 + index) % 2;
-        context.fillStyle = ENEMY_COLORS[spawn.kind];
-        context.fillRect(x - 8, y - 6, 16, 12);
-        context.fillStyle = pulse ? "#fff1c4" : "#702946";
-        context.fillRect(x - 3, y - 2, 6, 4);
+        drawEnemySprite(context, spawn.kind, x, y, pulse === 1);
         if (y > 122 && y < 585) {
-          context.fillStyle = "#d45151";
-          context.fillRect(x, y + 9 + ((elapsed * 90) % 46), 2, 10);
+          context.fillStyle = spawn.kind === "warden" ? "#ffe17b" : "#ff8bc1";
+          context.fillRect(x - 1, y + 9 + ((elapsed * 90) % 46), 3, 10);
         }
       });
 
-      const firePhase = Math.floor(elapsed * 10) % 2;
-      context.fillStyle = firePhase ? "#f7d76b" : "#f49b4c";
-      context.fillRect(player.x - 2, player.y - 34, 4, 25);
-      context.fillStyle = "#e5c15d";
-      context.fillRect(player.x - 11, player.y - 6, 22, 17);
-      context.fillStyle = "#f7f0d1";
-      context.fillRect(player.x - 4, player.y - 15, 8, 10);
-      context.fillStyle = "#1a2633";
-      context.fillRect(player.x - 3, player.y - 11, 6, 4);
+      drawPlayerShip(context, player.x, player.y, Math.floor(elapsed * 10) % 2 === 1);
 
       const ghostY = 122 + Math.sin(elapsed * 1.4) * 14;
-      context.fillStyle = "#c97b93";
-      context.fillRect(277, ghostY, 24, 14);
-      context.fillStyle = "#f5d4c4";
-      context.fillRect(283, ghostY + 4, 5, 4);
-      context.fillStyle = "#742f50";
-      context.fillRect(292, ghostY + 4, 5, 4);
+      drawHoundGhost(context, 289, ghostY);
 
-      context.fillStyle = "#10151e";
+      context.fillStyle = "rgba(28, 24, 50, .92)";
       context.fillRect(10, 10, 340, 62);
-      context.strokeStyle = "#46566b";
+      context.strokeStyle = "#8c7ac8";
       context.lineWidth = 1;
       context.strokeRect(10.5, 10.5, 339, 61);
-      context.fillStyle = "#b7c5d3";
+      context.fillStyle = "#d9d1ed";
       context.font = "600 10px Arial Narrow, sans-serif";
       context.fillText("HOUND // HOUND RUNG", 20, 28);
-      context.fillStyle = "#e5c15d";
+      context.fillStyle = "#ffda79";
       context.font = "900 22px Arial Narrow, sans-serif";
       context.fillText(String(HOUND_SCORE), 20, 53);
-      context.fillStyle = "#b7c5d3";
+      context.fillStyle = "#d9d1ed";
       context.font = "600 10px Arial Narrow, sans-serif";
       context.fillText("PROJECTED", 226, 28);
-      context.fillStyle = score > HOUND_SCORE ? "#e5c15d" : "#f7f0d1";
+      context.fillStyle = score > HOUND_SCORE ? "#86efc3" : "#fff7df";
       context.font = "900 22px Arial Narrow, sans-serif";
       context.fillText(String(score).padStart(5, "0"), 226, 53);
 
-      context.fillStyle = "#253343";
+      context.fillStyle = "#393057";
       context.fillRect(14, 82, 124, 7);
-      context.fillStyle = projectedHealth > 35 ? "#6fba9b" : "#e05f5f";
+      context.fillStyle = projectedHealth > 35 ? "#86efc3" : "#ff789d";
       context.fillRect(14, 82, Math.max(0, projectedHealth * 1.24), 7);
-      context.fillStyle = "#b7c5d3";
+      context.fillStyle = "#d9d1ed";
       context.font = "700 9px Arial Narrow, sans-serif";
       context.fillText(`HULL ${String(projectedHealth).padStart(3, "0")}`, 14, 104);
       context.fillText(`${Math.max(0, Math.ceil((RUN_TICKS - tick) / 60))} SEC`, 298, 104);
@@ -286,6 +274,81 @@ const KEY_DIRECTIONS: Record<string, DirectionCode> = {
   "-1,0": 7,
   "-1,-1": 8,
 };
+
+function drawEnemySprite(
+  context: CanvasRenderingContext2D,
+  kind: EnemyKind,
+  x: number,
+  y: number,
+  blink: boolean,
+): void {
+  const color = ENEMY_COLORS[kind];
+  context.fillStyle = "#2d2145";
+  context.fillRect(x - 11, y - 7, 22, 16);
+  context.fillStyle = color;
+
+  if (kind === "skitter") {
+    context.fillRect(x - 8, y - 5, 16, 10);
+    context.fillRect(x - 12, y - 2, 5, 5);
+    context.fillRect(x + 7, y - 2, 5, 5);
+  } else if (kind === "lance") {
+    context.fillRect(x - 7, y - 7, 14, 14);
+    context.fillRect(x - 3, y - 11, 6, 4);
+    context.fillRect(x - 12, y + 4, 24, 3);
+  } else if (kind === "bulwark") {
+    context.fillRect(x - 10, y - 7, 20, 14);
+    context.fillRect(x - 14, y - 3, 4, 8);
+    context.fillRect(x + 10, y - 3, 4, 8);
+  } else {
+    context.fillRect(x - 9, y - 8, 18, 16);
+    context.fillRect(x - 3, y - 13, 6, 5);
+    context.fillRect(x - 14, y + 6, 28, 4);
+  }
+
+  context.fillStyle = blink ? "#fff7df" : "#ffd879";
+  context.fillRect(x - 4, y - 2, 8, 4);
+}
+
+function drawPlayerShip(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  flame: boolean,
+): void {
+  context.fillStyle = flame ? "#ff8d76" : "#ffca71";
+  context.fillRect(x - 3, y + 11, 6, 16);
+  context.fillStyle = "#292142";
+  context.fillRect(x - 13, y - 1, 26, 17);
+  context.fillStyle = "#86efc3";
+  context.fillRect(x - 10, y + 1, 20, 13);
+  context.fillRect(x - 15, y + 7, 5, 5);
+  context.fillRect(x + 10, y + 7, 5, 5);
+  context.fillStyle = "#fff7df";
+  context.fillRect(x - 4, y - 9, 8, 16);
+  context.fillStyle = "#605584";
+  context.fillRect(x - 3, y - 5, 6, 7);
+  context.fillStyle = "#ff7baa";
+  context.fillRect(x - 2, y + 14, 4, 4);
+}
+
+function drawHoundGhost(context: CanvasRenderingContext2D, x: number, y: number): void {
+  context.globalAlpha = .9;
+  context.fillStyle = "#ef70a9";
+  context.fillRect(x - 12, y - 7, 24, 16);
+  context.fillRect(x - 8, y - 12, 16, 5);
+  context.fillRect(x - 15, y + 9, 6, 5);
+  context.fillRect(x + 9, y + 9, 6, 5);
+  context.fillStyle = "#ffe0cc";
+  context.fillRect(x - 6, y - 2, 12, 8);
+  context.fillStyle = "#3b204a";
+  context.fillRect(x - 3, y, 2, 3);
+  context.fillRect(x + 2, y, 2, 3);
+  context.fillStyle = "#ffdc78";
+  context.fillRect(x - 6, y - 17, 12, 3);
+  context.fillRect(x - 4, y - 21, 3, 4);
+  context.fillRect(x + 1, y - 21, 3, 4);
+  context.globalAlpha = 1;
+}
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));
