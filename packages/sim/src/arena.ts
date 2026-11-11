@@ -3,6 +3,9 @@ import {
   RIVAL_GHOST_RULES_V1,
   RULES_VERSION,
   RUN_TICKS,
+  ENEMIES_V1,
+  WAVE_SPAWNS_V1,
+  type EnemyKind,
 } from "@rivalghost/game-data";
 
 export type DirectionCode = (typeof DIRECTION_CODES)[keyof typeof DIRECTION_CODES];
@@ -39,19 +42,14 @@ export interface ArenaResult {
 
 interface Enemy {
   id: number;
+  kind: EnemyKind;
   health: number;
   laneX: number;
   fired: boolean;
 }
 
 const { arena, combat } = RIVAL_GHOST_RULES_V1;
-const ENEMY_SPAWN_INTERVAL_TICKS = 90;
-const ENEMY_FIRE_DELAY_TICKS = 45;
-const ENEMY_HEALTH = 3;
 const PLAYER_SHOT_DAMAGE = 1;
-const ENEMY_DESTROY_SCORE = 100;
-const ENEMY_DAMAGE = 20;
-const PLAYER_HIT_HALF_WIDTH = 18;
 
 const MOVEMENT: Record<DirectionCode, readonly [number, number]> = {
   0: [0, 0],
@@ -91,21 +89,24 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
     player.x = clamp(player.x + deltaX, 0, arena.width);
     player.y = clamp(player.y + deltaY, 0, arena.height);
 
-    if (tick % ENEMY_SPAWN_INTERVAL_TICKS === 0) {
+    const scheduledSpawns = WAVE_SPAWNS_V1.filter((spawn) => spawn.tick === tick);
+    for (const spawn of scheduledSpawns) {
       randomState = xorshift32(randomState);
       const laneX = 24 + (randomState % (arena.width - 48));
-      enemies.push({ id: nextEnemyId, health: ENEMY_HEALTH, laneX, fired: false });
+      enemies.push({ id: nextEnemyId, kind: spawn.kind, health: ENEMIES_V1[spawn.kind].health, laneX, fired: false });
       events.push({ tick, type: "enemy-spawned", value: nextEnemyId });
       nextEnemyId += 1;
     }
 
     for (const enemy of enemies) {
-      if (enemy.health > 0 && !enemy.fired && tick % ENEMY_SPAWN_INTERVAL_TICKS === ENEMY_FIRE_DELAY_TICKS) {
+      const definition = ENEMIES_V1[enemy.kind];
+      const spawnTick = WAVE_SPAWNS_V1[enemy.id - 1].tick;
+      if (enemy.health > 0 && !enemy.fired && tick === spawnTick + definition.fireDelayTicks) {
         enemy.fired = true;
         events.push({ tick, type: "enemy-fired", value: enemy.id });
-        if (Math.abs(player.x - enemy.laneX) <= PLAYER_HIT_HALF_WIDTH) {
-          player.health = Math.max(0, player.health - ENEMY_DAMAGE);
-          events.push({ tick, type: "player-damaged", value: ENEMY_DAMAGE });
+        if (Math.abs(player.x - enemy.laneX) <= definition.hitHalfWidth) {
+          player.health = Math.max(0, player.health - definition.contactDamage);
+          events.push({ tick, type: "player-damaged", value: definition.contactDamage });
         }
       }
     }
@@ -117,7 +118,7 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
       if (target) {
         target.health -= PLAYER_SHOT_DAMAGE;
         if (target.health === 0) {
-          score += ENEMY_DESTROY_SCORE;
+          score += ENEMIES_V1[target.kind].killScore;
           enemiesDestroyed += 1;
           events.push({ tick, type: "enemy-destroyed", value: target.id });
         }

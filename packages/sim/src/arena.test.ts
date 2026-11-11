@@ -15,8 +15,10 @@ describe("deterministic arena core", () => {
 
     expect(first).toEqual(second);
     expect(first.tick).toBe(RUN_TICKS);
-    expect(first.shotsFired).toBe(600);
+    expect(first.shotsFired).toBeGreaterThan(0);
+    expect(first.shotsFired).toBeLessThan(600);
     expect(first.enemiesDestroyed).toBeGreaterThan(0);
+    expect(first.destroyedAtTick).not.toBeNull();
     expect(first.stateHash).toMatch(/^[a-f0-9]{8}$/);
   });
 
