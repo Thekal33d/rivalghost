@@ -44,16 +44,30 @@ describe("deterministic arena core", () => {
     );
   });
 
-  it("rewards four near-misses with one deterministic Surge", () => {
+  it("does not award accidental idle grazes", () => {
     const result = simulateArena({
       rulesVersion: RULES_VERSION,
       seed: 3,
       runs: [{ direction: 0, ticks: RUN_TICKS }],
     });
 
-    expect(result.grazes).toBe(10);
+    expect(result.score).toBeLessThan(14_000);
+    expect(result.grazes).toBe(0);
+    expect(result.surgeActivations).toBe(0);
+  });
+
+  it("rewards a deliberate route with a HOUND-beating Surge run", () => {
+    const directions = [2, 4, 6, 8] as const;
+    const runs = Array.from({ length: 30 }, (_, index) => ({
+      direction: directions[index % directions.length],
+      ticks: 120,
+    }));
+    const result = simulateArena({ rulesVersion: RULES_VERSION, seed: 3, runs });
+
+    expect(result.score).toBe(14_242);
+    expect(result.score).toBeGreaterThan(14_000);
+    expect(result.grazes).toBe(9);
     expect(result.surgeActivations).toBe(1);
-    expect(result.events.filter((event) => event.type === "surge-started")).toHaveLength(1);
     expect(result.events.some((event) => event.type === "surge-ended")).toBe(true);
   });
 });

@@ -31,7 +31,7 @@ describe("replay verifier", () => {
       challengeId: "challenge-1",
       crownId: "crown-1",
       playerId: "player.testnet",
-      score: 17_000,
+      score: 9_802,
     });
     expect(verified.replayHash).toHaveLength(64);
     expect(verified.finalStateHash).toHaveLength(64);
@@ -48,7 +48,7 @@ describe("replay verifier", () => {
 
     expect(certificate.signature).toHaveLength(64);
     expect(new TextDecoder().decode(certificateMessage(certificate))).toBe(
-      `RIVALGHOST-CERT-v1|challenge-1|crown-1|player.testnet|1|3|${"a".repeat(64)}|${certificate.replayHash}|${certificate.finalStateHash}|17000|1001|20000|4`,
+      `RIVALGHOST-CERT-v1|challenge-1|crown-1|player.testnet|1|3|${"a".repeat(64)}|${certificate.replayHash}|${certificate.finalStateHash}|9802|1001|20000|4`,
     );
     await expect(globalThis.crypto.subtle.verify(
       { name: "Ed25519" },

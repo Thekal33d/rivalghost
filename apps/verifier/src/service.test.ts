@@ -31,7 +31,7 @@ describe("replay verification service", () => {
       replay: { rulesVersion: RULES_VERSION, seed: 3, runs: [{ direction: 0, ticks: RUN_TICKS }] },
     }, 1_000);
 
-    expect(certificate).toMatchObject({ challengeId: "0", crownId: "0", score: 17_000, verifierKeyVersion: 2 });
+    expect(certificate).toMatchObject({ challengeId: "0", crownId: "0", score: 9_802, verifierKeyVersion: 2 });
     await expect(globalThis.crypto.subtle.verify(
       { name: "Ed25519" },
       keyPair.publicKey,

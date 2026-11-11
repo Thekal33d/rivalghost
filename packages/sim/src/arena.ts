@@ -72,7 +72,7 @@ const PLAYER_SHOT_DAMAGE = 1;
 const PLAYER_HIT_HALF_SIZE = 10;
 const GRAZE_HALF_SIZE = 20;
 const PROJECTILE_SPEED_PER_TICK = 6;
-const GRAZE_SCORE = 50;
+const GRAZE_SCORE = 250;
 
 const MOVEMENT: Record<DirectionCode, readonly [number, number]> = {
   0: [0, 0],
@@ -152,7 +152,7 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
         }
         projectile.y = arena.height + PROJECTILE_SPEED_PER_TICK;
         events.push({ tick, type: "player-damaged", value: projectile.damage });
-      } else if (!projectile.grazed && xDistance <= GRAZE_HALF_SIZE && yDistance <= GRAZE_HALF_SIZE) {
+      } else if (directions[tick] !== 0 && !projectile.grazed && xDistance <= GRAZE_HALF_SIZE && yDistance <= GRAZE_HALF_SIZE) {
         projectile.grazed = true;
         grazes += 1;
         grazeMarks += 1;

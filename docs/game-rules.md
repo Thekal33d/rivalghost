@@ -61,17 +61,17 @@ The single competitive loadout is fixed for every player and HOUND. There are no
 
 | Enemy | Health | Contact damage | Kill score | Role |
 | --- | ---: | ---: | ---: | --- |
-| Skitter | 1 | 20 | 100 | Fast low-value mover. |
-| Lance | 2 | 25 | 250 | Telegraphs a direct lane attack. |
-| Bulwark | 6 | 35 | 700 | Slow durable target that crowds routes. |
-| Warden | 12 | 40 | 1,500 | Sector anchor with a readable burst pattern. |
+| Skitter | 1 | 20 | 60 | Fast low-value mover. |
+| Lance | 2 | 25 | 148 | Telegraphs a direct lane attack. |
+| Bulwark | 6 | 35 | 413 | Slow durable target that crowds routes. |
+| Warden | 12 | 40 | 885 | Sector anchor with a readable burst pattern. |
 
 Hostile projectile damage is 20. No score bonus is awarded for a collision, survival time, or client-reported combo. Kill score is awarded at the deterministic kill tick.
 
 ### Graze and Surge
 
 - A projectile produces a Graze once when its center enters the outer 20-unit ring around the Sentinel but does not hit its inner 10-unit hitbox.
-- Each unique projectile can award only one Graze, worth 50 score and one Graze mark.
+- Each unique projectile can award only one Graze, worth 250 score and one Graze mark. The Sentinel must be moving when it clears the outer ring, so an idle run cannot collect accidental GRAZEs.
 - At four Graze marks, Surge starts immediately if it has not activated already in that run.
 - Surge lasts 180 ticks (three seconds). Eligible enemy kill scores are multiplied by two; Graze score is unchanged.
 - Damage immediately clears Graze marks and ends an active Surge. A run can activate Surge once.
