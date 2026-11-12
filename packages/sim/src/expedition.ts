@@ -1,4 +1,4 @@
-import { EXPEDITION_TICKS, EXPEDITION_VERSION, RIGS, type ChapterId, type Rig } from "@rivalghost/game-data";
+import { CHAPTERS, ENCOUNTERS, EXPEDITION_TICKS, EXPEDITION_VERSION, RIGS, type ChapterId, type Rig } from "@rivalghost/game-data";
 import { sha256Hex } from "./replay.js";
 
 export interface ExpeditionConfig { seed: number; chapter: ChapterId; rig: Rig }
@@ -15,7 +15,7 @@ const triangle = (tick:number,span:number) => { const p = ((tick % (span*4)) + s
 
 function validateConfig(config:ExpeditionConfig) {
   if(!Number.isInteger(config.seed) || config.seed<0 || config.seed>0xffffffff) throw new Error("Invalid expedition seed");
-  if(![0,1,2].includes(config.chapter)) throw new Error("Invalid chapter");
+  if(!CHAPTERS.some(c=>c.id===config.chapter)) throw new Error("Invalid chapter");
   if(!RIGS.some(r=>r.id===config.rig)) throw new Error("Invalid rig");
 }
 function validInput(input:number) { return Number.isInteger(input) && input>=0 && (input & 15)<=8 && input<=24; }
@@ -23,6 +23,7 @@ function validInput(input:number) { return Number.isInteger(input) && input>=0 &
 export function createExpedition(config:ExpeditionConfig) {
   validateConfig(config);
   const {seed,chapter,rig}=config;
+  const encounter=ENCOUNTERS[chapter];
   const spec=RIGS.find(r=>r.id===rig)!;
   let random=seed || 0x12345678;
   const rand=()=>{random^=random<<13;random^=random>>>17;random^=random<<5;return random>>>0;};
@@ -40,7 +41,7 @@ export function createExpedition(config:ExpeditionConfig) {
     if(player.invulnerable>0) return;
     player.invulnerable=55;
     if(player.shield){player.shield=0;emit("shield",player.x,player.y);return;}
-    player.health=Math.max(0,player.health-(10+chapter*2));damageTaken+=10+chapter*2;
+    player.health=Math.max(0,player.health-encounter.damage);damageTaken+=encounter.damage;
     combo=0;charge=0;surge=0;emit("hit",player.x,player.y);
   };
   const kill=(foe:Foe)=>{
@@ -52,7 +53,7 @@ export function createExpedition(config:ExpeditionConfig) {
     else if(kills%3===0) drop(foe.x,foe.y,"power");
   };
   const spawn=(kind:FoeKind,x:number)=>{
-    const hp=kind==="boss" ? 105+chapter*25 : kind==="turret" ? 12 : kind==="weaver" ? 6 : 4;
+    const hp=kind==="boss" ? encounter.hp : kind==="turret" ? 12 : kind==="weaver" ? 6 : 4;
     foes.push({id:++id,kind,x,y:-30,origin:x,born:tick,hp,maxHp:hp,phase:1});
     if(kind==="boss") emit("boss",180,100);
   };
@@ -76,15 +77,20 @@ export function createExpedition(config:ExpeditionConfig) {
       emit("pulse",player.x,player.y);
     }
     // Formation entries leave time to read silhouettes before their first attack.
-    const interval=chapter===0 ? 210 : chapter===1 ? 180 : 160;
+    const interval=encounter.waves;
     if(tick>=90 && tick<2310 && (tick-90)%interval===0) {
       const origin=65+rand()%70;
-      for(let n=0;n<3;n++) spawn((Math.floor(tick/interval)+n)%3===0 ? "weaver" : "dart",origin+n*72);
+      for(let n=0;n<3;n++) {
+        const wave=Math.floor(tick/interval);
+        const x=encounter.formation==="pincer" ? [55,180,305][n] : encounter.formation==="column" ? (wave%2===0?70:150)+n*42 : origin+n*72;
+        const kind=encounter.formation==="pincer" ? (n===1?"dart":"weaver") : (wave+n)%3===0?"weaver":"dart";
+        spawn(kind,x);
+      }
     }
     if(tick===840 || tick===1560 || tick===2100) spawn("turret",80+rand()%200);
     if(tick===420 || tick===1080 || tick===1740) drop(70+rand()%220,80,"rescue");
     if(tick===2400) spawn("boss",180);
-    if(chapter>0 && tick>=600 && tick<2400 && tick%420===180) hazards.push({id:++id,x:50+rand()%260,born:tick});
+    if(encounter.hazardEvery>0 && tick>=600 && tick<2400 && tick%encounter.hazardEvery===180) hazards.push({id:++id,x:50+rand()%260,born:tick});
 
     for(const foe of foes) {
       if(foe.hp<=0) continue;
@@ -94,7 +100,17 @@ export function createExpedition(config:ExpeditionConfig) {
         foe.phase=foe.hp<=foe.maxHp/2 ? 2 : 1;
         const cadence=foe.phase===2 ? 65 : 100;
         if(age>85 && age%cadence===0) {
-          for(const vx of [-3,-2,-1,0,1,2,3]) bolt(foe.x,foe.y+25,vx,3+chapter);
+          const volley=Math.floor(age/cadence);
+          const attack=encounter.attack==="remix" ? (["crossfire","aimed","sweep"] as const)[volley%3] : encounter.attack;
+          if(attack==="crossfire") {
+            for(const vx of [1,2,3]) {bolt(foe.x-42,foe.y+25,vx,5);bolt(foe.x+42,foe.y+25,-vx,5);}
+          } else if(attack==="aimed") {
+            const aim=clamp(Math.round((player.x-foe.x)/Math.max(1,player.y-foe.y)*5),-2,2);
+            for(const spread of [-1,0,1]) bolt(foe.x,foe.y+25,aim+spread,5);
+          } else if(attack==="sweep") {
+            const sweep=volley%2===0?-2:2;
+            for(const spread of [-1,0,1]) {bolt(foe.x-28,foe.y+25,sweep+spread,5);bolt(foe.x+28,foe.y+25,sweep+spread,5);}
+          } else for(const vx of [-3,-2,-1,0,1,2,3]) bolt(foe.x,foe.y+25,vx,3+encounter.speed);
           if(foe.phase===2) hazards.push({id:++id,x:clamp(player.x,40,320),born:tick});
         }
       } else {
@@ -103,7 +119,7 @@ export function createExpedition(config:ExpeditionConfig) {
         if(age>=75 && age<300 && (age-75)%90===0) {
           const vx=Math.round((player.x-foe.x)/Math.max(1,player.y-foe.y)*4);
           if(foe.kind==="turret") for(const v of [-2,0,2]) bolt(foe.x,foe.y+16,v,4);
-          else bolt(foe.x,foe.y+16,clamp(vx,-3,3),4+chapter);
+          else bolt(foe.x,foe.y+16,clamp(vx,-3,3),4+encounter.speed);
         }
       }
       if(Math.abs(player.x-foe.x)<22 && Math.abs(player.y-foe.y)<24) hurt();

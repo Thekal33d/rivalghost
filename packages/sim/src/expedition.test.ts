@@ -31,6 +31,17 @@ function fly(chapter:ChapterId,rig:Rig,active=true) {
 }
 
 describe("Ghost Signal rules v2",()=>{
+  it("preserves the original three v2 outcomes and replay hashes",async()=>{
+    const fixtures=[[5610, 20, 12, 0, 70, 30, 8, 3600, "0f771e6f351ea04a4b007d061cdb33e9e74f275e95c62a383ffbacbc75350bf1"], [6080, 23, 14, 2, 84, 16, 8, 3600, "0e56b34675aab59ef0e6e46fa8bec12f8b964972c8ece820ab1b9142f8362b69"], [9780, 24, 33, 6, 112, 0, 6, 2851, "905cf0d806bdef002de8f2d51d126f1475d4afc312d6305bef2780f9c7a6d6b0"]];
+    for(let c=0;c<3;c++) {
+      const game=createExpedition({chapter:c as ChapterId,seed:CHAPTERS[c].seed,rig:"fan"});
+      while(!game.snapshot().finished){const t=game.snapshot().tick;game.step(Math.floor(t/90)%9|(t%480===0?16:0));}
+      const [score,kills,grazes,surges,damageTaken,health,pulses,durationTicks,hash]=fixtures[c];
+      expect(game.result()).toMatchObject({score,kills,grazes,surges,damageTaken,health,pulses,durationTicks});
+      expect(await expeditionReplayHash(game.replay())).toBe(hash);
+    }
+  });
+
   it("replays active movement, pickups, upgrades, bosses and pulses identically",async()=>{
     const game=fly(2,"fan");
     const replay=game.replay(), result=game.result();
@@ -47,7 +58,9 @@ describe("Ghost Signal rules v2",()=>{
   });
   it("every chapter can be cleared with every rig through normal inputs",()=>{
     for(const chapter of CHAPTERS)for(const rig of RIGS) {
-      expect(fly(chapter.id,rig.id).result().cleared,`${chapter.name}/${rig.id}`).toBe(true);
+      const game=fly(chapter.id,rig.id);
+      expect(game.result().cleared,`${chapter.name}/${rig.id}`).toBe(true);
+      expect(simulateExpedition(game.replay())).toEqual(game.result());
     }
     const idle=fly(2,"fan",false).result();
     expect(idle.cleared).toBe(false);
@@ -59,7 +72,7 @@ describe("Ghost Signal rules v2",()=>{
     expect(()=>validateExpedition({...replay,runs:[{input:0,ticks:3599}]})).toThrow();
     expect(()=>validateExpedition({...replay,runs:[{input:0,ticks:1800},{input:0,ticks:1800}]})).toThrow();
     expect(()=>validateExpedition({...replay,rig:"hacked" as Rig})).toThrow();
-    expect(()=>validateExpedition({...replay,chapter:3 as ChapterId})).toThrow();
+    expect(()=>validateExpedition({...replay,chapter:10 as ChapterId})).toThrow();
     expect(()=>validateExpedition({...replay,rulesVersion:1 as 2})).toThrow();
     expect(()=>validateExpedition({...replay,seed:NaN})).toThrow();
   });
