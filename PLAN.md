@@ -1,5 +1,13 @@
 # RivalGhost Implementation Plan
 
+## Current checkpoint — November 12, 2026
+
+The playable local alpha now includes ten Ghost Signal chapters, three rigs, thirty medals, personal best ghosts and a daily challenge. The frontend uses React and Canvas with the approved illustrated arcade style; earlier Phaser/pixel-art items below are historical planning choices, not the current implementation.
+
+Phase 0 and the deterministic simulation foundation are implemented. Game-client work is substantially playable locally. Crown v1 contract, verifier and typed-client cores exist, but guest bootstrap, the actual relay, autonomous HOUND, competitive v2 binding and deployed end-to-end integration remain unfinished. This is **not yet a testnet release candidate**.
+
+See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 28 TypeScript tests plus production build/type checking, and four Rust contract tests pass. Live storage/gas measurements and physical-device playtests remain outstanding.
+
 ## Overview
 
 RivalGhost is a 60-second arcade shooter in which players race a rival’s recorded Ghost, take its Crown and Bounty on NEAR testnet, then defend it while HOUND decides whether a rematch is worth paying for. This plan starts from an empty repository and ships one complete, reproducible vertical slice before expanding screens, rivals, or economy features.

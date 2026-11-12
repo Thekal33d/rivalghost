@@ -7,9 +7,9 @@ function label(c:CanvasRenderingContext2D,text:string,x:number,y:number,color=cr
   c.font=`800 ${size}px 'Barlow Condensed',sans-serif`;c.textAlign="center";
   c.lineWidth=4;c.strokeStyle=ink;c.strokeText(text,x,y);c.fillStyle=color;c.fillText(text,x,y);
 }
-function boss(c:CanvasRenderingContext2D,f:Foe) {
+function boss(c:CanvasRenderingContext2D,f:Foe,color:string) {
   c.save();c.translate(f.x,f.y);c.strokeStyle=ink;c.lineWidth=3;
-  c.fillStyle=f.phase===2 ? coral : gold;
+  c.fillStyle=f.phase===2 ? coral : color;
   c.beginPath();c.moveTo(-52,-30);c.lineTo(-27,-12);c.lineTo(0,-40);c.lineTo(27,-12);c.lineTo(52,-30);c.lineTo(46,26);c.lineTo(24,20);c.lineTo(0,39);c.lineTo(-24,20);c.lineTo(-46,26);c.closePath();c.fill();c.stroke();
   c.fillStyle=ink;c.fillRect(-24,-9,48,23);
   c.fillStyle=cream;c.fillRect(-19,-3,12,5);c.fillRect(7,-3,12,5);
@@ -20,7 +20,7 @@ function boss(c:CanvasRenderingContext2D,f:Foe) {
 
 export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,events:readonly CombatEvent[],reduced:boolean,ghost?:ExpeditionSnapshot) {
   const t=s.tick,scroll=reduced ? 0 : t;
-  const palettes=[['#17343b','#24474a'],['#34353e','#4b4448'],['#283b39','#3d5048']];
+  const palettes=[['#17343b','#24474a'],['#34353e','#4b4448'],['#283b39','#3d5048'],['#183d46','#275561'],['#3d3530','#58463a'],['#30364c','#454e65'],['#443137','#614047'],['#2e3d31','#45553c'],['#443b2b','#605339'],['#303e44','#4d6063']];
   const [background,structure]=palettes[s.chapter];
   c.fillStyle=background;c.fillRect(0,0,360,640);
   // District architecture is cosmetic; all damage below comes from the simulation.
@@ -56,7 +56,7 @@ export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,e
     c.restore();
   }
   for(const f of s.foes) {
-    if(f.kind==="boss") boss(c,f);
+    if(f.kind==="boss") boss(c,f,CHAPTERS[s.chapter].color);
     else {ship(c,f.x,f.y,f.kind==="dart" ? "skitter" : f.kind==="weaver" ? "lance" : "bulwark",t);}
     if(f.kind!=="boss" && f.hp<f.maxHp){c.fillStyle=ink;c.fillRect(f.x-16,f.y-27,32,3);c.fillStyle=coral;c.fillRect(f.x-16,f.y-27,32*f.hp/f.maxHp,3);}
   }

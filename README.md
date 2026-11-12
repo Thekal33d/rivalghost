@@ -1,17 +1,17 @@
 # RivalGhost
 
-RivalGhost is a 60-second arcade rivalry game being built for NEAR testnet. The browser now includes **Ghost Signal**, a three-chapter local campaign: rescue couriers, evolve your weapons, break a boss signal, and race your saved best ghost. A UTC-seeded daily signal offers a separate expert run. The intended on-chain Crown loop remains a separate versioned competition.
+RivalGhost is a 60-second arcade rivalry game being built for NEAR testnet. The browser now includes **Ghost Signal**, a ten-chapter local campaign across three acts: rescue couriers, evolve your weapons, break a boss signal, and race your saved best ghost. A UTC-seeded daily signal offers a separate expert run. The intended on-chain Crown loop remains a separate versioned competition.
 
 ## Workspace
 
 - `apps/web` — the playable React and Canvas experience, with original vector characters and live simulation rendering.
 - `apps/verifier` — deterministic replay checks and settlement certificate issuance.
-- `apps/relayer` — tightly scoped sponsored transaction relay.
+- `apps/relayer` — placeholder for the sponsored transaction relay; no live relay yet.
 - `packages/sim` — shared deterministic fixed-tick game simulation.
 - `packages/game-data` — game constants and schemas.
 - `packages/contracts-client` — browser-to-contract boundary.
 - `packages/ui` — reusable presentation components.
-- `contracts/rivalghost` — the NEAR contract, currently a tested state shell.
+- `contracts/rivalghost` — the Crown v1 NEAR contract prototype, with credit grants, challenge locks, signed settlement, defense, and expiry methods.
 
 ## Local setup
 
@@ -23,6 +23,8 @@ pnpm dev
 ```
 
 Copy the relevant `.env.example` file before configuring a verifier or relayer. Never commit a private key or funded-account credential.
+
+See [the development checkpoint](docs/development-status.md) for implemented features, validation, and the remaining integration milestones.
 
 ## Current scope
 

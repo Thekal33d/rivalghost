@@ -1,19 +1,19 @@
 import { validateExpedition, type ExpeditionReplay, type ExpeditionResult } from "@rivalghost/sim";
-import { type ChapterId, type Rig } from "@rivalghost/game-data";
+import { CHAPTERS, RIGS, type ChapterId, type Rig } from "@rivalghost/game-data";
 
 export const PROFILE_KEY="rivalghost.ghost-signal.v2";
 export interface BestFlight { score:number; replay:ExpeditionReplay }
 export interface FlightProfile { version:2; medals:number[]; attempts:number[]; bests:Record<string,BestFlight>; daily:{key:string;bests:Record<string,BestFlight>} }
-export const emptyProfile=():FlightProfile=>({version:2,medals:[0,0,0],attempts:[0,0,0],bests:{},daily:{key:"",bests:{}}});
+export const emptyProfile=():FlightProfile=>({version:2,medals:CHAPTERS.map(()=>0),attempts:CHAPTERS.map(()=>0),bests:{},daily:{key:"",bests:{}}});
 export const flightKey=(chapter:ChapterId,rig:Rig)=>`${chapter}:${rig}`;
 export const isUnlocked=(profile:FlightProfile,chapter:ChapterId)=>chapter===0||Boolean(profile.medals[chapter-1]&1);
 export const medalCount=(profile:FlightProfile)=>profile.medals.reduce((sum,mask)=>sum+[1,2,4].filter(bit=>mask&bit).length,0);
-export const callsign=(profile:FlightProfile)=>medalCount(profile)>=7?"GHOSTBREAKER":medalCount(profile)>=3?"SIGNAL RUNNER":"ROOKIE ACE";
+export const callsign=(profile:FlightProfile)=>medalCount(profile)>=30?"ORIGINAL ACE":medalCount(profile)>=15?"GHOST LIBERATOR":medalCount(profile)>=7?"GHOSTBREAKER":medalCount(profile)>=3?"SIGNAL RUNNER":"ROOKIE ACE";
 function cleanBests(value:unknown, daily=false):Record<string,BestFlight> {
   if(!value||typeof value!=="object")return {};
   const clean:Record<string,BestFlight>={};
-  for(const [key,entry] of Object.entries(value).slice(0,12)) {
-    if(!/^[012]:(needle|fan|guard)$/.test(key)||!entry||typeof entry!=="object")continue;
+  for(const [key,entry] of Object.entries(value).slice(0,CHAPTERS.length*RIGS.length)) {
+    if(!/^[0-9]:(needle|fan|guard)$/.test(key)||!entry||typeof entry!=="object")continue;
     const best=entry as BestFlight;
     if(!Number.isSafeInteger(best.score)||best.score<0||best.score>1e9)continue;
     try{validateExpedition(best.replay);if(key!==flightKey(best.replay.chapter,best.replay.rig))continue;if(daily&&best.replay.chapter!==2)continue;clean[key]={score:best.score,replay:best.replay};}catch{/* Ignore obsolete or damaged local ghosts. */}
@@ -25,7 +25,7 @@ export function parseProfile(raw:string|null):FlightProfile {
   try{
     const data=JSON.parse(raw);if(data?.version!==2)return emptyProfile();
     const p=emptyProfile();
-    for(let i=0;i<3;i++) {
+    for(let i=0;i<CHAPTERS.length;i++) {
       const medal=data.medals?.[i],attempt=data.attempts?.[i];
       p.medals[i]=Number.isInteger(medal)&&medal>=0&&medal<=7?medal:0;
       p.attempts[i]=Number.isSafeInteger(attempt)&&attempt>=0?Math.min(attempt,100000):0;
