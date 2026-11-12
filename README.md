@@ -49,3 +49,7 @@ The browser campaign now uses local rules version 3 with ten distinct chapter tw
 The first vertical slice is testnet-only. Credits are game credits with no cash value. Contract deployment, account funding, and public publishing happen only after explicit approval.
 
 See [the verifier runbook](docs/verifier-runbook.md) for startup, internal-service authentication, finalized transaction recovery, and remaining integration gates. `pnpm contract:size` enforces the original 100,000-byte deployment ceiling; the current 171,363-byte optimized artifact fails that gate. No deployment has occurred.
+
+## Living economy and NPC compute
+
+Open **Workshop** for free recovery jobs, MOTH salvage trading, cosmetic crafting/player listings, HOUND ghost commissions and shared district restoration. **NPC Reactor** shows the current compute/funding state. NEAR AI Cloud is disabled by default; no Cloud or staking account is configured. [Implementation and operator setup](docs/living-economy.md).

@@ -45,3 +45,10 @@
 - Added finalized RPC reads, an internal authenticated HTTP verifier, bounded replay storage and a restricted wallet transport that distinguishes verification from finalized settlement. The browser campaign remains local.
 - Added a cross-language replay-to-settlement fixture and adversarial tests.
 - Added an optimized Wasm size gate; the measured 220,885-byte artifact exceeds the unchanged 100,000-byte ceiling, so deployment remains blocked on optimization.
+
+## November 13, 2026 — Living economy and compute
+
+- Shared conserved CR ledger extended with MOTH, mission-bound recovery/commission receipts, escrowed listings, crafting and repair sinks.
+- Playable Workshop, original MOTH SVG, three visible cosmetic trails, raceable commissioned ghosts and ten restoration tracks.
+- NEAR AI Cloud choice adapter with persistent request caps/fallback and read-only staking-farm reporting; disabled until accounts and funding are configured.
+- 88 TypeScript tests and full check pass. Browser recovery → cargo → craft → equip → flight flow verified. No NEAR deployment or spending.

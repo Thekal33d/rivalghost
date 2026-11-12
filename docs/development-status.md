@@ -1,6 +1,6 @@
 # RivalGhost development checkpoint
 
-November 12, 2026
+November 13, 2026
 
 **Stage: playable local alpha.** Ghost Signal is playable in the local browser. RivalGhost is not yet an end-to-end NEAR game or a public hackathon release.
 
@@ -16,12 +16,16 @@ November 12, 2026
 | Contract | Rust Crown v1 and expedition v2: mission/deployment binding, exclusive Crown locks, signed settlement, defense and expiry | Resolve the failing 100 KB Wasm gate (current artifact 171,363 bytes); storage/gas measurements; fresh testnet deployment |
 | Verifier/client | Finalized RPC reads, internal authenticated HTTP verifier, bounded replay persistence, scoped wallet transport and pending-transaction recovery | Live gateway integration, browser controller, hosted infrastructure and real deployed integration |
 | Guest/relay | Browser pilot keys and signed login; HttpOnly sessions; authenticated verification gateway; opt-in testnet account bootstrap with scoped keys and durable budgets | Real provisioning validation, NEP-366 delegation, relay quotas/accounting and circuit breaker |
-| Economy / HOUND | Playable local Crown Pit; finite persistent CR ledger; NPC wallet, three input-only styles, autonomous policy-limited counterflights; replay receipts, defense, refunds and isolated seven-day workbench | Funded NEAR NPC wallet and sponsored execution, v3 protocol decision, stronger identity/anti-abuse, player-owned item markets if selected |
+| Economy / HOUND | Playable local Crown Pit; finite persistent CR ledger; NPC wallet, three input-only styles, autonomous policy-limited counterflights; replay receipts, defense, refunds and isolated seven-day workbench | Funded NEAR NPC wallet and sponsored execution, v3 protocol decision, stronger identity/anti-abuse, NEP-245 item custody and v3 settlement (local markets now implemented) |
+| Living world | MOTH recovery jobs/exchange; craftable and tradeable cosmetic trails; HOUND commissions and raceable archive; ten shared restoration tracks | Public market/abuse validation and NEAR asset settlement |
+| Compute | Server-only NEAR AI focus adapter, bounded/cached fallback; read-only farm reporting and Reactor UI | Operator accounts, funded activation, live API checks, attestation verification and later individual staking |
 | Release | Local commits and build instructions | GitHub remote/push, hosted demo, fresh-clone checks, judge walkthrough, real captures and submission |
+
+See [the living economy checkpoint](living-economy.md) for gameplay, parameters, compute setup and evidence. No NEAR funds have been spent.
 
 ## Validation completed
 
-- `pnpm test` and `pnpm typecheck`: 75 TypeScript tests, type checking and production build pass.
+- `pnpm test` and `pnpm typecheck`: 88 TypeScript tests, type checking and production build pass.
 - Input-only automated pilots clear all 30 chapter/rig combinations in both v2 and v3; their replays reproduce results. This proves attainability, not human fun or retention.
 - Regression fixtures preserve original chapters 01–03 outcomes and replay hashes.
 - Save tests cover migration from three chapters, the entire unlock chain, thirty medals, all thirty personal-best slots, and separation of daily records and v2/v3 bests.

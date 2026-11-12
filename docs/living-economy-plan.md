@@ -15,3 +15,7 @@ One finite 100,100 CR ledger includes Crown bounties and entry escrow. MOTH rece
 Stake-to-inference is a funding rail for NEAR AI Cloud, not a game reward. Official docs describe staking rewards becoming Cloud credits; value varies with price and reward rate. The currently published overview does not provide a contract address or transaction schema sufficient to safely construct a stake transaction. Use the official operator workflow until those are verified. Do not invent a staking endpoint, balance or attestation.
 
 Sources: https://docs.near.ai/cloud/staking-for-inference/overview ; https://docs.near.ai/cloud/guides/usage-reporting ; https://nearhackathon.com/
+
+## Completion checkpoint
+
+Local economy, Workshop flow, bounded compute adapter and read-only farm reporting are implemented and tested. See [living-economy.md](living-economy.md). Real Cloud activation, stake transactions, asset custody and chain settlement remain pending; no credentials or funded accounts exist. Later API research found authenticated farm read endpoints, with conflicting deprecation labels. Direct staking transactions remain unimplemented pending provider verification.
