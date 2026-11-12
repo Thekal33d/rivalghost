@@ -5,10 +5,10 @@ import { drawExpedition } from "./expedition-art";
 import {flightView,worldPoint,screenDirection} from "./flight-view";
 
 export interface FlightReport { result:ExpeditionResult; replay:ExpeditionReplay; hash:string }
-interface Props { config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
+interface Props { pilotName?:string; ghostLabel?:string; config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
 const keysOfMovement=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"]);
 
-export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound}:Props) {
+export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,pilotName,ghostLabel="BEST"}:Props) {
   const stageRef=useRef<HTMLElement>(null);
   const [wide,setWide]=useState(false),[fullError,setFullError]=useState("");
   const canvasRef=useRef<HTMLCanvasElement>(null),soundRef=useRef(sound),pulseRef=useRef(false),pauseRef=useRef(false);
@@ -77,7 +77,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound}:Pro
     const loop=(now:number)=>{
       if(done||disposed)return;
       advance(now,!focused||document.hidden);setCount(Math.max(0,Math.ceil((begins-now)/600)));
-      const s=session.snapshot(),g=past?.snapshot();c.setTransform(pixelRatio,0,0,pixelRatio,0,0);drawExpedition(c,s,session.events.slice(-160),reduced,g,view);
+      const s=session.snapshot(),g=past?.snapshot();c.setTransform(pixelRatio,0,0,pixelRatio,0,0);drawExpedition(c,s,session.events.slice(-160),reduced,g,view,ghostLabel);
       if(s.tick-lastHud>=6||s.finished){setHud(s);setGhostScore(g?.score??null);lastHud=s.tick;}
       if(s.finished){void finish();return;}frame=requestAnimationFrame(loop);
     };
@@ -85,7 +85,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound}:Pro
     window.addEventListener("keydown",keyDown);window.addEventListener("keyup",keyUp);window.addEventListener("blur",blur);window.addEventListener("focus",focus);document.addEventListener("visibilitychange",visibility);
     frame=requestAnimationFrame(loop);
     return()=>{observer.disconnect();if(document.fullscreenElement===stageRef.current)void document.exitFullscreen().catch(()=>{});disposed=true;cancelAnimationFrame(frame);canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",point);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);canvas.removeEventListener("lostpointercapture",up);window.removeEventListener("keydown",keyDown);window.removeEventListener("keyup",keyUp);window.removeEventListener("blur",blur);window.removeEventListener("focus",focus);document.removeEventListener("visibilitychange",visibility);if(audio)void audio.close().catch(()=>{});};
-  },[config,ghost,onFinish]);
+  },[config,ghost,onFinish,ghostLabel]);
   const seconds=Math.ceil((EXPEDITION_TICKS-hud.tick)/60),chapter=CHAPTERS[config.chapter],district=DISTRICTS[config.chapter];
   const boss=hud.foes.find(f=>f.kind==="boss"),hp=boss?Math.ceil(100*boss.hp/boss.maxHp):0,sector=flightSector(hud.tick),target=grazeTarget(config.chapter,config.rulesVersion??2);
   const sectorAge=hud.tick-(sector===0?0:sector===1?1200:2400);
@@ -93,7 +93,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound}:Pro
   return <section ref={stageRef} className={`arena-stage expedition-stage immersive-flight ${wide?"flight-wide":"flight-portrait"} ${hud.surge>0?"is-surge":""}`} aria-label="Ghost Signal arena">
     <header className="flight-topbar">
       <button className="flight-exit" onClick={onExit} aria-label="Exit flight">← <span>HANGAR</span></button>
-      <div className="flight-identity"><small>GHOST SIGNAL / {String(chapter.id+1).padStart(2,"0")}</small><b>{chapter.name}</b></div>
+      <div className="flight-identity"><small>{pilotName?`@${pilotName}`:"GHOST SIGNAL"} / {String(chapter.id+1).padStart(2,"0")}</small><b>{chapter.name}</b></div>
       <div className="flight-score"><small>SCORE <em>×{Math.max(1,hud.combo)}</em></small><strong>{hud.score.toLocaleString()}</strong></div>
       <div className="flight-clock"><strong>{seconds.toString().padStart(2,"0")}</strong><small>SEC</small></div>
       <button className="flight-sound" aria-pressed={sound} onClick={onSound}>SOUND {sound?"ON":"OFF"}</button>
@@ -117,7 +117,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound}:Pro
       <div className="flight-vitals"><span>HULL <b>{hud.player.health}%</b>{hud.player.shield>0&&<em>SHIELD</em>}</span><meter aria-label="Hull health" min="0" max="100" value={hud.player.health}/></div>
       <div className="flight-loadout"><small>{config.rig.toUpperCase()}</small><strong>LV {hud.weapon}<i>{[0,1,2].map(n=><span key={n} className={n<hud.weapon?"lit":""}/>)}</i></strong></div>
       <div className="flight-charge"><small>{hud.surge>0?`SURGE ×2 / ${(hud.surge/60).toFixed(1)}s`:`GRAZE ${hud.charge}/${target}`}</small><div>{Array.from({length:target},(_,i)=><i key={i} className={hud.surge>0||i<hud.charge?"charged":""}/>)}</div></div>
-      <div className="flight-rescues"><small>COURIERS</small><b>{hud.rescues} / 3</b>{ghostScore!==null&&<span>BEST {hud.score-ghostScore>=0?"+":""}{(hud.score-ghostScore).toLocaleString()}</span>}</div>
+      <div className="flight-rescues"><small>COURIERS</small><b>{hud.rescues} / 3</b>{ghostScore!==null&&<span>{ghostLabel} {hud.score-ghostScore>=0?"+":""}{(hud.score-ghostScore).toLocaleString()}</span>}</div>
       <p className="flight-key-hint">{wide?"WASD / ARROWS / DRAG":"DRAG TO FLY"}<span>SPACE TO PULSE · ESC TO PAUSE</span></p>
       <button className="pulse-button" disabled={hud.pulseCooldown>0||count>0||paused} onClick={()=>{pulseRef.current=true;}}>{hud.pulseCooldown>0?`PULSE / ${Math.ceil(hud.pulseCooldown/60)}s`:"PULSE READY ↯"}<small>{hud.pulseCooldown>0?"RECHARGING":"CLEAR FIRE / SPACE"}</small></button>
     </footer>

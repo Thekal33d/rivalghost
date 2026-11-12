@@ -26,7 +26,7 @@ function boss(c:CanvasRenderingContext2D,f:Foe,color:string,chapter:number,hit:b
   c.restore();
 }
 
-export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,events:readonly CombatEvent[],reduced:boolean,ghost:ExpeditionSnapshot|undefined,view:FlightView) {
+export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,events:readonly CombatEvent[],reduced:boolean,ghost:ExpeditionSnapshot|undefined,view:FlightView,ghostLabel="BEST") {
   const t=s.tick;
   c.save();c.fillStyle=DISTRICTS[s.chapter].sky;c.fillRect(0,0,view.width,view.height);applyFlightView(c,view);
   drawDistrict(c,s,reduced);
@@ -79,7 +79,7 @@ export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,e
   if(ghost && ghost.player.health>0 && ghost.tick>60) {
     c.globalAlpha=.35;c.strokeStyle=cream;c.lineWidth=1;c.setLineDash([3,3]);
     c.beginPath();c.moveTo(ghost.player.x,ghost.player.y-20);c.lineTo(ghost.player.x+18,ghost.player.y+15);c.lineTo(ghost.player.x,ghost.player.y+8);c.lineTo(ghost.player.x-18,ghost.player.y+15);c.closePath();c.stroke();c.setLineDash([]);
-    text("BEST",ghost.player.x,ghost.player.y+30,cream,10);c.globalAlpha=1;
+    text(ghostLabel,ghost.player.x,ghost.player.y+30,cream,10);c.globalAlpha=1;
   }
   if(s.player.health>0) {
     const p=s.player;

@@ -29,11 +29,20 @@ describe('off-chain social flights',()=>{
       expect(JSON.stringify(board)).not.toContain(a.publicKey);expect(social.challenge(run.id)?.replay).toEqual(replay);
     }finally{store.close();}
   });
+  it('ranks one best flight per pilot rather than filling the board with their runs',()=>{
+    const store=new GuestStore(':memory:',origin),social=new SocialService(store);try{
+      const a=guest(store).guest,b=guest(store).guest;social.saveProfile(a,{username:'Alpha',avatar:DEFAULT_AVATAR});social.saveProfile(b,{username:'Bravo',avatar:DEFAULT_AVATAR});
+      const alternate=createExpedition({chapter:0,rig:'fan',seed:313,rulesVersion:3});while(!alternate.snapshot().finished)alternate.step(Math.floor(alternate.snapshot().tick/90)%9);
+      social.publish(a,input);social.publish(a,{mode:'story',replay:alternate.replay()});social.publish(b,input);
+      const board=social.board(new URLSearchParams(),a);expect(board.total).toBe(2);expect(board.rows.filter(row=>row.pilot.id===a.id)).toHaveLength(1);
+      expect(board.rows.find(row=>row.pilot.id===a.id)?.score).toBe(Math.max(score,alternate.result().score));expect(board.rows.map(row=>row.rank)).toEqual([1,2]);expect(board.rows[0].score).toBeGreaterThanOrEqual(board.rows[1].score);
+    }finally{store.close();}
+  });
   it('keeps rigs separate and follows only real other pilots',()=>{
     const store=new GuestStore(':memory:',origin),social=new SocialService(store);try{const a=guest(store).guest,b=guest(store).guest;
       social.saveProfile(a,{username:'Ace',avatar:DEFAULT_AVATAR});social.saveProfile(b,{username:'Wing',avatar:DEFAULT_AVATAR});social.publish(b,input);
       expect(social.board(new URLSearchParams('scope=rivals'),a).total).toBe(0);social.follow(a,b.id,true);
-      expect(social.board(new URLSearchParams('scope=rivals'),a).rows[0].following).toBe(true);expect(social.board(new URLSearchParams('rig=guard'),a).total).toBe(0);
+      expect(social.board(new URLSearchParams('scope=rivals'),a).rows[0].following).toBe(true);expect(social.board(new URLSearchParams('scope=rivals&rig=guard'),a).rivals.map(p=>p.id)).toEqual([b.id]);expect(social.board(new URLSearchParams('rig=guard'),a).total).toBe(0);
       expect(()=>social.follow(a,a.id,true)).toThrow('another');social.follow(a,b.id,false);expect(social.board(new URLSearchParams('scope=rivals'),a).total).toBe(0);
     }finally{store.close();}
   });

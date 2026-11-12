@@ -11,6 +11,7 @@ November 12, 2026
 | Game | Ten authored chapters across three acts; deterministic combat; ten v3 encounter twists; changing vector environments; visible boss damage and two phases; pickups, rescues, Pulse, Graze, Surge and combos | Human difficulty and replay-motivation playtests; physical-device performance tuning |
 | Progression | Three free rigs; 30 medals; sequential unlocks; best ghosts for each chapter/rig; daily signal; old-save migration | Cross-device progress is not implemented; local saves are untrusted |
 | Frontend | React/Canvas illustrated arcade UI, keyboard and drag controls, local results, replay download, pause/resume, full-window landscape desktop flight and fitted portrait mobile play | Physical-phone controls/performance testing and audible sound QA; competition board, settlement UI and proof drawer |
+| Social | Editable unique usernames; 36 avatar combinations; server-shared replay-checked v3 boards; rival follows and shareable ghost challenges | Public hosting, multi-device validation, moderation/anti-bot policy, recovery; no live multiplayer or notifications |
 | Simulation | Crown v1 retained; expedition v2 preserved; local v3 chapter remix with deterministic replay validation | Competition controller and deployed configuration selection |
 | Contract | Rust Crown v1 and expedition v2: mission/deployment binding, exclusive Crown locks, signed settlement, defense and expiry | Resolve the failing 100 KB Wasm gate (current artifact 171,283 bytes); storage/gas measurements; fresh testnet deployment |
 | Verifier/client | Finalized RPC reads, internal authenticated HTTP verifier, bounded replay persistence, scoped wallet transport and pending-transaction recovery | Live gateway integration, browser controller, hosted infrastructure and real deployed integration |
@@ -20,7 +21,7 @@ November 12, 2026
 
 ## Validation completed
 
-- `pnpm test` and `pnpm typecheck`: 59 TypeScript tests, type checking and production build pass.
+- `pnpm test` and `pnpm typecheck`: 67 TypeScript tests, type checking and production build pass.
 - Input-only automated pilots clear all 30 chapter/rig combinations in both v2 and v3; their replays reproduce results. This proves attainability, not human fun or retention.
 - Regression fixtures preserve original chapters 01–03 outcomes and replay hashes.
 - Save tests cover migration from three chapters, the entire unlock chain, thirty medals, all thirty personal-best slots, and separation of daily records and v2/v3 bests.
@@ -32,6 +33,8 @@ November 12, 2026
 - Raw and optimized Wasm execute the same signed settlement and produce identical storage in the deterministic host smoke test. This is not a NEAR VM gas measurement.
 
 - New browser checks cover full-window desktop play, a one-row phone HUD, chapter environment transitions, boss HP falling from 124 to 66 to 56/130, phase-two feedback, and complete local result screens. Camera tests cover portrait, landscape and ultrawide pointer mappings.
+
+- Social tests verify authenticated posting, server-derived scores, stable ranking, rival follows and persistent profiles/replays. Browser checks cover avatar controls and mobile board/workshop layouts. The board is empty until real scores are explicitly posted; no public multi-device test has occurred.
 
 ## Next implementation milestones
 
@@ -54,3 +57,5 @@ No Git remote is configured in this checkout. Publishing needs the intended repo
 See [the guest onboarding runbook](guest-onboarding.md) and [contract build measurements](contract-build.md). Local authentication is running with provisioning disabled; no real account, grant or chain payout is claimed.
 
 The browser campaign currently plays **local v3**. Competition remains v2; promoting the new mechanics requires explicit protocol versioning and new settlement fixtures. See [immersive flight](immersive-flight.md).
+
+See [social play](social-play.md) for the new off-chain leaderboard and ghost-challenge loop.

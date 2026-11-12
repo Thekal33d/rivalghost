@@ -8,7 +8,9 @@ Phase 0 and the deterministic simulation foundation are implemented. Game-client
 
 The local campaign now uses versioned v3 chapter twists and a full-window responsive flight camera; v2 competitive behavior and original ghosts remain separate. See [the immersive update](docs/immersive-flight.md).
 
-See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 59 TypeScript tests plus production build/type checking, and ten Rust contract tests pass. The optimized 171,283-byte Wasm artifact fails the unchanged 100,000-byte ceiling. Live storage/gas measurements and physical-device playtests remain outstanding.
+Pilot identities, free avatar customization, replay-checked shared boards, rival lists and ghost challenges are now implemented off-chain. Public social use still needs hosting and multi-device validation. See [social play](docs/social-play.md).
+
+See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 67 TypeScript tests plus production build/type checking, and ten Rust contract tests pass. The optimized 171,283-byte Wasm artifact fails the unchanged 100,000-byte ceiling. Live storage/gas measurements and physical-device playtests remain outstanding.
 
 ## Overview
 

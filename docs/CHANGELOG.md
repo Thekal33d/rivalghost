@@ -1,5 +1,13 @@
 # Changelog
 
+## November 12, 2026 — Pilot identities and social rivalry
+
+- Added editable unique usernames and 36 free avatar combinations, shown in profiles, navigation, results and leaderboard entries.
+- Added persistent, replay-checked v3 boards with chapter/rig/daily filters and one best score per pilot.
+- Added one-way rival lists, explicit score posting, shareable recorded-ghost challenges, opponent score differences and rematches.
+- Kept the social loop off-chain; localhost sharing still requires public hosting for other devices.
+- Verified 67 TypeScript tests plus builds/type checking; browser-checked the avatar workshop and mobile leaderboard empty state.
+
 ## November 12, 2026 — Immersive flight and chapter remix
 
 - Replaced the narrow desktop arena with full-window landscape flight, fitted mobile portrait play, screen-relative controls and optional fullscreen.

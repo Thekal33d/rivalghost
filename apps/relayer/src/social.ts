@@ -63,6 +63,6 @@ export class SocialService {
     const rows=this.store.db.prepare(`SELECT * FROM (SELECT *,ROW_NUMBER() OVER(PARTITION BY player ORDER BY score DESC,created ASC,id ASC) AS best FROM social_runs WHERE mode=? AND day=? AND chapter=? AND rig=?) WHERE best=1 ORDER BY score DESC,created ASC,id ASC`).all(mode,day,chapter,rig);
     const rivals=new Set(guest?this.store.db.prepare('SELECT rival FROM social_rivals WHERE player=?').all(guest.id).map(r=>String(r.rival)):[]);
     const ranked=rows.filter(r=>scope==='all'||r.player===guest?.id||rivals.has(String(r.player))).map((r,index)=>({rank:index+1,id:String(r.id),pilot:this.profile(String(r.player))!,score:Number(r.score),following:rivals.has(String(r.player)),you:r.player===guest?.id}));
-    return {rows:ranked.slice(0,20),yourRank:ranked.find(r=>r.you)?.rank??null,total:ranked.length,mode,day,chapter,rig,scope,checked:'replay',retentionDays:30};
+    return {rivals:[...rivals].map(id=>this.profile(id)).filter((p):p is SocialProfile=>p!==null),rows:ranked.slice(0,20),yourRank:ranked.find(r=>r.you)?.rank??null,total:ranked.length,mode,day,chapter,rig,scope,checked:'replay',retentionDays:30};
   }
 }

@@ -28,6 +28,10 @@ Run `pnpm guest:serve` in a second terminal to enable the optional **Save pilot*
 
 See [the development checkpoint](docs/development-status.md) for implemented features, validation, and the remaining integration milestones.
 
+## Social play
+
+Open **Your Pilot** to set a username and customize armor, helmet and insignia. The **Leaderboard** shows real, server-replayed submissions by chapter and rig. Post a finished flight or a saved best to create a ghost challenge; add other pilots as rivals and race their recorded lines. See [social play](docs/social-play.md) for endpoints, quotas and the hosting boundary. The local preview has no invented players, and localhost links need public hosting before friends elsewhere can use them.
+
 ## Current scope
 
 Drag or use WASD/arrows to steer and aim; firing is automatic. Press Space or tap Pulse to clear nearby fire. Collect two gold cells to evolve your weapon. Mint rescue pods repair hull. Four moving grazes (three in Null Choir) trigger a repeatable three-second Surge; chained kills build a multiplier up to five. Bosses change patterns at half health, and yellow laser lanes warn before firing.

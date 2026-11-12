@@ -6,11 +6,11 @@ async function request(path:string,body?:unknown){
   const response=await fetch(`/api/guest/${path}`,{method:body===undefined?"GET":"POST",credentials:"same-origin",headers:body===undefined?{}:{"Content-Type":"application/json"},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000)});
   const data=await response.json();if(!response.ok)throw new Error(data.error??"Pilot service unavailable");return data;
 }
-export function GuestPilot(){
+export function GuestPilot({username}:{username?:string}){
   const toggle=useRef<HTMLButtonElement>(null);
   const [open,setOpen]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const [session,setSession]=useState<Session>({guest:null,onlineAvailable:false}),[hasKey,setHasKey]=useState(false);
-  useEffect(()=>{let active=true;void Promise.all([readPilotKey(),request("me")]).then(([key,data])=>{if(active){setHasKey(Boolean(key));if(key&&data.guest?.publicKey===key.publicKey)setSession(data);else setSession({guest:null,onlineAvailable:data.onlineAvailable});}}).catch(()=>{});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void Promise.all([readPilotKey(),request("me")]).then(([key,data])=>{if(active){setHasKey(Boolean(key));if(key&&data.guest?.publicKey===key.publicKey)setSession(data);else setSession({guest:null,onlineAvailable:data.onlineAvailable});}}).catch(()=>{});return()=>{active=false;};},[username]);
   useEffect(()=>{if(!open)return;const escape=(event:KeyboardEvent)=>{if(event.key==="Escape"){setOpen(false);toggle.current?.focus();}};window.addEventListener("keydown",escape);return()=>window.removeEventListener("keydown",escape);},[open]);
   async function connect(){
     setBusy(true);setError("");
@@ -27,7 +27,7 @@ export function GuestPilot(){
   return <div className="guest-pilot">
     <button ref={toggle} className="pilot-toggle" aria-expanded={open} aria-controls="pilot-onboarding" onClick={()=>setOpen(v=>!v)}>{guest?"PILOT SAVED ✓":hasKey?"RECONNECT PILOT":"SAVE PILOT"}</button>
     {open&&<section id="pilot-onboarding" className="pilot-onboarding" aria-label="Save your pilot">
-      <p className="eyebrow">YOUR PILOT. YOUR DEVICE.</p><h2>{guest?`GHOST-${guest.id.slice(0,4).toUpperCase()}`:"MAKE IT YOURS."}</h2>
+      <p className="eyebrow">YOUR PILOT. YOUR DEVICE.</p><h2>{guest?(username??`GHOST-${guest.id.slice(0,4).toUpperCase()}`):"MAKE IT YOURS."}</h2>
       <p>{guest?"Your pilot is saved in this browser. Your medals and best flights stay here too.":"Save a guest pilot without a wallet popup. Free play is always available."}</p>
       <p className="pilot-disclosure">Clearing this browser’s site data removes access to this pilot and its local progress. There’s no cross-device recovery yet.</p>
       {guest&&<p className="pilot-status">{guest.state==="ready"?"NEAR testnet account ready":guest.state==="pending"?"Online account setup pending":"Saved here · online rivalry coming soon"}{guest.state==="ready"&&<small>{guest.accountId}</small>}</p>}

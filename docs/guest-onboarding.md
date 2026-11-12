@@ -61,3 +61,7 @@ Routes: `GET /api/guest/me`; POST `challenge`, `session`, `logout`, `provision`,
 Tests cover forged/expired/reused proofs, origin binding, non-exportable browser signing, session rotation and expiry, real local HTTP requests, persistence across restarts, concurrency, uncertain account creation, wrong key permissions, gas caps and budget exhaustion before provider calls. Browser checks cover saving, restoring the same pilot after reload, retained campaign progress and phone-sized panel bounds.
 
 Still required: live account and delegate-action testing, transaction hash recovery, browser challenge controller, measured storage/receipts, public abuse controls and monitoring, recovery design, and service hosting. No accounts have been funded or deployed by this implementation.
+
+## Social service integration
+
+The gateway also serves authenticated pilot profiles, replay-checked v3 score boards, rival lists and ghost links without enabling NEAR bootstrap. See [social play](social-play.md). A saved social profile and posted score are distinct from a funded NEAR account or on-chain payout.
