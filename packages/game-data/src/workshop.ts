@@ -1,5 +1,5 @@
 export const RECIPES = [
-  {id:'afterglow',name:'Afterglow',salvage:6,fee:4,color:'#ff705e',description:'A coral ribbon with diamond sparks.'},
+  {id:'afterglow',name:'Afterglow',salvage:4,fee:4,color:'#ff705e',description:'A coral ribbon with diamond sparks.'},
   {id:'ion',name:'Ion Wake',salvage:9,fee:6,color:'#75e5c1',description:'Twin mint contrails from the rebuilt city.'},
   {id:'sunflare',name:'Sunflare',salvage:12,fee:8,color:'#f6c85f',description:'A golden comet tail. Made from your recoveries.'},
 ] as const;

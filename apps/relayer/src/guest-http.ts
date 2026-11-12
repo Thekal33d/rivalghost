@@ -1,3 +1,4 @@
+import type {NearCompute} from './near-compute.js';
 import {WorkshopError} from './workshop.js';
 import {createServer,type IncomingMessage,type ServerResponse} from "node:http";
 import {SocialService,SocialError} from "./social.js";
@@ -8,7 +9,7 @@ export interface VerificationGateway {verify(guest:Guest,submission:{challengeId
 const token=(req:IncomingMessage)=>req.headers.cookie?.split(";").map(s=>s.trim()).find(s=>s.startsWith("rg_guest="))?.slice(9)??"";
 function send(res:ServerResponse,status:number,body:unknown,cookie?:string){res.writeHead(status,{"Content-Type":"application/json","Cache-Control":"no-store","X-Content-Type-Options":"nosniff",...(cookie?{"Set-Cookie":cookie}:{})});res.end(JSON.stringify(body));}
 async function json(req:IncomingMessage){const chunks:Buffer[]=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>128*1024)throw new Error("Request too large");chunks.push(chunk);}return JSON.parse(Buffer.concat(chunks).toString("utf8"));}
-export function createGuestServer(service:GuestService,gateway?:VerificationGateway){
+export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute){
   const store=service.store,social=new SocialService(store),secure=store.origin.startsWith("https:");
   const cookie=(value:string,age=43200)=>`rg_guest=${value}; HttpOnly; SameSite=Strict; Path=/api/guest; Max-Age=${age}${secure?"; Secure":""}`;
   let economy:EconomyService|undefined;
@@ -17,6 +18,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
     try {
     const session=token(req),guest=store.session(session);
     if(req.method==="GET"&&req.url==="/api/guest/me"){send(res,200,{guest,onlineAvailable:service.configured});return;}
+    if(req.method==="GET"&&req.url==="/api/guest/compute"){store.rate("compute-read",60);send(res,200,{...(compute?.status()??{enabled:false,dailyLimit:0,callsToday:0,source:"local"}),stake:await compute?.stake()??{state:"not-configured"}});return;}
     if(req.method==="GET"&&req.url==="/api/guest/workshop"){store.rate("workshop-read",180);send(res,200,pit().workshop(guest));return;}
     if(req.method==="GET"&&req.url==="/api/guest/economy"){store.rate("pit-read-global",180);store.rate("pit-read-ip:"+req.socket.remoteAddress,60);send(res,200,pit().view(guest));return;}
     if(req.method==="GET"&&req.url?.startsWith("/api/guest/social/")){
@@ -61,5 +63,6 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
       send(res,404,{error:"Route not found"});
     }catch(error){send(res,error instanceof Error&&/Too many attempts/.test(error.message)?429:400,{error:error instanceof WorkshopError||error instanceof SocialError||error instanceof EconomyError?error.message:error instanceof Error&&/attempts|capacity|proof|public key/.test(error.message)?error.message:"Invalid guest request"});}
   });server.requestTimeout=10000;server.headersTimeout=5000;server.timeout=20000;server.maxHeadersCount=30;
-  const heartbeat=setInterval(()=>{try{economy?.tick();}catch{console.error('HOUND tick failed; no partial economy write committed.');}},15000);heartbeat.unref();server.on('close',()=>clearInterval(heartbeat));return server;
+  let stopped=false,thinking=false;
+  const heartbeat=setInterval(()=>{try{economy?.tick();if(economy&&compute&&!thinking){thinking=true;const world=economy.workshop(null);void compute.decide(world.moth.stock,world.districts.filter(n=>n>=60).length).then(d=>{if(!stopped)economy?.setFocus(d.focus);}).catch(()=>{}).finally(()=>{thinking=false;});}}catch{console.error('HOUND tick failed; no partial economy write committed.');}},15000);heartbeat.unref();server.on('close',()=>{stopped=true;clearInterval(heartbeat);});return server;
 }

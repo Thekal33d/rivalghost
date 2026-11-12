@@ -3,15 +3,15 @@ import {CHAPTERS,JOBS,RECIPES,repairStage,type ChapterId,type JobId,type TrailId
 import {simulateExpedition,validateExpedition,canonicalExpeditionReplayJson,type ExpeditionReplay,type ExpeditionConfig} from '@rivalghost/sim';
 export class WorkshopError extends Error{}
 function fail(s:string):never{throw new WorkshopError(s);}
-export interface JobTicket {id:string;kind:JobId;day:string;config:ExpeditionConfig;stage:number;expires:number;creditsHeld?:number;receipt?:{ok:boolean;salvage:number;credits:number;score:number;message:string}}
-interface PilotStock {salvage:number;items:Record<string,number>;equipped:TrailId|null;day:string;claims:string[];ticket?:JobTicket;receipts:{id:string;fingerprint:string;result:unknown}[]}
+export interface JobTicket {id:string;kind:JobId;day:string;config:ExpeditionConfig;stage:number;expires:number;creditsHeld?:number;focusBonus?:number;receipt?:{ok:boolean;salvage:number;credits:number;score:number;message:string}}
+interface PilotStock {salvage:number;items:Record<string,number>;equipped:TrailId|null;day:string;claims:string[];ticket?:JobTicket;receipts:{id:string;fingerprint:string;result:unknown;at?:number}[]}
 export interface WorldState {version:1;pilots:Record<string,PilotStock>;districts:number[];moth:{stock:number;day:string;spent:number};ghosts:{id:string;pilot:string;replay:ExpeditionReplay;score:number}[];listings:{id:string;seller:string;item:TrailId;price:number}[];commissionDay:string;commissionSpent:number;focus:'recovery'|'courier';}
 interface Ledger {wallets:Record<string,number>;world?:WorldState}
 const dayOf=(now:number)=>new Date(now).toISOString().slice(0,10);
 function pay(s:Ledger,from:string,to:string,n:number){if(!Number.isSafeInteger(n)||n<0||(s.wallets[from]??0)<n)fail('That wallet cannot cover this purchase.');s.wallets[from]-=n;s.wallets[to]=(s.wallets[to]??0)+n;}
 export function world(s:Ledger,now:number){
   if(!s.world){pay(s,'reserve','npc:moth',600);s.world={version:1,pilots:{},districts:Array(10).fill(0),moth:{stock:0,day:dayOf(now),spent:0},ghosts:[],listings:[],commissionDay:dayOf(now),commissionSpent:0,focus:'recovery'};}
-  const w=s.world,day=dayOf(now);if(w.moth.day!==day){w.moth.day=day;w.moth.spent=0;}if(w.commissionDay!==day){w.commissionDay=day;w.commissionSpent=0;}for(const [id,p] of Object.entries(w.pilots)){const t=p.ticket;if(t?.creditsHeld&&(t.expires<=now||t.day!==day)){pay(s,'npc:commission:'+id,'npc:hound',t.creditsHeld);if(t.day===day)w.commissionSpent-=t.creditsHeld;t.creditsHeld=0;}}return w;
+  const w=s.world,day=dayOf(now);if(w.moth.day!==day){w.moth.day=day;w.moth.spent=0;}if(w.commissionDay!==day){w.commissionDay=day;w.commissionSpent=0;}for(const [id,p] of Object.entries(w.pilots)){p.receipts=p.receipts.filter(r=>r.at!==undefined&&now-r.at<=960000);const t=p.ticket;if(t?.creditsHeld&&(t.expires<=now||t.day!==day)){pay(s,'npc:commission:'+id,'npc:hound',t.creditsHeld);if(t.day===day)w.commissionSpent-=t.creditsHeld;t.creditsHeld=0;}}return w;
 }
 function pilot(w:WorldState,id:string,now:number){const p=w.pilots[id]??(w.pilots[id]={salvage:0,items:{},equipped:null,day:dayOf(now),claims:[],receipts:[]});if(p.day!==dayOf(now)){p.day=dayOf(now);p.claims=[];}return p;}
 export function workshopView(s:Ledger,id:string|null,now:number){const w=world(s,now),p=id?w.pilots[id]:undefined;return {mode:'local-demo',balance:id?s.wallets[id]??null:null,pilot:p?{...p,receipts:undefined,claims:p.day===dayOf(now)?p.claims:[]}:null,districts:w.districts,focus:w.focus,moth:{...w.moth,balance:s.wallets['npc:moth'],buyPrice:Math.max(1,5-Math.floor(w.moth.stock/8)),sellPrice:Math.max(1,5-Math.floor(w.moth.stock/8))+2,dailyBudget:80},commissionAvailable:w.commissionSpent<24&&s.wallets['npc:hound']>=28,ghosts:w.ghosts.slice(0,12),listings:w.listings.map(l=>({...l,you:l.seller===id}))};}
@@ -19,20 +19,22 @@ export function workshopAction(s:Ledger,id:string,input:Record<string,unknown>,n
   if(!(id in s.wallets))fail('Claim your pilot demo wallet first.');
   const w=world(s,now),p=pilot(w,id,now);
   if(typeof input.requestId!=='string'||!/^[-a-zA-Z0-9]{8,80}$/.test(input.requestId))fail('A valid action receipt ID is required.');
-  const fingerprint=createHash('sha256').update(JSON.stringify(input)).digest('hex'),cached=p.receipts.find(r=>r.id===input.requestId);
+  const {issuedAt:transportTime,...intent}=input;const fingerprint=createHash('sha256').update(JSON.stringify(intent)).digest('hex'),cached=p.receipts.find(r=>r.id===input.requestId);
   if(cached){if(cached.fingerprint!==fingerprint)fail('That receipt ID belongs to a different action.');return cached.result;}
+  if(!Number.isSafeInteger(input.issuedAt)||Number(input.issuedAt)>now+60000||now-Number(input.issuedAt)>900000)fail('This action expired. Refresh before making a new request.');
   let result:unknown={ok:true};
   switch(input.action){
     case 'job':{
       const job=JOBS.find(j=>j.id===input.kind);if(!job)fail('Choose a recovery job.');
       if(p.claims.includes(job!.id))fail('This job is already rewarded today. Free story flights remain open.');
       if(job!.id==='commission'&&(w.commissionSpent>=24||s.wallets['npc:hound']<28))fail('HOUND is protecting his reserve. This commission is closed.');
-      if(p.ticket&&!p.ticket.receipt&&p.ticket.expires>now){result=p.ticket;break;}
+      if(p.ticket&&!p.ticket.receipt&&p.ticket.expires>now){if(p.ticket.kind!==job!.id||p.ticket.config.chapter!==input.chapter)fail('Resume or cancel your active job first.');result=p.ticket;break;}
       const chapter=Number(input.chapter);if(!Number.isInteger(chapter)||chapter<0||chapter>=10)fail('Choose a district.');
       const nonce=randomUUID(),stage=repairStage(w.districts[chapter]);
       const seed=createHash('sha256').update(id+nonce+stage).digest().readUInt32LE(0)||1;
-      p.ticket={id:nonce,kind:job!.id,day:dayOf(now),config:{rulesVersion:3,chapter:chapter as ChapterId,rig:'fan',seed},stage,expires:now+900000,creditsHeld:job!.credits};if(job!.credits){pay(s,'npc:hound','npc:commission:'+id,job!.credits);w.commissionSpent+=job!.credits;}result=p.ticket;break;
+      p.ticket={id:nonce,kind:job!.id,day:dayOf(now),config:{rulesVersion:3,chapter:chapter as ChapterId,rig:'fan',seed},stage,expires:now+900000,creditsHeld:job!.credits,focusBonus:job!.id===w.focus?1:0};if(job!.credits){pay(s,'npc:hound','npc:commission:'+id,job!.credits);w.commissionSpent+=job!.credits;}result=p.ticket;break;
     }
+    case 'cancelJob':{const t=p.ticket;if(!t||t.id!==input.ticket)fail('Choose your active job.');if(t.receipt)fail('This job is already resolved.');if(t.creditsHeld){pay(s,'npc:commission:'+id,'npc:hound',t.creditsHeld);if(t.day===dayOf(now))w.commissionSpent-=t.creditsHeld;t.creditsHeld=0;}t.receipt={ok:false,salvage:0,credits:0,score:0,message:'Job cancelled. Any reserved commission returned to HOUND.'};break;}
     case 'claim':{
       const t=p.ticket;if(!t||input.ticket!==t.id)fail('This job does not belong to your pilot.');
       if(t!.receipt){result=t!.receipt;break;}if(now>t!.expires||t!.day!==dayOf(now))fail('The job expired. Launch a new free recovery.');
@@ -42,10 +44,10 @@ export function workshopAction(s:Ledger,id:string,input:Record<string,unknown>,n
       const r=simulateExpedition(replay),job=JOBS.find(j=>j.id===t!.kind)!;
       const ok=t!.kind==='recovery'?r.kills>=12:t!.kind==='courier'?r.rescues>=2:r.score>=12000&&r.pulses===0;
       if(ok){if(job.credits){if(t!.creditsHeld!==job.credits)fail('The commission reservation expired.');pay(s,'npc:commission:'+id,id,job.credits);t!.creditsHeld=0;w.ghosts.unshift({id:t!.id,pilot:id,replay:JSON.parse(canonicalExpeditionReplayJson(replay)),score:r.score});w.ghosts=w.ghosts.slice(0,30);}
-        p.salvage+=job.salvage;p.claims.push(job.id);
+        p.salvage+=job.salvage+(t!.focusBonus??0);p.claims.push(job.id);
       }
       if(!ok&&t!.creditsHeld){pay(s,'npc:commission:'+id,'npc:hound',t!.creditsHeld);w.commissionSpent-=t!.creditsHeld;t!.creditsHeld=0;}
-      t!.receipt={ok,salvage:ok?job.salvage:0,credits:ok?job.credits:0,score:r.score,message:ok?'Replay checked. Cargo delivered.':`Flight checked; objective missed: ${job.goal}. Retry for free.`};result=t!.receipt;break;
+      t!.receipt={ok,salvage:ok?job.salvage+(t!.focusBonus??0):0,credits:ok?job.credits:0,score:r.score,message:ok?'Replay checked. Cargo delivered.':`Flight checked; objective missed: ${job.goal}. Retry for free.`};result=t!.receipt;break;
     }
     case 'sell':{
       const price=Math.max(1,5-Math.floor(w.moth.stock/8));if(p.salvage<1)fail('Recover salvage first.');
@@ -81,6 +83,6 @@ export function workshopAction(s:Ledger,id:string,input:Record<string,unknown>,n
     }
     default:fail('Unknown workshop action.');
   }
-  p.receipts.unshift({id:input.requestId as string,fingerprint,result});p.receipts=p.receipts.slice(0,40);return result;
+  p.receipts=p.receipts.filter(r=>r.at!==undefined&&now-r.at<=960000);p.receipts.unshift({id:input.requestId as string,fingerprint,result,at:now});if(p.receipts.length>512)fail('Too many pending receipts. Try again in 16 minutes.');return result;
 }
 export function assertWorld(s:Ledger){if(!s.world)return;const w=s.world;for(const p of Object.values(w.pilots))if(!Number.isSafeInteger(p.salvage)||p.salvage<0||Object.values(p.items).some(n=>!Number.isSafeInteger(n)||n<0)||p.equipped&&(p.items[p.equipped]??0)<1)throw new Error('Inventory invariant failed');if(w.districts.some(n=>!Number.isSafeInteger(n)||n<0||n>60)||w.moth.stock<0||w.moth.stock>40)throw new Error('District invariant failed');}

@@ -1,4 +1,4 @@
-import { CHAPTERS, DISTRICTS } from "@rivalghost/game-data";
+import { CHAPTERS, DISTRICTS,RECIPES,type TrailId } from "@rivalghost/game-data";
 import type { CombatEvent, ExpeditionSnapshot, Foe } from "@rivalghost/sim";
 import { ship } from "./arena-art";
 import {drawDistrict} from "./district-art";
@@ -26,10 +26,13 @@ function boss(c:CanvasRenderingContext2D,f:Foe,color:string,chapter:number,hit:b
   c.restore();
 }
 
-export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,events:readonly CombatEvent[],reduced:boolean,ghost:ExpeditionSnapshot|undefined,view:FlightView,ghostLabel="BEST") {
+export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,events:readonly CombatEvent[],reduced:boolean,ghost:ExpeditionSnapshot|undefined,view:FlightView,ghostLabel="BEST",trail?:TrailId|null,restorationStage=0) {
   const t=s.tick;
   c.save();c.fillStyle=DISTRICTS[s.chapter].sky;c.fillRect(0,0,view.width,view.height);applyFlightView(c,view);
   drawDistrict(c,s,reduced);
+  // Restoration lives at the scenery edges: never cover bullets or alter collision.
+  if(restorationStage>0){c.save();for(let i=0;i<12;i++){const y=(i*64+(reduced?0:t*.3))%680-20;for(const x of [9,345]){c.fillStyle=restorationStage===3?gold:mint;c.globalAlpha=.45;c.fillRect(x,y,6,restorationStage*5);if(restorationStage>=2){c.globalAlpha=.12;c.fillRect(x-4,y-3,14,24);}}}c.restore();}
+
   const text=(value:string,x:number,y:number,color=cream,size=12)=>label(c,value,x,y,color,size,view.landscape);
   const recent=events.filter(e=>t-e.tick<52 && t>=e.tick);
   c.save();
@@ -83,6 +86,9 @@ export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,e
   }
   if(s.player.health>0) {
     const p=s.player;
+    const cosmetic=RECIPES.find(r=>r.id===trail);
+    if(cosmetic){c.save();c.strokeStyle=cosmetic.color;c.globalAlpha=.6;c.lineWidth=trail==='sunflare'?7:3;for(const offset of trail==='ion'?[-9,9]:[0]){c.beginPath();c.moveTo(p.x+offset,p.y+15);c.quadraticCurveTo(p.x+offset+(reduced?0:Math.sin(t*.1)*6),p.y+39,p.x+offset,p.y+62);c.stroke();}c.restore();}
+
     if(p.shield){c.strokeStyle=mint;c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,29,0,Math.PI*2);c.stroke();}
     c.strokeStyle=s.surge>0?gold:"#82bdad88";c.lineWidth=1;c.setLineDash([3,5]);c.strokeRect(p.x-23,p.y-23,46,46);c.setLineDash([]);
     c.globalAlpha=p.invulnerable>0 && !reduced && t%8<4 ? .35 : 1;

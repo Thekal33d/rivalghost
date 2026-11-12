@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { CHAPTERS, DISTRICTS, flightSector, grazeTarget, EXPEDITION_TICKS } from "@rivalghost/game-data";
+import { type TrailId,REPAIR_NAMES,CHAPTERS, DISTRICTS, flightSector, grazeTarget, EXPEDITION_TICKS } from "@rivalghost/game-data";
 import { createExpedition, expeditionReplayHash, type ExpeditionConfig, type ExpeditionReplay, type ExpeditionResult, type ExpeditionSnapshot } from "@rivalghost/sim";
 import { drawExpedition } from "./expedition-art";
 import {flightView,worldPoint,screenDirection} from "./flight-view";
 
 export interface FlightReport { result:ExpeditionResult; replay:ExpeditionReplay; hash:string }
-interface Props { reservationExpires?:number; pilotName?:string; ghostLabel?:string; config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
+interface Props { trail?:TrailId|null;restorationStage?:number;jobLabel?:string; reservationExpires?:number; pilotName?:string; ghostLabel?:string; config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
 const keysOfMovement=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"]);
 
-export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,reservationExpires,pilotName,ghostLabel="BEST"}:Props) {
+export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,reservationExpires,pilotName,ghostLabel="BEST",trail,restorationStage=0,jobLabel}:Props) {
   const [wallClock,setWallClock]=useState(Date.now);
   useEffect(()=>{if(!reservationExpires)return;const timer=setInterval(()=>setWallClock(Date.now()),1000);return()=>clearInterval(timer);},[reservationExpires]);
   const reservedSeconds=reservationExpires?Math.max(0,Math.ceil((reservationExpires-wallClock)/1000)):0;
@@ -80,7 +80,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
     const loop=(now:number)=>{
       if(done||disposed)return;
       advance(now,!focused||document.hidden);setCount(Math.max(0,Math.ceil((begins-now)/600)));
-      const s=session.snapshot(),g=past?.snapshot();c.setTransform(pixelRatio,0,0,pixelRatio,0,0);drawExpedition(c,s,session.events.slice(-160),reduced,g,view,ghostLabel);
+      const s=session.snapshot(),g=past?.snapshot();c.setTransform(pixelRatio,0,0,pixelRatio,0,0);drawExpedition(c,s,session.events.slice(-160),reduced,g,view,ghostLabel,trail,restorationStage);
       if(s.tick-lastHud>=6||s.finished){setHud(s);setGhostScore(g?.score??null);lastHud=s.tick;}
       if(s.finished){void finish();return;}frame=requestAnimationFrame(loop);
     };
@@ -88,7 +88,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
     window.addEventListener("keydown",keyDown);window.addEventListener("keyup",keyUp);window.addEventListener("blur",blur);window.addEventListener("focus",focus);document.addEventListener("visibilitychange",visibility);
     frame=requestAnimationFrame(loop);
     return()=>{observer.disconnect();if(document.fullscreenElement===stageRef.current)void document.exitFullscreen().catch(()=>{});disposed=true;cancelAnimationFrame(frame);canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",point);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);canvas.removeEventListener("lostpointercapture",up);window.removeEventListener("keydown",keyDown);window.removeEventListener("keyup",keyUp);window.removeEventListener("blur",blur);window.removeEventListener("focus",focus);document.removeEventListener("visibilitychange",visibility);if(audio)void audio.close().catch(()=>{});};
-  },[config,ghost,onFinish,ghostLabel]);
+  },[config,ghost,onFinish,ghostLabel,trail,restorationStage]);
   const seconds=Math.ceil((EXPEDITION_TICKS-hud.tick)/60),chapter=CHAPTERS[config.chapter],district=DISTRICTS[config.chapter];
   const boss=hud.foes.find(f=>f.kind==="boss"),hp=boss?Math.ceil(100*boss.hp/boss.maxHp):0,sector=flightSector(hud.tick),target=grazeTarget(config.chapter,config.rulesVersion??2);
   const sectorAge=hud.tick-(sector===0?0:sector===1?1200:2400);
@@ -105,7 +105,8 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
     </header>
     <div className="arena-window">
       <canvas ref={canvasRef} className="arena-canvas" aria-label={wide?"Landscape flight. Move with WASD/arrows or drag. Guns fire right. Space activates Pulse.":"Portrait flight. Move with WASD/arrows or drag. Guns fire up. Space activates Pulse."}/>
-      <div className="flight-location"><span>{district.route[sector]}</span><small>{district.name}{config.chapter===3?` / TIDE ${Math.floor(hud.tick/360)%2===0?(wide?"↓":"→"):(wide?"↑":"←")}`:""}</small></div>
+      <div className="flight-location"><span>{district.route[sector]}</span><small>{restorationStage>0?REPAIR_NAMES[restorationStage]+" / ":""}{district.name}{config.chapter===3?` / TIDE ${Math.floor(hud.tick/360)%2===0?(wide?"↓":"→"):(wide?"↑":"←")}`:""}</small></div>
+      {jobLabel&&<div className="job-flight-objective">{jobLabel}</div>}
       {boss&&<div className={`boss-readout phase-${boss.phase}`}>
         <div><span>{chapter.boss}</span><b>{hp}% <small>PHASE {boss.phase}</small></b></div>
         <div className="boss-health" role="progressbar" aria-label={`${chapter.boss} health`} aria-valuemin={0} aria-valuemax={boss.maxHp} aria-valuenow={boss.hp}><i style={{transform:`scaleX(${boss.hp/boss.maxHp})`}}/></div>

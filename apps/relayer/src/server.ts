@@ -1,3 +1,4 @@
+import {NearCompute,computeConfig} from './near-compute.js';
 import {mkdir,readFile,chmod} from "node:fs/promises";
 import {resolve,dirname} from "node:path";
 import type {KeyPairString} from "near-api-js";
@@ -32,7 +33,7 @@ async function main(){
   }
   const service=new GuestService(store,provider,budget,maxAttempts),port=Number(process.env.PORT??8788);
   if(!Number.isInteger(port)||port<1||port>65535)throw new Error("Invalid guest server port");
-  const server=createGuestServer(service,gateway);
+  const server=createGuestServer(service,gateway,new NearCompute(store,computeConfig(process.env)));
   server.listen(port,"127.0.0.1",()=>console.log(`RivalGhost guest gateway: 127.0.0.1:${port}; ${service.configured?"testnet provisioning enabled":"local pilot authentication only; no chain spending"}`));
   for(const signal of ["SIGINT","SIGTERM"] as const)process.once(signal,()=>server.close(()=>store.close()));
 }

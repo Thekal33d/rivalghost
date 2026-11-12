@@ -86,7 +86,7 @@ export class EconomyService {
   workshop(guest:Guest|null){return this.update(s=>workshopView(s,guest?.id??null,this.now()));}
   work(guest:Guest,input:Record<string,unknown>){this.store.rate("work:"+guest.id,30);return this.update(s=>workshopAction(s,guest.id,input,this.now()));}
   setFocus(focus:"recovery"|"courier"){this.update(s=>{workshopView(s,null,this.now());s.world!.focus=focus;});}
-  tick(){this.update(s=>npcTick(s,this.now()));}
+  tick(){this.update(s=>{if(s.world)workshopView(s,null,this.now());npcTick(s,this.now());});}
   view(guest:Guest|null){return this.update(s=>{maintenance(s,this.now());const a=guest?s.attempts[guest.id]:null;
     const name=(id:string)=>id===HOUND?'HOUND':String(this.store.db.prepare('SELECT username FROM social_profiles WHERE id=?').get(id)?.username??'Pilot');
     return {mode:'local-demo' as const,balance:guest?s.wallets[guest.id]??null:null,joined:!!guest&&guest.id in s.wallets,houndBalance:s.wallets[HOUND],reserve:s.wallets[TREASURY],total:total(s),spentToday:s.spent,policy:HOUND_POLICY,now:this.now(),crowns:s.crowns.map(c=>({...c,holderName:name(c.holder),you:guest?.id===c.holder})),attempt:a??null,events:s.events.slice(0,15)};
