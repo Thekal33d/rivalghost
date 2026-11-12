@@ -45,6 +45,13 @@ describe("local campaign progression",()=>{
     expect(parseProfile(JSON.stringify(profile))).toEqual(profile);
     expect(profile.attempts).toEqual(CHAPTERS.map(()=>3));
   });
+  it("keeps v2 ghosts and new v3 bests in separate slots without losing medals",()=>{
+    const previous=recordFlight(emptyProfile(),result,replay);
+    const next=recordFlight(previous,{...result,rulesVersion:3,score:1},{...replay,rulesVersion:3});
+    expect(next.bests["0:fan"]).toEqual(previous.bests["0:fan"]);
+    expect(next.bests["v3:0:fan"].score).toBe(1);
+    expect(parseProfile(JSON.stringify(next))).toEqual(next);
+  });
   it("recovers from broken saves and refuses invalid ghosts",()=>{
     expect(parseProfile("{broken")).toEqual(emptyProfile());
     const p=parseProfile(JSON.stringify({version:2,medals:[900,-1,null],bests:{'0:fan':{score:100,replay:{...replay,rulesVersion:1}}}}));

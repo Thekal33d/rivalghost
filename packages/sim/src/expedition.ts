@@ -1,19 +1,20 @@
-import { CHAPTERS, ENCOUNTERS, EXPEDITION_TICKS, EXPEDITION_VERSION, RIGS, type ChapterId, type Rig } from "@rivalghost/game-data";
+import { CHAPTERS, ENCOUNTERS, EXPEDITION_TICKS, EXPEDITION_VERSION, RIGS, grazeTarget, type ChapterId, type Rig } from "@rivalghost/game-data";
 import { sha256Hex } from "./replay.js";
 
-export interface ExpeditionConfig { seed: number; chapter: ChapterId; rig: Rig }
-export interface ExpeditionReplay extends ExpeditionConfig { rulesVersion: 2; runs: { input: number; ticks: number }[] }
+export interface ExpeditionConfig { seed: number; chapter: ChapterId; rig: Rig; rulesVersion?: 2|3 }
+export interface ExpeditionReplay extends ExpeditionConfig { rulesVersion: 2|3; runs: { input: number; ticks: number }[] }
 export type FoeKind = "dart" | "weaver" | "turret" | "boss";
 export interface Foe { id: number; kind: FoeKind; x: number; y: number; origin: number; born: number; hp: number; maxHp: number; phase: number }
 export interface Bolt { id: number; x: number; y: number; vx: number; vy: number; damage: number; friendly: boolean; grazed: boolean }
 export interface Pickup { id: number; x: number; y: number; kind: "power" | "rescue" }
-export interface Hazard { id: number; x: number; born: number }
-export interface CombatEvent { tick: number; type: "kill" | "graze" | "hit" | "surge" | "pulse" | "rescue" | "upgrade" | "shield" | "boss"; x: number; y: number; value: number }
+export interface Hazard { id: number; x: number; born: number; axis?: "horizontal"|"blast"; y?:number }
+export interface CombatEvent { tick: number; type: "kill" | "graze" | "hit" | "surge" | "pulse" | "rescue" | "upgrade" | "shield" | "boss" | "damage"; x: number; y: number; value: number; targetId?:number }
 const movement = [[0,0],[0,-4],[3,-3],[4,0],[3,3],[0,4],[-3,3],[-4,0],[-3,-3]];
 const clamp = (n:number,a:number,b:number) => Math.max(a,Math.min(b,n));
 const triangle = (tick:number,span:number) => { const p = ((tick % (span*4)) + span*4) % (span*4); return p < span*2 ? p-span : span*3-p; };
 
 function validateConfig(config:ExpeditionConfig) {
+  if(config.rulesVersion!==undefined&&config.rulesVersion!==2&&config.rulesVersion!==3)throw new Error("Unsupported expedition rules version");
   if(!Number.isInteger(config.seed) || config.seed<0 || config.seed>0xffffffff) throw new Error("Invalid expedition seed");
   if(!CHAPTERS.some(c=>c.id===config.chapter)) throw new Error("Invalid chapter");
   if(!RIGS.some(r=>r.id===config.rig)) throw new Error("Invalid rig");
@@ -23,6 +24,8 @@ function validInput(input:number) { return Number.isInteger(input) && input>=0 &
 export function createExpedition(config:ExpeditionConfig) {
   validateConfig(config);
   const {seed,chapter,rig}=config;
+  const rulesVersion=config.rulesVersion??EXPEDITION_VERSION,remix=rulesVersion===3;
+  let echoX=180;
   const encounter=ENCOUNTERS[chapter];
   const spec=RIGS.find(r=>r.id===rig)!;
   let random=seed || 0x12345678;
@@ -50,7 +53,13 @@ export function createExpedition(config:ExpeditionConfig) {
     const points=(foe.kind==="boss" ? 2500 : foe.kind==="turret" ? 180 : 90)*combo*(surge>0 ? 2 : 1);
     score+=points;emit("kill",foe.x,foe.y,points);
     if(foe.kind==="boss") {bossDefeated=true;extractionAtTick=Math.min(EXPEDITION_TICKS,tick+120);bolts=bolts.filter(b=>b.friendly);hazards=[];}
-    else if(kills%3===0) drop(foe.x,foe.y,"power");
+    else {if(kills%3===0) drop(foe.x,foe.y,"power");if(remix&&chapter===0&&kills%5===0)drop(foe.x+22,foe.y,"power");}
+  };
+  const damage=(foe:Foe,amount:number)=>{
+    const actual=Math.min(foe.hp,amount);
+    if(actual<=0)return;
+    events.push({tick,type:"damage",x:foe.x,y:foe.y,value:actual,targetId:foe.id});
+    foe.hp-=amount;kill(foe);
   };
   const spawn=(kind:FoeKind,x:number)=>{
     const hp=kind==="boss" ? encounter.hp : kind==="turret" ? 12 : kind==="weaver" ? 6 : 4;
@@ -73,8 +82,19 @@ export function createExpedition(config:ExpeditionConfig) {
     if((input&16)!==0 && pulseCooldown===0) {
       pulseCooldown=480;pulses++;player.invulnerable=Math.max(player.invulnerable,35);
       bolts=bolts.filter(b=>b.friendly || Math.abs(b.x-player.x)>180 || Math.abs(b.y-player.y)>180);
-      for(const foe of foes) if(Math.abs(foe.x-player.x)<180 && Math.abs(foe.y-player.y)<180){foe.hp-=8;kill(foe);}
+      for(const foe of foes) if(Math.abs(foe.x-player.x)<180 && Math.abs(foe.y-player.y)<180){damage(foe,8);}
       emit("pulse",player.x,player.y);
+    }
+    if(remix&&!bossDefeated) {
+      // All chapter mechanics use ticks and seeded state; presentation never changes the outcome.
+      const tide=chapter===3||(chapter===9&&tick<1200);
+      if(tide&&tick%2===0)player.x=clamp(player.x+(Math.floor(tick/360)%2===0?1:-1),20,340);
+      if(chapter===1&&tick>=600&&tick<2400&&tick%480===0){const lanes=tick%960===0?[70,290]:[145,215];for(const x of lanes)hazards.push({id:++id,x,born:tick});}
+      if(chapter===2&&tick>=720&&tick<2300&&tick%420===0){spawn("weaver",echoX);echoX=player.x;}
+      if((chapter===4||(chapter===9&&tick>=1200&&tick<2400))&&tick>=600&&tick%420===0)hazards.push({id:++id,x:0,y:340+Math.floor(tick/420)%3*90,axis:"horizontal",born:tick});
+      if(chapter===5&&tick>=2520&&tick%420===0){spawn("weaver",60);spawn("weaver",300);}
+      if((chapter===6||(chapter===9&&tick>=2400))&&tick>=600&&tick%240===0)hazards.push({id:++id,x:player.x,y:player.y,axis:"blast",born:tick});
+      if(chapter===8&&tick>=2520&&tick%360===0){for(const x of [50,310])hazards.push({id:++id,x,born:tick});if(foes.some(f=>f.kind==="boss"&&f.phase===2))hazards.push({id:++id,x:0,y:460,axis:"horizontal",born:tick});}
     }
     // Formation entries leave time to read silhouettes before their first attack.
     const interval=encounter.waves;
@@ -135,13 +155,13 @@ export function createExpedition(config:ExpeditionConfig) {
       b.x+=b.vx;b.y+=b.vy;
       if(b.friendly) {
         const foe=foes.find(f=>f.hp>0 && Math.abs(f.x-b.x)<(f.kind==="boss" ? 48 : 19) && Math.abs(f.y-b.y)<(f.kind==="boss" ? 33 : 18));
-        if(foe){foe.hp-=b.damage;b.y=-100;kill(foe);}
+        if(foe){damage(foe,b.damage);b.y=-100;}
       } else {
         const x=Math.abs(player.x-b.x),y=Math.abs(player.y-b.y);
         if(x<=8 && y<=8){hurt();b.y=700;}
         else if((input&15)!==0 && !b.grazed && x<=23 && y<=23) {
           b.grazed=true;grazes++;score+=100;charge++;emit("graze",player.x,player.y,100);
-          if(charge>=4){charge=0;surge=180;surges++;emit("surge",player.x,player.y);}
+          if(charge>=grazeTarget(chapter,rulesVersion)){if(remix&&chapter===7)pulseCooldown=0;charge=0;surge=180;surges++;emit("surge",player.x,player.y);}
         }
       }
     }
@@ -152,24 +172,24 @@ export function createExpedition(config:ExpeditionConfig) {
     for(const p of pickups) {
       p.y+=2;
       if(Math.abs(player.x-p.x)<24 && Math.abs(player.y-p.y)<28) {
-        if(p.kind==="rescue") {rescues++;score+=500;player.health=Math.min(100,player.health+15);if(rig==="guard")player.shield=1;emit("rescue",p.x,p.y,500);}
+        if(p.kind==="rescue") {if(remix&&chapter===0)pulseCooldown=0;rescues++;score+=500;player.health=Math.min(100,player.health+15);if(rig==="guard")player.shield=1;emit("rescue",p.x,p.y,500);}
         else {cells++;score+=75;const next=Math.min(3,1+Math.floor(cells/2));if(next>weapon){weapon=next;emit("upgrade",p.x,p.y,weapon);}}
         p.y=800;
       }
     }
     pickups=pickups.filter(p=>p.y<670);
-    for(const h of hazards) if(tick-h.born>=55 && tick-h.born<85 && Math.abs(player.x-h.x)<18) hurt();
+    for(const h of hazards) if(tick-h.born>=55 && tick-h.born<85 && (h.axis==="horizontal" ? Math.abs(player.y-h.y!)<18 : h.axis==="blast" ? (player.x-h.x)**2+(player.y-h.y!)**2<38**2 : Math.abs(player.x-h.x)<18)) hurt();
     hazards=hazards.filter(h=>tick-h.born<85);
     tick++;
     if(player.health===0 || tick>=extractionAtTick) finished=true;
   }
   function snapshot() {
     return {tick,player:{...player},score,kills,rescues,grazes,surges,charge,surge,combo,maxCombo,pulseCooldown,pulses,weapon,cells,damageTaken,bossDefeated,finished,
-      foes:foes.map(f=>({...f})),bolts:bolts.map(b=>({...b})),pickups:pickups.map(p=>({...p})),hazards:hazards.map(h=>({...h})),chapter,rig};
+      foes:foes.map(f=>({...f})),bolts:bolts.map(b=>({...b})),pickups:pickups.map(p=>({...p})),hazards:hazards.map(h=>({...h})),chapter,rig,rulesVersion};
   }
   function result() {
     if(!finished) throw new Error("Expedition is not complete");
-    return {rulesVersion:EXPEDITION_VERSION,seed,chapter,rig,score,kills,rescues,grazes,surges,maxCombo,pulses,weapon,damageTaken,health:player.health,
+    return {rulesVersion,seed,chapter,rig,score,kills,rescues,grazes,surges,maxCombo,pulses,weapon,damageTaken,health:player.health,
       cleared:bossDefeated && player.health>0, bossDefeated, durationTicks:tick};
   }
   function replay():ExpeditionReplay {
@@ -183,7 +203,7 @@ export type ExpeditionResult=ReturnType<ReturnType<typeof createExpedition>["res
 
 export function validateExpedition(replay:ExpeditionReplay) {
   validateConfig(replay);
-  if(replay.rulesVersion!==EXPEDITION_VERSION) throw new Error("Unsupported expedition rules version");
+  if(replay.rulesVersion!==2&&replay.rulesVersion!==3) throw new Error("Unsupported expedition rules version");
   if(!Array.isArray(replay.runs) || replay.runs.length===0 || replay.runs.length>EXPEDITION_TICKS) throw new Error("Invalid expedition runs");
   let total=0,previous=-1;
   for(const run of replay.runs) {
@@ -195,7 +215,7 @@ export function validateExpedition(replay:ExpeditionReplay) {
 export function encodeExpedition(config:ExpeditionConfig,inputs:readonly number[]):ExpeditionReplay {
   const runs:ExpeditionReplay["runs"]=[];
   for(const input of inputs){const last=runs.at(-1);if(last?.input===input)last.ticks++;else runs.push({input,ticks:1});}
-  const replay={...config,rulesVersion:EXPEDITION_VERSION,runs};validateExpedition(replay);return replay;
+  const replay={...config,rulesVersion:config.rulesVersion??EXPEDITION_VERSION,runs};validateExpedition(replay);return replay;
 }
 export function simulateExpedition(replay:ExpeditionReplay) {
   validateExpedition(replay);

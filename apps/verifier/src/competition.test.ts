@@ -26,7 +26,7 @@ describe("competitive expedition v2",()=>{
   });
   it("rejects chapter, rig, seed, version, fingerprint, revision and settled-state mismatches",async()=>{
     const c=await challenge();
-    for(const bad of [{...replay,chapter:1 as const},{...replay,rig:"guard" as const},{...replay,seed:314},{...replay,rulesVersion:1 as 2}])await expect(verifyReplay(c,c.playerId,bad,1002)).rejects.toThrow();
+    for(const bad of [{...replay,chapter:1 as const},{...replay,rig:"guard" as const},{...replay,seed:314},{...replay,rulesVersion:1 as 2},{...replay,rulesVersion:3 as const}])await expect(verifyReplay(c,c.playerId,bad,1002)).rejects.toThrow();
     for(const bad of [{...c,loadoutHash:"a".repeat(64)},{...c,mission:{...mission,revision:2 as 1}},{...c,settled:true},{...c,contractId:undefined}])await expect(verifyReplay(bad,c.playerId,replay,1002)).rejects.toThrow();
     await expect(verifyReplay({...c,rulesVersion:1},c.playerId,replay,1002)).rejects.toThrow("rules");
   });
