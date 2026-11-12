@@ -6,7 +6,9 @@ The playable local alpha now includes ten Ghost Signal chapters, three rigs, thi
 
 Phase 0 and the deterministic simulation foundation are implemented. Game-client work is substantially playable locally. Crown v1 / expedition v2 mission binding, finalized RPC reads, an internal authenticated HTTP verifier, replay storage and wallet transport now exist. Local guest authentication, the verifier gateway and an opt-in testnet provisioning adapter are implemented. Real provisioning validation, the sponsored relay, browser competitive flow, autonomous HOUND and deployed end-to-end integration remain unfinished. This is **not yet a testnet release candidate**.
 
-See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 53 TypeScript tests plus production build/type checking, and ten Rust contract tests pass. The optimized 171,283-byte Wasm artifact fails the unchanged 100,000-byte ceiling. Live storage/gas measurements and physical-device playtests remain outstanding.
+The local campaign now uses versioned v3 chapter twists and a full-window responsive flight camera; v2 competitive behavior and original ghosts remain separate. See [the immersive update](docs/immersive-flight.md).
+
+See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 59 TypeScript tests plus production build/type checking, and ten Rust contract tests pass. The optimized 171,283-byte Wasm artifact fails the unchanged 100,000-byte ceiling. Live storage/gas measurements and physical-device playtests remain outstanding.
 
 ## Overview
 

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { CHAPTERS, EXPEDITION_TICKS } from "@rivalghost/game-data";
+import { CHAPTERS, DISTRICTS, flightSector, grazeTarget, EXPEDITION_TICKS } from "@rivalghost/game-data";
 import { createExpedition, expeditionReplayHash, type ExpeditionConfig, type ExpeditionReplay, type ExpeditionResult, type ExpeditionSnapshot } from "@rivalghost/sim";
 import { drawExpedition } from "./expedition-art";
+import {flightView,worldPoint,screenDirection} from "./flight-view";
 
 export interface FlightReport { result:ExpeditionResult; replay:ExpeditionReplay; hash:string }
-interface Props { config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void }
+interface Props { config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
 const keysOfMovement=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"]);
 
-export function ExpeditionArena({config,sound,ghost,onFinish}:Props) {
+export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound}:Props) {
+  const stageRef=useRef<HTMLElement>(null);
+  const [wide,setWide]=useState(false),[fullError,setFullError]=useState("");
   const canvasRef=useRef<HTMLCanvasElement>(null),soundRef=useRef(sound),pulseRef=useRef(false),pauseRef=useRef(false);
   soundRef.current=sound;
   const [hud,setHud]=useState<ExpeditionSnapshot>(()=>createExpedition(config).snapshot());
@@ -15,7 +18,9 @@ export function ExpeditionArena({config,sound,ghost,onFinish}:Props) {
   const togglePause=()=>{pauseRef.current=!pauseRef.current;setPaused(pauseRef.current);};
   useEffect(()=>{
     const canvas=canvasRef.current,c=canvas?.getContext("2d");if(!canvas||!c)return;
-    const scale=Math.min(devicePixelRatio||1,2);canvas.width=360*scale;canvas.height=640*scale;c.scale(scale,scale);
+    let view=flightView(360,640),pixelRatio=1;
+    const resize=()=>{const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;pixelRatio=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(r.width*pixelRatio);canvas.height=Math.round(r.height*pixelRatio);view=flightView(r.width,r.height);setWide(view.landscape);};
+    const observer=new ResizeObserver(resize);observer.observe(canvas);resize();
     const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
     const session=createExpedition(config);
     const past=ghost ? createExpedition(ghost) : null;
@@ -31,7 +36,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish}:Props) {
       const o=audio.createOscillator(),g=audio.createGain();o.type="triangle";o.frequency.setValueAtTime(hz,audio.currentTime);o.frequency.exponentialRampToValueAtTime(hz*.5,audio.currentTime+length);
       g.gain.setValueAtTime(.035,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+length);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+length);
     };
-    const point=(e:PointerEvent)=>{const r=canvas.getBoundingClientRect();pointer.x=(e.clientX-r.left)*360/r.width;pointer.y=(e.clientY-r.top)*640/r.height-(e.pointerType==="touch"?45:0);};
+    const point=(e:PointerEvent)=>{const r=canvas.getBoundingClientRect(),p=worldPoint(view,e.clientX-r.left,e.clientY-r.top-(e.pointerType==="touch"?35:0));pointer.x=p.x;pointer.y=p.y;};
     const down=(e:PointerEvent)=>{wakeAudio();pointer.active=true;point(e);canvas.setPointerCapture(e.pointerId);};
     const up=()=>{pointer.active=false;};
     const keyDown=(e:KeyboardEvent)=>{const k=e.key.toLowerCase();if(k==="escape"&&!e.repeat){e.preventDefault();pauseRef.current=!pauseRef.current;setPaused(pauseRef.current);keys.clear();up();}if(keysOfMovement.has(k)||k===" "){e.preventDefault();keys.add(k);wakeAudio();}};
@@ -40,7 +45,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish}:Props) {
       if(pointer.active){const dx=pointer.x-s.player.x,dy=pointer.y-s.player.y;if(Math.abs(dx)<4&&Math.abs(dy)<4)return 0;return [3,4,5,6,7,8,1,2][(Math.round(Math.atan2(dy,dx)/(Math.PI/4))+8)%8];}
       const x=Number(keys.has("d")||keys.has("arrowright"))-Number(keys.has("a")||keys.has("arrowleft"));
       const y=Number(keys.has("s")||keys.has("arrowdown"))-Number(keys.has("w")||keys.has("arrowup"));
-      return ({"0,-1":1,"1,-1":2,"1,0":3,"1,1":4,"0,1":5,"-1,1":6,"-1,0":7,"-1,-1":8} as Record<string,number>)[`${x},${y}`]??0;
+      return screenDirection(({"0,-1":1,"1,-1":2,"1,0":3,"1,1":4,"0,1":5,"-1,1":6,"-1,0":7,"-1,-1":8} as Record<string,number>)[`${x},${y}`]??0,view.landscape);
     };
     const advance=(now:number,neutral:boolean)=>{
       if(done)return;
@@ -60,6 +65,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish}:Props) {
           if(e.type==="rescue"||e.type==="upgrade")tone(1100,.15);
           if(e.type==="pulse"||e.type==="surge")tone(320,.3);
           if(e.type==="boss")tone(90,.5);
+          if(e.type==="damage"&&e.tick%6===0)tone(210,.025);
         }
         seen=session.events.length;
       }
@@ -71,23 +77,49 @@ export function ExpeditionArena({config,sound,ghost,onFinish}:Props) {
     const loop=(now:number)=>{
       if(done||disposed)return;
       advance(now,!focused||document.hidden);setCount(Math.max(0,Math.ceil((begins-now)/600)));
-      const s=session.snapshot(),g=past?.snapshot();drawExpedition(c,s,session.events.slice(-70),reduced,g);
+      const s=session.snapshot(),g=past?.snapshot();c.setTransform(pixelRatio,0,0,pixelRatio,0,0);drawExpedition(c,s,session.events.slice(-160),reduced,g,view);
       if(s.tick-lastHud>=6||s.finished){setHud(s);setGhostScore(g?.score??null);lastHud=s.tick;}
       if(s.finished){void finish();return;}frame=requestAnimationFrame(loop);
     };
     canvas.addEventListener("pointerdown",down);canvas.addEventListener("pointermove",point);canvas.addEventListener("pointerup",up);canvas.addEventListener("pointercancel",up);canvas.addEventListener("lostpointercapture",up);
     window.addEventListener("keydown",keyDown);window.addEventListener("keyup",keyUp);window.addEventListener("blur",blur);window.addEventListener("focus",focus);document.addEventListener("visibilitychange",visibility);
     frame=requestAnimationFrame(loop);
-    return()=>{disposed=true;cancelAnimationFrame(frame);canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",point);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);canvas.removeEventListener("lostpointercapture",up);window.removeEventListener("keydown",keyDown);window.removeEventListener("keyup",keyUp);window.removeEventListener("blur",blur);window.removeEventListener("focus",focus);document.removeEventListener("visibilitychange",visibility);if(audio)void audio.close().catch(()=>{});};
+    return()=>{observer.disconnect();if(document.fullscreenElement===stageRef.current)void document.exitFullscreen().catch(()=>{});disposed=true;cancelAnimationFrame(frame);canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",point);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);canvas.removeEventListener("lostpointercapture",up);window.removeEventListener("keydown",keyDown);window.removeEventListener("keyup",keyUp);window.removeEventListener("blur",blur);window.removeEventListener("focus",focus);document.removeEventListener("visibilitychange",visibility);if(audio)void audio.close().catch(()=>{});};
   },[config,ghost,onFinish]);
-  const seconds=Math.ceil((EXPEDITION_TICKS-hud.tick)/60), chapter=CHAPTERS[config.chapter];
-  return <section className={`arena-stage expedition-stage ${hud.surge>0?"is-surge":""}`} aria-label="Ghost Signal arena">
-    <div className="arena-hud"><div><small>SCORE / ×{Math.max(1,hud.combo)}</small><strong>{hud.score.toLocaleString()}</strong></div><div className="arena-clock"><strong>{seconds.toString().padStart(2,"0")}</strong><small>SECONDS</small></div><div><small>WEAPON</small><strong>LV {hud.weapon}</strong></div></div>
-    <div className="arena-window"><canvas ref={canvasRef} className="arena-canvas" aria-label="Move with drag or WASD/arrows. Press Space or Pulse to clear nearby fire."/>
-      {count>0&&<div className="launch-countdown"><span>{chapter.name}</span><strong key={count}>{count}</strong><small>MOVE TO AIM / SPACE TO PULSE</small></div>}
-      {paused&&<div className="flight-paused"><span>FLIGHT PAUSED</span><h2>TAKE A<br/>BREATH.</h2><button onClick={togglePause}>RESUME FLIGHT →</button><small>ESC TO RESUME</small></div>}
+  const seconds=Math.ceil((EXPEDITION_TICKS-hud.tick)/60),chapter=CHAPTERS[config.chapter],district=DISTRICTS[config.chapter];
+  const boss=hud.foes.find(f=>f.kind==="boss"),hp=boss?Math.ceil(100*boss.hp/boss.maxHp):0,sector=flightSector(hud.tick),target=grazeTarget(config.chapter,config.rulesVersion??2);
+  const sectorAge=hud.tick-(sector===0?0:sector===1?1200:2400);
+  const fullscreen=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await stageRef.current?.requestFullscreen();setFullError("");}catch{setFullError("Fullscreen is unavailable here. The arena already fits this window.");}};
+  return <section ref={stageRef} className={`arena-stage expedition-stage immersive-flight ${wide?"flight-wide":"flight-portrait"} ${hud.surge>0?"is-surge":""}`} aria-label="Ghost Signal arena">
+    <header className="flight-topbar">
+      <button className="flight-exit" onClick={onExit} aria-label="Exit flight">← <span>HANGAR</span></button>
+      <div className="flight-identity"><small>GHOST SIGNAL / {String(chapter.id+1).padStart(2,"0")}</small><b>{chapter.name}</b></div>
+      <div className="flight-score"><small>SCORE <em>×{Math.max(1,hud.combo)}</em></small><strong>{hud.score.toLocaleString()}</strong></div>
+      <div className="flight-clock"><strong>{seconds.toString().padStart(2,"0")}</strong><small>SEC</small></div>
+      <button className="flight-sound" aria-pressed={sound} onClick={onSound}>SOUND {sound?"ON":"OFF"}</button>
+      <button className="flight-expand" onClick={()=>void fullscreen()} aria-label="Toggle fullscreen">⛶</button>
+      <button className="flight-pause" onClick={togglePause} aria-label={paused?"Resume flight":"Pause flight"}>{paused?"▶":"Ⅱ"}</button>
+    </header>
+    <div className="arena-window">
+      <canvas ref={canvasRef} className="arena-canvas" aria-label={wide?"Landscape flight. Move with WASD/arrows or drag. Guns fire right. Space activates Pulse.":"Portrait flight. Move with WASD/arrows or drag. Guns fire up. Space activates Pulse."}/>
+      <div className="flight-location"><span>{district.route[sector]}</span><small>{district.name}{config.chapter===3?` / TIDE ${Math.floor(hud.tick/360)%2===0?(wide?"↓":"→"):(wide?"↑":"←")}`:""}</small></div>
+      {boss&&<div className={`boss-readout phase-${boss.phase}`}>
+        <div><span>{chapter.boss}</span><b>{hp}% <small>PHASE {boss.phase}</small></b></div>
+        <div className="boss-health" role="progressbar" aria-label={`${chapter.boss} health`} aria-valuemin={0} aria-valuemax={boss.maxHp} aria-valuenow={boss.hp}><i style={{transform:`scaleX(${boss.hp/boss.maxHp})`}}/></div>
+        <small>{boss.phase===2?"ARMOR BROKEN / ATTACKS ACCELERATING":"BREAK THE SIGNAL"} · {boss.hp} / {boss.maxHp} HP</small>
+      </div>}
+      {count===0&&!paused&&sectorAge<150&&<div className="sector-banner" key={sector}><small>{sector===2?"BOSS CONTACT":`SECTOR 0${sector+1}`}</small><h2>{sector===2?chapter.boss:district.route[sector]}</h2><p>{sector===2?"Stay on target. Watch the warning lanes.":district.cue}</p></div>}
+      {count>0&&<div className="launch-countdown"><span>{chapter.name} / {district.name}</span><strong key={count}>{count}</strong><small>{wide?"FLY RIGHT / WASD TO STEER":"FLY UP / DRAG TO STEER"} · SPACE / TAP TO PULSE</small><p>{district.twist}</p></div>}
+      {paused&&<div className="flight-paused"><span>FLIGHT PAUSED / {chapter.name}</span><h2>HOLD YOUR<br/>FLIGHT LINE.</h2><p>{district.twist}</p><button onClick={togglePause}>RESUME FLIGHT →</button><button className="pause-exit" onClick={onExit}>RETURN TO HANGAR</button><small>ESC TO RESUME</small></div>}
+      {fullError&&<button className="fullscreen-note" onClick={()=>setFullError("")}>{fullError} ×</button>}
     </div>
-    <div className="arena-bottom"><div className="hull"><small>HULL {hud.player.health}% {hud.player.shield?"+ SHIELD":""}</small><meter min="0" max="100" value={hud.player.health}/></div><div className="surge-meter"><small>{hud.surge>0?`SURGE ×2 / ${(hud.surge/60).toFixed(1)}s`:`GRAZE ${hud.charge}/4`}</small><div>{[0,1,2,3].map(i=><i key={i} className={hud.surge>0||i<hud.charge?"charged":""}/>)}</div></div></div>
-    <div className="flight-controls"><span>RESCUED <b>{hud.rescues}/3</b>{ghostScore!==null&&<small>VS BEST {hud.score-ghostScore>=0?"+":""}{(hud.score-ghostScore).toLocaleString()}</small>}<button className="pause-button" onClick={togglePause}>{paused?"RESUME":"PAUSE Ⅱ"}</button></span><button className="pulse-button" disabled={hud.pulseCooldown>0||count>0||paused} onClick={()=>{pulseRef.current=true;}}>{hud.pulseCooldown>0?`PULSE ${Math.ceil(hud.pulseCooldown/60)}s`:"PULSE ↯"}<small>SPACE / TAP</small></button></div>
+    <footer className="flight-dashboard">
+      <div className="flight-vitals"><span>HULL <b>{hud.player.health}%</b>{hud.player.shield>0&&<em>SHIELD</em>}</span><meter aria-label="Hull health" min="0" max="100" value={hud.player.health}/></div>
+      <div className="flight-loadout"><small>{config.rig.toUpperCase()}</small><strong>LV {hud.weapon}<i>{[0,1,2].map(n=><span key={n} className={n<hud.weapon?"lit":""}/>)}</i></strong></div>
+      <div className="flight-charge"><small>{hud.surge>0?`SURGE ×2 / ${(hud.surge/60).toFixed(1)}s`:`GRAZE ${hud.charge}/${target}`}</small><div>{Array.from({length:target},(_,i)=><i key={i} className={hud.surge>0||i<hud.charge?"charged":""}/>)}</div></div>
+      <div className="flight-rescues"><small>COURIERS</small><b>{hud.rescues} / 3</b>{ghostScore!==null&&<span>BEST {hud.score-ghostScore>=0?"+":""}{(hud.score-ghostScore).toLocaleString()}</span>}</div>
+      <p className="flight-key-hint">{wide?"WASD / ARROWS / DRAG":"DRAG TO FLY"}<span>SPACE TO PULSE · ESC TO PAUSE</span></p>
+      <button className="pulse-button" disabled={hud.pulseCooldown>0||count>0||paused} onClick={()=>{pulseRef.current=true;}}>{hud.pulseCooldown>0?`PULSE / ${Math.ceil(hud.pulseCooldown/60)}s`:"PULSE READY ↯"}<small>{hud.pulseCooldown>0?"RECHARGING":"CLEAR FIRE / SPACE"}</small></button>
+    </footer>
   </section>;
 }

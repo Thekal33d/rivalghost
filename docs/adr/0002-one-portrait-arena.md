@@ -1,6 +1,6 @@
 # ADR 0002: Ship one portrait arena on phone and desktop
 
-**Status:** accepted
+**Status:** superseded for presentation by [ADR 0004](0004-responsive-flight-and-local-remix.md). The logical world remains 360 × 640.
 
 ## Decision
 

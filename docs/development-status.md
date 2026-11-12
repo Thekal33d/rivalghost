@@ -8,10 +8,10 @@ November 12, 2026
 
 | Area | Current implementation | Remaining work |
 | --- | --- | --- |
-| Game | Ten authored chapters across three acts; deterministic combat; distinct encounter configurations; two-phase bosses; pickups, rescues, Pulse, Graze, Surge and combos | Human difficulty and replay-motivation playtests; more distinct boss silhouettes and environmental art |
+| Game | Ten authored chapters across three acts; deterministic combat; ten v3 encounter twists; changing vector environments; visible boss damage and two phases; pickups, rescues, Pulse, Graze, Surge and combos | Human difficulty and replay-motivation playtests; physical-device performance tuning |
 | Progression | Three free rigs; 30 medals; sequential unlocks; best ghosts for each chapter/rig; daily signal; old-save migration | Cross-device progress is not implemented; local saves are untrusted |
-| Frontend | React/Canvas illustrated arcade UI, keyboard and drag controls, local results, replay download, pause/resume and responsive layouts | Physical-phone controls/performance testing and audible sound QA; competition board, settlement UI and proof drawer |
-| Simulation | Crown v1 retained; separate expedition v2 with deterministic replay validation | Competition controller and deployed configuration selection |
+| Frontend | React/Canvas illustrated arcade UI, keyboard and drag controls, local results, replay download, pause/resume, full-window landscape desktop flight and fitted portrait mobile play | Physical-phone controls/performance testing and audible sound QA; competition board, settlement UI and proof drawer |
+| Simulation | Crown v1 retained; expedition v2 preserved; local v3 chapter remix with deterministic replay validation | Competition controller and deployed configuration selection |
 | Contract | Rust Crown v1 and expedition v2: mission/deployment binding, exclusive Crown locks, signed settlement, defense and expiry | Resolve the failing 100 KB Wasm gate (current artifact 171,283 bytes); storage/gas measurements; fresh testnet deployment |
 | Verifier/client | Finalized RPC reads, internal authenticated HTTP verifier, bounded replay persistence, scoped wallet transport and pending-transaction recovery | Live gateway integration, browser controller, hosted infrastructure and real deployed integration |
 | Guest/relay | Browser pilot keys and signed login; HttpOnly sessions; authenticated verification gateway; opt-in testnet account bootstrap with scoped keys and durable budgets | Real provisioning validation, NEP-366 delegation, relay quotas/accounting and circuit breaker |
@@ -20,16 +20,18 @@ November 12, 2026
 
 ## Validation completed
 
-- `pnpm check`: type checking, 53 TypeScript tests, and production build pass.
-- Input-only automated pilots clear all 30 chapter/rig combinations; their replays reproduce results. This proves attainability, not human fun or retention.
+- `pnpm test` and `pnpm typecheck`: 59 TypeScript tests, type checking and production build pass.
+- Input-only automated pilots clear all 30 chapter/rig combinations in both v2 and v3; their replays reproduce results. This proves attainability, not human fun or retention.
 - Regression fixtures preserve original chapters 01–03 outcomes and replay hashes.
-- Save tests cover migration from three chapters, the entire unlock chain, thirty medals, all thirty personal-best slots, and separation of daily records.
+- Save tests cover migration from three chapters, the entire unlock chain, thirty medals, all thirty personal-best slots, and separation of daily records and v2/v3 bests.
 - Browser checks confirm the ten-chapter map, retained local medal/best ghost, chapter selection, locked destinations and no horizontal overflow in a phone-sized viewport. Earlier full-run browser checks covered clear/fail results, personal ghosts, pause and daily play. New chapters have automated simulation coverage, not ten complete manual browser playthroughs.
 - A shared fixture takes an actual expedition replay through TypeScript verification/signing and Rust contract settlement. RPC/HTTP tests use local or injected test sources; they are not live testnet transactions.
 - `cargo test --workspace`: ten contract tests pass. Cargo reports a future-compatibility warning in the existing `wasmparser` dependency; no contract dependency changed in this expansion.
 
 - Guest checks cover one-use signatures, expiry, persistent sessions/budgets, duplicate setup, wrong key permissions, uncertain receipts, gas caps and authenticated HTTP verification. SDK doubles replace NEAR calls. Browser QA confirms the same saved pilot survives reload, prior medals/bests remain, and the panel fits a phone-sized viewport.
 - Raw and optimized Wasm execute the same signed settlement and produce identical storage in the deterministic host smoke test. This is not a NEAR VM gas measurement.
+
+- New browser checks cover full-window desktop play, a one-row phone HUD, chapter environment transitions, boss HP falling from 124 to 66 to 56/130, phase-two feedback, and complete local result screens. Camera tests cover portrait, landscape and ultrawide pointer mappings.
 
 ## Next implementation milestones
 
@@ -50,3 +52,5 @@ Gameplay runs locally with no wallet prompt. Competitive confirmation should be 
 No Git remote is configured in this checkout. Publishing needs the intended repository URL and access. Testnet integration needs an operator/contract account, the approved sponsor budget, and a service-hosting choice. The user confirmed that the testnet account and hosting are not set up. No funding, deployment or publishing occurred during this integration.
 
 See [the guest onboarding runbook](guest-onboarding.md) and [contract build measurements](contract-build.md). Local authentication is running with provisioning disabled; no real account, grant or chain payout is claimed.
+
+The browser campaign currently plays **local v3**. Competition remains v2; promoting the new mechanics requires explicit protocol versioning and new settlement fixtures. See [immersive flight](immersive-flight.md).

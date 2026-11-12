@@ -1,5 +1,13 @@
 # Changelog
 
+## November 12, 2026 — Immersive flight and chapter remix
+
+- Replaced the narrow desktop arena with full-window landscape flight, fitted mobile portrait play, screen-relative controls and optional fullscreen.
+- Added actual boss hit feedback, grouped damage numbers, HP/percentage, armor cracks and phase-two status.
+- Added ten authored environments, route transitions and ten local chapter mechanics, including tides, freight beams, echo interceptors, ash strikes and graze-powered Pulse resets.
+- Isolated changed physics in local v3; preserved original v2 replays, medals and unlocks. The current verifier rejects v3 competitive submissions.
+- Verified 59 TypeScript tests, production build/type checking, all 30 v3 chapter/rig combinations and browser desktop/mobile layout checks.
+
 ## November 12, 2026 — Saved pilots and contract build correction
 
 - Added optional browser pilot keys, one-use signature authentication, HttpOnly sessions, and an identity-bound verification gateway. Campaign play remains local.
