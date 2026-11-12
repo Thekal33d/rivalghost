@@ -6,7 +6,7 @@ RivalGhost is a 60-second arcade rivalry game being built for NEAR testnet. The 
 
 - `apps/web` — the playable React and Canvas experience, with original vector characters and live simulation rendering.
 - `apps/verifier` — v1/v2 replay verification, finalized RPC challenge reads, bounded replay storage, and an internal authenticated HTTP service.
-- `apps/relayer` — placeholder for the sponsored transaction relay; no live relay yet.
+- `apps/relayer` — authenticated guest gateway, persistent sponsorship limits and an opt-in testnet bootstrap adapter; NEP-366 relay remains unfinished.
 - `packages/sim` — shared deterministic fixed-tick game simulation.
 - `packages/game-data` — game constants and schemas.
 - `packages/contracts-client` — typed ABI, finalized RPC reads, and a scoped wallet transport with pending-transaction recovery.
@@ -24,6 +24,8 @@ pnpm dev
 
 Copy the relevant `.env.example` file before configuring a verifier or relayer. Never commit a private key or funded-account credential.
 
+Run `pnpm guest:serve` in a second terminal to enable the optional **Save pilot** button. This defaults to local identity only, with no account funding or RPC calls. See [guest onboarding](docs/guest-onboarding.md) for configuration and its limits.
+
 See [the development checkpoint](docs/development-status.md) for implemented features, validation, and the remaining integration milestones.
 
 ## Current scope
@@ -36,4 +38,4 @@ The expedition uses rules version 2. The contract now supports separately bound 
 
 The first vertical slice is testnet-only. Credits are game credits with no cash value. Contract deployment, account funding, and public publishing happen only after explicit approval.
 
-See [the verifier runbook](docs/verifier-runbook.md) for startup, internal-service authentication, finalized transaction recovery, and remaining integration gates. `pnpm contract:size` enforces the original 100,000-byte deployment ceiling; the current 220,885-byte optimized artifact fails that gate. No deployment has occurred.
+See [the verifier runbook](docs/verifier-runbook.md) for startup, internal-service authentication, finalized transaction recovery, and remaining integration gates. `pnpm contract:size` enforces the original 100,000-byte deployment ceiling; the current 171,283-byte optimized artifact fails that gate. No deployment has occurred.

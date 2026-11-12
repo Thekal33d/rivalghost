@@ -41,7 +41,7 @@ The server binds only to `127.0.0.1:8787` by default. Startup checks the RPC's n
 
 The input shown is an illustrative replay, not an opening score or a live challenge. The request cannot supply authoritative scores, mission settings, expiry or contract state. A successful response contains a certificate, `status: "verified"`, and `settled: false`.
 
-**This endpoint is service-to-service, not a public browser API.** Keep its token and signing key out of web code, Vite variables and logs. The future authenticated guest gateway must establish the player's identity and bind submissions to that player before calling it. A shared service credential is not end-user authentication. Do not publish the verifier directly as a substitute for that gateway.
+**This endpoint is service-to-service, not a public browser API.** Keep its token and signing key out of web code, Vite variables and logs. The authenticated guest gateway now establishes the player's identity and binds submissions to that player before calling it; see [guest onboarding](guest-onboarding.md). Its NEAR provisioning adapter still needs real deployment validation. A shared service credential is not end-user authentication. Do not publish the verifier directly as a substitute for that gateway.
 
 Current limits: 128 KiB request body, 30 authenticated verification attempts per minute, one request in progress, request timeouts, and a dedicated local replay store capped at 64 MiB / 4,096 files. The store deduplicates content, publishes complete files atomically, and refuses new writes at capacity. Signing happens only after persistence; storage failures return no certificate. These limits are for one process. Shared storage, retention, observability and distributed quotas need a separate production design.
 
@@ -55,8 +55,8 @@ The implementation follows NEAR's [contract view RPC](https://docs.near.org/api/
 
 ## Remaining release gates
 
-- Authenticated guest bootstrap and gateway; restricted NEP-366 relay with sponsorship accounting.
-- Browser competition controller, onboarding, pending-result recovery and proof drawer.
+- Validate guest provisioning against a deployed contract; implement the restricted NEP-366 relay with sponsorship accounting.
+- Browser competition controller, pending-result recovery and proof drawer.
 - HOUND worker competing through the same verification path.
 - A fresh testnet contract deployment; the new Crown/Challenge storage layout has no migration for existing deployments.
 - Resolve the failing contract-size budget; measure state growth and actual method receipts.

@@ -5,3 +5,4 @@ export * from "./rules.js";
 export * from "./waves.js";
 export * from "./expedition.js";
 export * from "./competition.js";
+export * from "./guest.js";

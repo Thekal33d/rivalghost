@@ -174,6 +174,10 @@ impl RivalGhost {
         self.verifier_key_version
     }
 
+    pub fn has_guest_grant(&self, account_id: AccountId) -> bool {
+        self.guest_grants.get(&account_id).copied().unwrap_or(false)
+    }
+
     pub fn get_balance(&self, account_id: AccountId) -> u64 {
         self.balances.get(&account_id).copied().unwrap_or(0)
     }
@@ -192,7 +196,7 @@ impl RivalGhost {
             .and_then(|challenge_id| self.challenges.get(&challenge_id).cloned())
     }
 
-    /// This remains operator-only until the authenticated bootstrap path is added.
+    /// The authenticated bootstrap service calls this once after confirming account creation.
     pub fn create_guest(&mut self, account_id: AccountId) -> u64 {
         self.assert_operator();
         require!(
@@ -571,6 +575,18 @@ mod tests {
             account("operator.testnet"),
             signing_key.verifying_key().to_bytes().to_vec(),
         )
+    }
+
+    #[test]
+    fn guest_grant_survives_spent_balance() {
+        context("operator.testnet", 1_000);
+        let mut game = contract(&verifier_key());
+        let player = account("guest.testnet");
+        assert!(!game.has_guest_grant(player.clone()));
+        game.create_guest(player.clone());
+        assert!(game.has_guest_grant(player.clone()));
+        game.balances.insert(player.clone(), 0);
+        assert!(game.has_guest_grant(player));
     }
 
     fn open_challenge(contract: &mut RivalGhost) -> Challenge {

@@ -1,5 +1,12 @@
 # Changelog
 
+## November 12, 2026 — Saved pilots and contract build correction
+
+- Added optional browser pilot keys, one-use signature authentication, HttpOnly sessions, and an identity-bound verification gateway. Campaign play remains local.
+- Added disabled-by-default testnet bootstrap with exact key permissions, idempotent grant checks, durable sponsorship reservations and fail-closed caps. No real account was funded.
+- Fixed NEAR host compilation and added pinned Wasm optimization plus executable raw/optimized parity checks. Current artifact is 171,283 bytes; the unchanged 100,000-byte gate still fails.
+- Verified 53 TypeScript tests, ten Rust tests, production build/type checking and desktop/phone-sized save/restore UI.
+
 ## November 12, 2026 — Ten-chapter Ghost Signal
 
 - Expanded the campaign from three to ten authored chapters with crossing, aimed, sweeping and mixed boss attacks, new formations and district palettes.

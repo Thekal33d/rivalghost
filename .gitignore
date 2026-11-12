@@ -12,3 +12,10 @@ target
 # Local verifier data and credentials
 replays/
 *.private.jwk
+
+# Guest session database and operator credentials
+.local/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.private.key

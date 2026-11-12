@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CAMPAIGN_ACTS, CHAPTERS, RIGS, dailySignal, type ChapterId, type Rig } from "@rivalghost/game-data";
 import type { ExpeditionConfig, ExpeditionReplay } from "@rivalghost/sim";
 import { ExpeditionArena, type FlightReport } from "./ExpeditionArena";
+import { GuestPilot } from "./GuestPilot";
 import { Pilot } from "./Pilot";
 import { PROFILE_KEY, callsign, emptyProfile, flightKey, isUnlocked, medalCount, parseProfile, recordFlight } from "./flight-profile";
 
@@ -50,7 +51,7 @@ export default function App() {
   const playedChapter=result?CHAPTERS[result.chapter]:chapter;
 
   return <main className={`game-shell screen-${screen}`}>
-    <header className="masthead"><a className="wordmark" href="#" onClick={e=>{e.preventDefault();setScreen("lobby");}} aria-label="RivalGhost hangar"><span className="brand-emblem">R↗</span>RIVAL<span>GHOST</span></a><div className="header-tools"><span className="build-label">{callsign(profile)} / {medalCount(profile)} {medalCount(profile)===1?"MEDAL":"MEDALS"}</span><button className="sound-button" aria-pressed={sound} onClick={()=>setSound(s=>!s)}>SOUND {sound?"ON ♪":"OFF"}</button></div></header>
+    <header className="masthead"><a className="wordmark" href="#" onClick={e=>{e.preventDefault();setScreen("lobby");}} aria-label="RivalGhost hangar"><span className="brand-emblem">R↗</span>RIVAL<span>GHOST</span></a><div className="header-tools"><GuestPilot/><span className="build-label">{callsign(profile)} / {medalCount(profile)} {medalCount(profile)===1?"MEDAL":"MEDALS"}</span><button className="sound-button" aria-pressed={sound} onClick={()=>setSound(s=>!s)}>SOUND {sound?"ON ♪":"OFF"}</button></div></header>
     {saveError&&<p role="status" className="save-notice">This browser couldn’t save your flight. Progress stays available here until you close or reload. You can download the replay from the result.</p>}
 
     {screen==="lobby"&&<>

@@ -80,8 +80,12 @@ This hackathon build does not deploy mainnet contracts, fund mainnet accounts, i
 
 ## Measured local artifact — November 12, 2026
 
-`cargo build --release --target wasm32-unknown-unknown -p rivalghost-contract` with size optimization, LTO, one codegen unit and symbol stripping produces **220,885 bytes**. SHA-256: `a0d62428501afe9a8908ec4f843ab7999b24f75ab8f3b3724f495b68c344ae15`.
+`pnpm contract:build` uses NEAR host imports, size-optimized Cargo output and pinned Binaryen optimization to produce **171,283 bytes** at `target/near/rivalghost_contract.wasm`. SHA-256: `b69fed6b495e6ea6daf4e73279bc0ea2cecbf4f1fd637d2c34fd4b2611ea683f`. Raw Cargo output is 209,604 bytes; use the optimized candidate for measurements.
 
 `pnpm contract:size` fails against the unchanged **100,000-byte ceiling**. Deployment remains gated on size optimization; the budget was not raised. This measures compiled code only, not deployed runtime compatibility, storage growth, gas receipts or an actual bill. Native unit tests do not replace a deployed smoke test. The std-based dependency graph builds with `wasm32-unknown-unknown`; the no-std `wasm32v1-none` target is not compatible with its current features.
 
 Competitive metadata adds a compact mission, a fingerprint on each Crown, and an exclusive Crown lock. Replay bodies stay off-chain in bounded storage. The next cost work is code-size reduction, followed by per-method state growth and receipt measurements.
+
+## Guest bootstrap implementation checkpoint
+
+The local pilot service spends nothing by default. Explicit testnet provisioning reserves child funding plus two 300 Tgas ceilings at the configured gas-price cap before any provider calls. Reservations and daily attempt limits persist in SQLite; uncertain attempts remain charged against capacity. Per-pilot provisioning is limited to three attempts per UTC day, while the HTTP IP limits apply per minute. These implemented bootstrap limits are distinct from the proposed competitive relay ceilings above. The NEP-366 relay is still unfinished. See [guest onboarding](guest-onboarding.md) for exact configuration and bounds.
