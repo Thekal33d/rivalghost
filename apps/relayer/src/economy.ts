@@ -1,3 +1,4 @@
+import {workshopView,workshopAction,assertWorld,type WorldState} from './workshop.js';
 import {randomUUID,createHash} from 'node:crypto';
 import {CHAPTERS,HOUND_POLICY,houndDecision,type ChapterId} from '@rivalghost/game-data';
 import {createExpedition,houndInput,flyHound,HOUND_STYLES,simulateExpedition,validateExpedition,canonicalExpeditionReplayJson,type ExpeditionReplay,type HoundStyle} from '@rivalghost/sim';
@@ -8,7 +9,7 @@ export interface PitCrown {id:number;name:string;chapter:ChapterId;style:HoundSt
 export interface PitReceipt {id:string;won:boolean;score:number;target:number;entryReturned:number;bountyPaid:number;bountyAdded:number;holderPaid:number;balance:number;hash:string}
 interface Attempt {id:string;player:string;crown:number;expires:number;status:'live'|'settled'|'refunded';receipt?:PitReceipt}
 interface PitEvent {id:string;at:number;kind:string;text:string}
-interface PitState {version:1;wallets:Record<string,number>;crowns:PitCrown[];attempts:Record<string,Attempt>;events:PitEvent[];day:string;spent:number;lastAttack:number;rounds:number}
+interface PitState {world?:WorldState;version:1;wallets:Record<string,number>;crowns:PitCrown[];attempts:Record<string,Attempt>;events:PitEvent[];day:string;spent:number;lastAttack:number;rounds:number}
 const fail=(message:string):never=>{throw new EconomyError(message);};
 const replayCache=new Map<string,ReturnType<typeof flyHound>>();
 function flight(chapter:ChapterId,style:HoundStyle){const key=chapter+style;let run=replayCache.get(key);if(!run){run=flyHound({rulesVersion:3,chapter,rig:'fan',seed:CHAPTERS[chapter].seed},style);replayCache.set(key,run);}return run;}
@@ -78,16 +79,19 @@ export class EconomyService {
   private update<T>(fn:(s:PitState)=>T):T{
     this.store.db.exec('BEGIN IMMEDIATE');
     try{const s=JSON.parse(String(this.store.db.prepare('SELECT body FROM crown_economy WHERE id=1').get()!.body)) as PitState;
-      const result=fn(s);if(total(s)!==100100||Object.values(s.wallets).some(v=>!Number.isSafeInteger(v)||v<0))throw new Error('Economy invariant failed');
+      const result=fn(s);assertWorld(s);if(total(s)!==100100||Object.values(s.wallets).some(v=>!Number.isSafeInteger(v)||v<0))throw new Error('Economy invariant failed');
       this.store.db.prepare('UPDATE crown_economy SET body=? WHERE id=1').run(JSON.stringify(s));this.store.db.exec('COMMIT');return result;
     }catch(e){this.store.db.exec('ROLLBACK');throw e;}
   }
+  workshop(guest:Guest|null){return this.update(s=>workshopView(s,guest?.id??null,this.now()));}
+  work(guest:Guest,input:Record<string,unknown>){this.store.rate("work:"+guest.id,30);return this.update(s=>workshopAction(s,guest.id,input,this.now()));}
+  setFocus(focus:"recovery"|"courier"){this.update(s=>{workshopView(s,null,this.now());s.world!.focus=focus;});}
   tick(){this.update(s=>npcTick(s,this.now()));}
   view(guest:Guest|null){return this.update(s=>{maintenance(s,this.now());const a=guest?s.attempts[guest.id]:null;
     const name=(id:string)=>id===HOUND?'HOUND':String(this.store.db.prepare('SELECT username FROM social_profiles WHERE id=?').get(id)?.username??'Pilot');
     return {mode:'local-demo' as const,balance:guest?s.wallets[guest.id]??null:null,joined:!!guest&&guest.id in s.wallets,houndBalance:s.wallets[HOUND],reserve:s.wallets[TREASURY],total:total(s),spentToday:s.spent,policy:HOUND_POLICY,now:this.now(),crowns:s.crowns.map(c=>({...c,holderName:name(c.holder),you:guest?.id===c.holder})),attempt:a??null,events:s.events.slice(0,15)};
   });}
-  join(guest:Guest){return this.update(s=>{if(!(guest.id in s.wallets)){if(Object.keys(s.wallets).length>=1002)fail('The demo pilot capacity is full. Free flight remains available.');transfer(s,TREASURY,guest.id,100);event(s,this.now(),'grant','A new pilot claimed 100 demo CR from the finite reserve.');}return {balance:s.wallets[guest.id]};});}
+  join(guest:Guest){return this.update(s=>{if(!(guest.id in s.wallets)){if(Object.keys(s.wallets).filter(id=>!id.startsWith("npc:")&&id!==TREASURY).length>=1000)fail('The demo pilot capacity is full. Free flight remains available.');transfer(s,TREASURY,guest.id,100);event(s,this.now(),'grant','A new pilot claimed 100 demo CR from the finite reserve.');}return {balance:s.wallets[guest.id]};});}
   start(guest:Guest,crown:unknown){
     if(!Number.isInteger(crown)||Number(crown)<0||Number(crown)>2)fail('Choose a valid Crown.');this.store.rate('pit-start:'+guest.id,6,600000);
     return this.update(s=>{maintenance(s,this.now());return start(s,guest.id,Number(crown),this.now());});
