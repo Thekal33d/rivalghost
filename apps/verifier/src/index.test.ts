@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RULES_VERSION, RUN_TICKS } from "@rivalghost/game-data";
 import { certificateMessage } from "@rivalghost/game-data";
+import { encodeExpedition, type ReplayInput } from "@rivalghost/sim";
 import {
   issueSettlementCertificate,
   verifyReplay,
@@ -24,6 +25,11 @@ const replay = {
 };
 
 describe("replay verifier", () => {
+  it("never certifies an expedition as a Crown v1 challenge", async () => {
+    const expedition = encodeExpedition({seed:3,chapter:0,rig:"fan"},Array(3600).fill(0));
+    await expect(verifyReplay(challenge,"player.testnet",expedition as unknown as ReplayInput,1000)).rejects.toThrow("rules");
+    await expect(verifyReplay({...challenge,rulesVersion:2},"player.testnet",expedition as unknown as ReplayInput,1000)).rejects.toThrow("Unsupported rules");
+  });
   it("binds hashes and score to the authoritative challenge", async () => {
     const verified = await verifyReplay(challenge, "player.testnet", replay, 1_000);
 

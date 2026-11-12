@@ -1,0 +1,75 @@
+import { describe, expect, it } from "vitest";
+import { CHAPTERS, RIGS, type ChapterId, type Rig } from "@rivalghost/game-data";
+import { createExpedition, encodeExpedition, expeditionReplayHash, simulateExpedition, validateExpedition, type ExpeditionSnapshot } from "./expedition.js";
+
+// A deterministic input-only pilot: no state mutation, invincibility, or debug shortcuts.
+function pilot(a:ExpeditionSnapshot) {
+  const p=a.player;
+  const pickups=a.pickups.filter(v=>v.y>200 && v.y<610).sort((a,b)=>(a.kind==="rescue"?-100:0)+Math.abs(a.y-p.y)-(b.kind==="rescue"?-100:0)-Math.abs(b.y-p.y));
+  const foe=a.foes.find(f=>f.kind==="boss")??a.foes.find(f=>f.y>0);
+  const target=pickups[0]??{x:foe?.x??180,y:490};
+  let best=Infinity,input=0;
+  const moves=[[0,0],[0,-4],[3,-3],[4,0],[3,3],[0,4],[-3,3],[-4,0],[-3,-3]];
+  for(let d=0;d<9;d++) {
+    const [dx,dy]=moves[d];let cost=0;
+    for(const f of [4,8,12]) {
+      const x=Math.max(20,Math.min(340,p.x+dx*f)),y=Math.max(210,Math.min(610,p.y+dy*f));
+      cost+=(Math.abs(x-target.x)+Math.abs(y-target.y))*.04;
+      for(const b of a.bolts) if(!b.friendly) {const dist=Math.max(Math.abs(x-b.x-b.vx*f),Math.abs(y-b.y-b.vy*f));if(dist<22)cost+=(22-dist)*15;}
+      for(const h of a.hazards)if(a.tick-h.born+f>=40 && Math.abs(x-h.x)<27)cost+=200;
+      for(const e of a.foes)if(Math.abs(e.x-x)<28 && Math.abs(e.y-y)<35)cost+=300;
+    }
+    if(cost<best){best=cost;input=d;}
+  }
+  if(a.pulseCooldown===0 && a.bolts.some(b=>!b.friendly && Math.abs(b.x-p.x)<70 && Math.abs(b.y-p.y)<100))input|=16;
+  return input;
+}
+function fly(chapter:ChapterId,rig:Rig,active=true) {
+  const game=createExpedition({chapter,rig,seed:CHAPTERS[chapter].seed});
+  while(!game.snapshot().finished)game.step(active ? pilot(game.snapshot()) : 0);
+  return game;
+}
+
+describe("Ghost Signal rules v2",()=>{
+  it("replays active movement, pickups, upgrades, bosses and pulses identically",async()=>{
+    const game=fly(2,"fan");
+    const replay=game.replay(), result=game.result();
+    expect(simulateExpedition(replay)).toEqual(result);
+    expect(result).toMatchObject({cleared:true,rescues:3,weapon:3,maxCombo:5,health:100});
+    expect(result.surges).toBeGreaterThan(1);
+    expect(result.pulses).toBeGreaterThan(0);
+    expect(await expeditionReplayHash(replay)).toHaveLength(64);
+    expect(await expeditionReplayHash({...replay,rig:"needle"})).not.toBe(await expeditionReplayHash(replay));
+    expect(await expeditionReplayHash({...replay,chapter:1})).not.toBe(await expeditionReplayHash(replay));
+    const pulses=game.events.filter(e=>e.type==="pulse");
+    for(let i=1;i<pulses.length;i++)expect(pulses[i].tick-pulses[i-1].tick).toBeGreaterThanOrEqual(480);
+  });
+  it("every chapter can be cleared with every rig through normal inputs",()=>{
+    for(const chapter of CHAPTERS)for(const rig of RIGS) {
+      expect(fly(chapter.id,rig.id).result().cleared,`${chapter.name}/${rig.id}`).toBe(true);
+    }
+    const idle=fly(2,"fan",false).result();
+    expect(idle.cleared).toBe(false);
+    expect(idle.health).toBe(0);
+  });
+  it("rejects malformed actions, lengths, rig, chapter and version",()=>{
+    const replay=encodeExpedition({seed:3,chapter:0,rig:"needle"},Array(3600).fill(0));
+    for(const input of [-1,9,15,25,32,1.5])expect(()=>validateExpedition({...replay,runs:[{input,ticks:3600}]})).toThrow();
+    expect(()=>validateExpedition({...replay,runs:[{input:0,ticks:3599}]})).toThrow();
+    expect(()=>validateExpedition({...replay,runs:[{input:0,ticks:1800},{input:0,ticks:1800}]})).toThrow();
+    expect(()=>validateExpedition({...replay,rig:"hacked" as Rig})).toThrow();
+    expect(()=>validateExpedition({...replay,chapter:3 as ChapterId})).toThrow();
+    expect(()=>validateExpedition({...replay,rulesVersion:1 as 2})).toThrow();
+    expect(()=>validateExpedition({...replay,seed:NaN})).toThrow();
+  });
+  it("keeps snapshots isolated and holds score after death",()=>{
+    const game=createExpedition({seed:1021,chapter:2,rig:"needle"});
+    const a=game.snapshot();a.player.health=999;
+    expect(game.snapshot().player.health).toBe(100);
+    while(!game.snapshot().finished)game.step(0);
+    const score=game.result().score;
+    for(let i=0;i<4000;i++)game.step(16);
+    expect(game.result().score).toBe(score);
+    expect(game.snapshot().tick).toBe(3600);
+  });
+});
