@@ -89,8 +89,14 @@ const MOVEMENT: Record<DirectionCode, readonly [number, number]> = {
 /** Runs a fixed-tick, renderer-free combat simulation for a complete v1 replay. */
 export function simulateArena(replay: ReplayInput): ArenaResult {
   validateReplay(replay);
+  const session = createArenaSession(replay.seed);
+  for (const direction of expandReplay(replay.runs)) session.step(direction);
+  return session.result(replay);
+}
 
-  const directions = expandReplay(replay.runs);
+/** The browser and verifier advance the exact same combat state, one tick at a time. */
+export function createArenaSession(seed: number) {
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffff_ffff) throw new Error("Invalid seed");
   const player: { x: number; y: number; health: number } = {
     x: Math.floor(arena.width / 2),
     y: 560,
@@ -99,7 +105,9 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
   const events: ArenaEvent[] = [];
   const enemies: Enemy[] = [];
   const projectiles: Projectile[] = [];
-  let randomState = replay.seed >>> 0;
+  let randomState = seed >>> 0;
+  let tick = 0;
+  let lastShot: { tick: number; x: number; y: number; targetX: number } | null = null;
   let nextEnemyId = 1;
   let nextProjectileId = 1;
   let score = 0;
@@ -111,10 +119,12 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
   let surgeActivations = 0;
   let destroyedAtTick: number | null = null;
 
-  for (let tick = 0; tick < RUN_TICKS; tick += 1) {
-    if (destroyedAtTick !== null) continue;
+  function step(direction: DirectionCode) {
+    if (!Number.isInteger(direction) || direction < 0 || direction > 8) throw new Error("Invalid direction code");
+    if (tick >= RUN_TICKS) return;
+    if (destroyedAtTick !== null) { tick += 1; return; }
 
-    const [deltaX, deltaY] = MOVEMENT[directions[tick]];
+    const [deltaX, deltaY] = MOVEMENT[direction];
     player.x = clamp(player.x + deltaX, 0, arena.width);
     player.y = clamp(player.y + deltaY, 0, arena.height);
 
@@ -152,7 +162,7 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
         }
         projectile.y = arena.height + PROJECTILE_SPEED_PER_TICK;
         events.push({ tick, type: "player-damaged", value: projectile.damage });
-      } else if (directions[tick] !== 0 && !projectile.grazed && xDistance <= GRAZE_HALF_SIZE && yDistance <= GRAZE_HALF_SIZE) {
+      } else if (direction !== 0 && !projectile.grazed && xDistance <= GRAZE_HALF_SIZE && yDistance <= GRAZE_HALF_SIZE) {
         projectile.grazed = true;
         grazes += 1;
         grazeMarks += 1;
@@ -172,6 +182,7 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
       shotsFired += 1;
       events.push({ tick, type: "auto-fired" });
       if (target) {
+        lastShot = { tick, x: player.x, y: player.y, targetX: target.laneX };
         target.health -= PLAYER_SHOT_DAMAGE;
         if (target.health === 0) {
           score += ENEMIES_V1[target.kind].killScore * (surgeTicksRemaining > 0 ? 2 : 1);
@@ -190,13 +201,17 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
       surgeTicksRemaining -= 1;
       if (surgeTicksRemaining === 0) events.push({ tick, type: "surge-ended" });
     }
+    tick += 1;
   }
 
+  function result(replay: ReplayInput): ArenaResult {
+  validateReplay(replay);
+  if (replay.seed !== seed || tick !== RUN_TICKS) throw new Error("Run is not complete");
   return {
     rulesVersion: replay.rulesVersion,
     seed: replay.seed >>> 0,
     tick: RUN_TICKS,
-    player,
+    player: { ...player },
     score,
     shotsFired,
     enemiesDestroyed,
@@ -204,9 +219,22 @@ export function simulateArena(replay: ReplayInput): ArenaResult {
     surgeActivations,
     destroyedAtTick,
     stateHash: stateHash({ replay, player, score, shotsFired, enemiesDestroyed, grazes, surgeActivations, destroyedAtTick, events }),
-    events,
+    events: events.slice(),
   };
+  }
+
+  function snapshot() {
+    return {
+      tick, player: { ...player }, score, grazes, grazeMarks, surgeTicksRemaining,
+      surgeActivations, enemiesDestroyed, destroyedAtTick, lastShot,
+      enemies: enemies.filter(enemy => enemy.health > 0).map(enemy => ({ ...enemy })),
+      projectiles: projectiles.filter(shot => shot.y <= arena.height).map(shot => ({ ...shot })),
+    };
+  }
+  return { step, snapshot, result, events };
 }
+
+export type ArenaSnapshot = ReturnType<ReturnType<typeof createArenaSession>["snapshot"]>;
 
 export function expandReplay(runs: readonly InputRun[]): DirectionCode[] {
   const directions: DirectionCode[] = [];

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { RULES_VERSION, RUN_TICKS } from "@rivalghost/game-data";
-import { simulateArena, type DirectionCode } from "./arena.js";
+import { createArenaSession, expandReplay, simulateArena, type DirectionCode } from "./arena.js";
 import {
   canonicalReplayJson,
   encodeDirections,
@@ -10,6 +10,18 @@ import {
 } from "./replay.js";
 
 describe("canonical replay protocol", () => {
+  it("live ticks and a verifier replay produce identical state and hashes", async () => {
+    const directions = Array.from({length: RUN_TICKS}, (_, i) => ([2, 4, 6, 8] as const)[Math.floor(i / 120) % 4]);
+    const replay = encodeDirections(RULES_VERSION, 3, directions);
+    const live = createArenaSession(3);
+    for (const direction of expandReplay(replay.runs)) live.step(direction);
+    const verified = simulateArena(replay);
+    expect(live.result(replay)).toEqual(verified);
+    expect(await resultHash(live.result(replay))).toBe(await resultHash(verified));
+    expect(verified.score).toBe(14_242);
+    live.step(0);
+    expect(live.snapshot().tick).toBe(RUN_TICKS);
+  });
   it("encodes a complete input stream into stable run-length bytes", () => {
     const directions: DirectionCode[] = [
       ...Array<DirectionCode>(120).fill(3),
