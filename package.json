@@ -12,10 +12,13 @@
     "test": "pnpm --filter @rivalghost/verifier... build && vitest run --passWithNoTests",
     "typecheck": "pnpm --filter @rivalghost/verifier... build && pnpm --recursive run typecheck",
     "verify:serve": "pnpm --filter @rivalghost/verifier... build && pnpm --filter @rivalghost/verifier start",
-    "contract:size": "cargo build --release --target wasm32-unknown-unknown -p rivalghost-contract && node tools/check-contract-size.mjs"
+    "contract:size": "pnpm contract:build && node tools/check-contract-size.mjs",
+    "contract:build": "node tools/build-contract.mjs",
+    "contract:smoke": "pnpm contract:build && node tools/contract-wasm-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "binaryen": "132.0.0",
     "typescript": "5.9.3",
     "vitest": "5.1.0"
   }

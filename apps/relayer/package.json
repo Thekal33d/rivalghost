@@ -6,6 +6,11 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "near-api-js": "7.5.3",
+    "@rivalghost/game-data": "workspace:*"
   }
 }
