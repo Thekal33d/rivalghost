@@ -1,5 +1,7 @@
 export interface SettlementCertificatePayload {
-  certificateVersion: 1;
+  certificateVersion: 1 | 2;
+  /** Required for v2; binds the signature to this testnet deployment. */
+  contractId?: string;
   challengeId: string;
   crownId: string;
   playerId: string;
@@ -25,8 +27,11 @@ export interface SettlementCertificate extends SettlementCertificatePayload {
  * cannot alter a valid certificate.
  */
 export function certificateMessage(payload: SettlementCertificatePayload): ArrayBuffer {
+  if(payload.certificateVersion!==1 && payload.certificateVersion!==2)throw new Error("Unsupported certificate version");
+  if(payload.certificateVersion===2 && (!payload.contractId || !/^[a-z0-9][a-z0-9._-]*\.testnet$/.test(payload.contractId)))throw new Error("A testnet contract is required for v2 certificates");
+  const domain=payload.certificateVersion===2?`RIVALGHOST-CERT-v2|near:testnet|${payload.contractId}`:"RIVALGHOST-CERT-v1";
   const bytes = new TextEncoder().encode([
-    "RIVALGHOST-CERT-v1",
+    domain,
     payload.challengeId,
     payload.crownId,
     payload.playerId,

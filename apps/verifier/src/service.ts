@@ -1,5 +1,5 @@
 import type { SettlementCertificate } from "@rivalghost/game-data";
-import type { ReplayInput } from "@rivalghost/sim";
+import type { ReplayInput, ExpeditionReplay } from "@rivalghost/sim";
 import {
   issueSettlementCertificate,
   verifyReplay,
@@ -13,7 +13,7 @@ export interface ChallengeSource {
 export interface ReplaySubmission {
   challengeId: string;
   playerId: string;
-  replay: ReplayInput;
+  replay: ReplayInput | ExpeditionReplay;
 }
 
 /**

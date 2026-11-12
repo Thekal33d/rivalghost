@@ -1,6 +1,9 @@
-import type { SettlementCertificate } from "@rivalghost/game-data";
+import type { CompetitionMission, SettlementCertificate } from "@rivalghost/game-data";
 
 export interface Crown {
+  mission?:CompetitionMission | null;
+  loadout_hash?:string;
+  active_challenge_id?:number | null;
   id: number;
   holder: string;
   score_to_beat: number;
@@ -15,6 +18,7 @@ export interface Crown {
 }
 
 export interface Challenge {
+  mission?:CompetitionMission | null;
   id: number;
   crown_id: number;
   challenger: string;
@@ -81,6 +85,7 @@ export class RivalGhostClient {
 export function toContractCertificate(certificate: SettlementCertificate): Record<string, unknown> {
   return {
     certificate_version: certificate.certificateVersion,
+    ...(certificate.contractId?{contract_id:certificate.contractId}:{}),
     challenge_id: certificateId(certificate.challengeId, "challengeId"),
     crown_id: certificateId(certificate.crownId, "crownId"),
     player_id: certificate.playerId,

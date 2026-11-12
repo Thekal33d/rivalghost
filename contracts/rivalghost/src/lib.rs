@@ -24,7 +24,32 @@ enum StorageKey {
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
+pub struct CompetitionMission {
+    pub revision: u8,
+    pub chapter: u8,
+    pub rig: Rig,
+}
+
+#[near(serializers = [borsh, json])]
+#[derive(Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum Rig { Needle, Fan, Guard }
+
+impl CompetitionMission {
+    fn hash(&self, seed: u32) -> String {
+        require!(self.revision == 1 && self.chapter < 10, "Unsupported competitive mission");
+        let rig = match self.rig { Rig::Needle => "needle", Rig::Fan => "fan", Rig::Guard => "guard" };
+        let message = format!("RIVALGHOST-MISSION-v2|{}|3600|{}|{}|{}", self.revision, seed, self.chapter, rig);
+        env::sha256(message.as_bytes()).iter().map(|b| format!("{:02x}", b)).collect()
+    }
+}
+
+#[near(serializers = [borsh, json])]
+#[derive(Clone)]
 pub struct Crown {
+    pub mission: Option<CompetitionMission>,
+    pub loadout_hash: String,
+    pub active_challenge_id: Option<u64>,
     pub id: u64,
     pub holder: AccountId,
     pub score_to_beat: u64,
@@ -41,6 +66,7 @@ pub struct Crown {
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
 pub struct Challenge {
+    pub mission: Option<CompetitionMission>,
     pub id: u64,
     pub crown_id: u64,
     pub challenger: AccountId,
@@ -66,6 +92,8 @@ pub struct CrownSeed {
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
 pub struct SettlementCertificate {
+    #[serde(default)]
+    pub contract_id: Option<AccountId>,
     pub certificate_version: u8,
     pub challenge_id: u64,
     pub crown_id: u64,
@@ -134,6 +162,10 @@ impl RivalGhost {
         self.rules_version
     }
 
+    pub fn supported_rules_versions(&self) -> Vec<u8> { vec![1, 2] }
+
+    pub fn verifier_public_key(&self) -> Vec<u8> { self.verifier_public_key.clone() }
+
     pub fn operator(&self) -> AccountId {
         self.operator.clone()
     }
@@ -174,13 +206,22 @@ impl RivalGhost {
 
     /// Seeds a bounded Crown record after off-chain opening replay validation.
     pub fn seed_crown(&mut self, seed: CrownSeed) -> Crown {
+        self.seed_competition(seed, None)
+    }
+
+    pub fn seed_expedition_crown(&mut self, seed: CrownSeed, mission: CompetitionMission) -> Crown {
+        self.seed_competition(seed, Some(mission))
+    }
+
+    fn seed_competition(&mut self, seed: CrownSeed, mission: Option<CompetitionMission>) -> Crown {
         self.assert_operator();
+        let loadout_hash = mission.as_ref().map(|m| m.hash(seed.seed)).unwrap_or_else(|| FIXED_LOADOUT_HASH.to_string());
         require!(
             seed.bounty_credits >= MINIMUM_BOUNTY_CREDITS,
             "Bounty is below the minimum"
         );
         require!(
-            seed.ghost_hash.len() == 64,
+            is_sha256_hex(&seed.ghost_hash),
             "Ghost hash must be a SHA-256 hex string"
         );
         require!(
@@ -192,13 +233,16 @@ impl RivalGhost {
         self.balances.insert(seed.holder.clone(), balance);
         let opened_at_ms = now_ms();
         let crown = Crown {
+            rules_version: if mission.is_some() { 2 } else { 1 },
+            mission,
+            loadout_hash,
+            active_challenge_id: None,
             id: self.next_crown_id,
             holder: seed.holder,
             score_to_beat: seed.score_to_beat,
             bounty_credits: seed.bounty_credits,
             seed: seed.seed,
             ghost_hash: seed.ghost_hash,
-            rules_version: self.rules_version,
             opened_at_ms,
             expires_at_ms: opened_at_ms + ROUND_EXPIRY_MS,
             active: true,
@@ -215,7 +259,7 @@ impl RivalGhost {
             self.active_challenge_by_player.get(&challenger).is_none(),
             "Player already has a live challenge"
         );
-        let crown = self
+        let mut crown = self
             .crowns
             .get(&crown_id)
             .cloned()
@@ -228,6 +272,7 @@ impl RivalGhost {
             crown.holder != challenger,
             "Cannot challenge your own Crown"
         );
+        require!(crown.active_challenge_id.is_none(), "Crown already has a live challenge");
         let balance = self.get_balance(challenger.clone());
         require!(balance >= CHALLENGE_ENTRY_CREDITS, "Insufficient CR");
 
@@ -235,6 +280,7 @@ impl RivalGhost {
             .insert(challenger.clone(), balance - CHALLENGE_ENTRY_CREDITS);
         let started_at_ms = now_ms();
         let challenge = Challenge {
+            mission: crown.mission.clone(),
             id: self.next_challenge_id,
             crown_id,
             challenger: challenger.clone(),
@@ -243,9 +289,11 @@ impl RivalGhost {
             expires_at_ms: started_at_ms + CHALLENGE_EXPIRY_MS,
             rules_version: crown.rules_version,
             seed: crown.seed,
-            loadout_hash: FIXED_LOADOUT_HASH.to_string(),
+            loadout_hash: crown.loadout_hash.clone(),
             settled: false,
         };
+        crown.active_challenge_id = Some(challenge.id);
+        self.crowns.insert(crown.id, crown);
         self.challenges.insert(challenge.id, challenge.clone());
         self.active_challenge_by_player
             .insert(challenger, challenge.id);
@@ -269,7 +317,9 @@ impl RivalGhost {
             .get(&challenge.crown_id)
             .cloned()
             .expect("Crown not found");
+        require!(crown.active && crown.active_challenge_id == Some(challenge.id), "Challenge does not own the Crown lock");
         self.assert_valid_certificate(&certificate, &challenge, &crown, now);
+        crown.active_challenge_id = None;
 
         challenge.settled = true;
         self.challenges.insert(challenge.id, challenge.clone());
@@ -317,6 +367,10 @@ impl RivalGhost {
         self.challenges.insert(challenge.id, challenge.clone());
         self.active_challenge_by_player
             .remove(&challenge.challenger);
+        let mut crown = self.crowns.get(&challenge.crown_id).cloned().expect("Crown not found");
+        require!(crown.active_challenge_id == Some(challenge.id), "Challenge does not own the Crown lock");
+        crown.active_challenge_id = None;
+        self.crowns.insert(crown.id, crown);
         self.credit(challenge.challenger, challenge.entry_credits);
         challenge.entry_credits
     }
@@ -333,6 +387,7 @@ impl RivalGhost {
             "Crown is not open"
         );
         require!(crown.holder == holder, "Crown holder only");
+        require!(crown.active_challenge_id.is_none(), "Crown already has a live challenge");
         require!(!crown.defense_used, "Defense already used");
         let balance = self.get_balance(holder.clone());
         require!(balance >= DEFEND_CREDITS, "Insufficient CR");
@@ -351,6 +406,7 @@ impl RivalGhost {
             .cloned()
             .expect("Crown not found");
         require!(crown.active, "Crown already closed");
+        require!(crown.active_challenge_id.is_none(), "Expire the live challenge first");
         require!(now_ms() >= crown.expires_at_ms, "Crown is still live");
 
         let payout = crown.bounty_credits;
@@ -376,9 +432,14 @@ impl RivalGhost {
         now: u64,
     ) {
         require!(
-            certificate.certificate_version == CERTIFICATE_VERSION,
+            certificate.certificate_version == if challenge.rules_version == 2 { 2 } else { CERTIFICATE_VERSION },
             "Certificate version is unsupported"
         );
+        if challenge.rules_version == 2 {
+            require!(certificate.contract_id.as_ref() == Some(&env::current_account_id()), "Certificate deployment does not match");
+        } else {
+            require!(certificate.contract_id.is_none(), "Legacy certificate cannot include a deployment");
+        }
         require!(
             certificate.crown_id == challenge.crown_id,
             "Certificate Crown does not match Challenge"
@@ -396,7 +457,7 @@ impl RivalGhost {
             "Certificate seed does not match Challenge"
         );
         require!(
-            certificate.loadout_hash == challenge.loadout_hash,
+            certificate.loadout_hash == challenge.loadout_hash && certificate.loadout_hash == crown.loadout_hash,
             "Certificate loadout does not match Challenge"
         );
         require!(
@@ -408,7 +469,7 @@ impl RivalGhost {
             "Certificate state hash is invalid"
         );
         require!(
-            certificate.issued_at_ms <= now,
+            certificate.issued_at_ms >= challenge.started_at_ms && certificate.issued_at_ms <= now,
             "Certificate is issued in the future"
         );
         require!(
@@ -449,8 +510,12 @@ impl RivalGhost {
 
 impl SettlementCertificate {
     fn message(&self) -> String {
+        let domain = if self.certificate_version == 2 {
+            format!("RIVALGHOST-CERT-v2|near:testnet|{}", self.contract_id.as_ref().expect("Missing certificate deployment"))
+        } else { "RIVALGHOST-CERT-v1".to_string() };
         format!(
-            "RIVALGHOST-CERT-v1|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
+            "{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
+            domain,
             self.challenge_id,
             self.crown_id,
             self.player_id,
@@ -492,6 +557,7 @@ mod tests {
     fn context(predecessor: &str, timestamp_ms: u64) {
         let mut builder = VMContextBuilder::new();
         builder.predecessor_account_id(account(predecessor));
+        builder.current_account_id(account("rivalghost.testnet"));
         builder.block_timestamp(timestamp_ms * 1_000_000);
         testing_env!(builder.build());
     }
@@ -527,7 +593,8 @@ mod tests {
         score: u64,
     ) -> SettlementCertificate {
         let mut certificate = SettlementCertificate {
-            certificate_version: CERTIFICATE_VERSION,
+            certificate_version: if challenge.rules_version == 2 { 2 } else { CERTIFICATE_VERSION },
+            contract_id: if challenge.rules_version == 2 { Some(env::current_account_id()) } else { None },
             challenge_id: challenge.id,
             crown_id: challenge.crown_id,
             player_id: challenge.challenger.clone(),
@@ -632,4 +699,94 @@ mod tests {
             .get_active_challenge(account("player.testnet"))
             .is_none());
     }
+    fn open_expedition(contract: &mut RivalGhost) -> Challenge {
+        contract.create_guest(account("hound.testnet"));
+        contract.create_guest(account("player.testnet"));
+        contract.create_guest(account("other.testnet"));
+        let crown = contract.seed_expedition_crown(CrownSeed {
+            holder: account("hound.testnet"), score_to_beat: 14000, bounty_credits: 40,
+            seed: 313, ghost_hash: "a".repeat(64),
+        }, CompetitionMission { revision: 1, chapter: 0, rig: Rig::Fan });
+        context("player.testnet", 1001);
+        contract.start_challenge(crown.id)
+    }
+
+    #[test]
+    fn expedition_hash_matches_typescript_and_settles_with_bound_mission() {
+        context("operator.testnet", 1000);
+        let key = verifier_key(); let mut game = contract(&key);
+        let challenge = open_expedition(&mut game);
+        assert_eq!(challenge.rules_version, 2);
+        assert_eq!(challenge.loadout_hash, "24dbd92929fea14445b2481899ddd7ceddd711aef9224024f25093a8ccdfeaad");
+        let cert = certificate(&key, &challenge, 14001);
+        assert!(cert.message().starts_with("RIVALGHOST-CERT-v2|near:testnet|rivalghost.testnet|"));
+        context("relayer.testnet", 1002);
+        let settled = game.settle_challenge(cert);
+        assert!(settled.challenger_won);
+        assert_eq!(settled.challenger_credits, 140);
+        let crown = game.get_crown(challenge.crown_id).unwrap();
+        assert_eq!(crown.mission.unwrap().chapter, 0);
+        assert!(crown.active_challenge_id.is_none());
+    }
+
+    #[test]
+    fn rejects_signed_mismatches_and_modified_certificates_before_mutating_balances() {
+        context("operator.testnet", 1000);
+        let key = verifier_key(); let mut game = contract(&key);
+        let challenge = open_expedition(&mut game);
+        context("relayer.testnet", 1002);
+        for case in 0..7 {
+            let mut cert = certificate(&key, &challenge, 14001);
+            match case {
+                0 => cert.loadout_hash = "d".repeat(64),
+                1 => cert.seed += 1,
+                2 => cert.contract_id = Some(account("another.testnet")),
+                3 => cert.player_id = account("other.testnet"),
+                4 => cert.rules_version = 1,
+                5 => cert.expires_at_ms += 1,
+                _ => cert.issued_at_ms = 999,
+            }
+            cert.signature = key.sign(cert.message().as_bytes()).to_bytes().to_vec();
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(cert))).is_err());
+            assert_eq!(game.get_balance(account("player.testnet")), 90);
+            assert!(!game.get_challenge(challenge.id).unwrap().settled);
+        }
+        let mut forged = certificate(&key, &challenge, 14001);
+        forged.score += 1;
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(forged))).is_err());
+        let mut legacy = certificate(&key, &challenge, 14001);
+        legacy.certificate_version = 1;
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(legacy))).is_err());
+    }
+
+    #[test]
+    fn crown_target_and_bounty_remain_locked_during_a_flight() {
+        context("operator.testnet", 1000);
+        let key = verifier_key(); let mut game = contract(&key);
+        let challenge = open_expedition(&mut game);
+        context("other.testnet", 1002);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.start_challenge(challenge.crown_id))).is_err());
+        assert_eq!(game.get_balance(account("other.testnet")), 100);
+        context("hound.testnet", 1002);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(challenge.crown_id))).is_err());
+        context("relayer.testnet", 1002);
+        game.settle_challenge(certificate(&key, &challenge, 0));
+        context("other.testnet", 1003);
+        assert_eq!(game.start_challenge(challenge.crown_id).challenger, account("other.testnet"));
+    }
+
+    #[test]
+    fn expiry_releases_both_locks_and_late_certificates_cannot_pay() {
+        context("operator.testnet", 1000);
+        let key = verifier_key(); let mut game = contract(&key);
+        let challenge = open_expedition(&mut game);
+        let cert = certificate(&key, &challenge, 14001);
+        context("relayer.testnet", challenge.expires_at_ms);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(cert))).is_err());
+        game.expire_challenge(challenge.id);
+        assert!(game.get_crown(challenge.crown_id).unwrap().active_challenge_id.is_none());
+        assert!(game.get_active_challenge(account("player.testnet")).is_none());
+        assert_eq!(game.get_balance(account("player.testnet")), 100);
+    }
+
 }

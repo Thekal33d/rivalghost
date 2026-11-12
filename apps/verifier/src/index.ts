@@ -1,10 +1,17 @@
 import {
+  expeditionReplayHash,
+  simulateExpedition,
+  sha256Hex,
+  type ExpeditionReplay,
   replayHash,
   resultHash,
   simulateArena,
   type ReplayInput,
 } from "@rivalghost/sim";
 import {
+  competitionHash,
+  validateMission,
+  type CompetitionMission,
   signSettlementCertificate,
   type SettlementCertificate,
 } from "@rivalghost/game-data";
@@ -12,6 +19,9 @@ import {
 export const VERIFIER_SERVICE_NAME = "rivalghost-verifier";
 
 export interface StoredChallenge {
+  contractId?:string;
+  mission?:CompetitionMission | null;
+  settled?:boolean;
   id: string;
   crownId: string;
   playerId: string;
@@ -22,6 +32,7 @@ export interface StoredChallenge {
 }
 
 export interface VerifiedReplay {
+  contractId?:string;
   challengeId: string;
   crownId: string;
   playerId: string;
@@ -49,7 +60,8 @@ export async function issueSettlementCertificate(
   }
 
   return signSettlementCertificate({
-    certificateVersion: 1,
+    certificateVersion: verified.rulesVersion===2?2:1,
+    ...(verified.rulesVersion===2?{contractId:verified.contractId}:{}),
     challengeId: verified.challengeId,
     crownId: verified.crownId,
     playerId: verified.playerId,
@@ -73,25 +85,42 @@ export async function issueSettlementCertificate(
 export async function verifyReplay(
   challenge: StoredChallenge,
   playerId: string,
-  replay: ReplayInput,
+  replay: ReplayInput | ExpeditionReplay,
   nowMs: number,
 ): Promise<VerifiedReplay> {
+  if(challenge.settled)throw new Error("Challenge already settled");
   if (nowMs >= challenge.expiresAtMs) throw new Error("Challenge has expired");
   if (playerId !== challenge.playerId) throw new Error("Replay player does not match challenge");
   if (replay.seed !== challenge.seed) throw new Error("Replay seed does not match challenge");
   if (replay.rulesVersion !== challenge.rulesVersion) throw new Error("Replay rules version does not match challenge");
 
-  const result = simulateArena(replay);
+  let score:number, inputHash:string, stateHash:string;
+  if(challenge.rulesVersion===2) {
+    if(!challenge.mission || !challenge.contractId)throw new Error("Unsupported rules: missing v2 mission or deployment");
+    validateMission(challenge.mission);
+    const flight=replay as ExpeditionReplay;
+    if(flight.chapter!==challenge.mission.chapter || flight.rig!==challenge.mission.rig)throw new Error("Replay mission does not match challenge");
+    if(await competitionHash(challenge.seed,challenge.mission)!==challenge.loadoutHash)throw new Error("Challenge mission hash is invalid");
+    const result=simulateExpedition(flight);
+    score=result.score;
+    inputHash=await expeditionReplayHash(flight);
+    stateHash=await sha256Hex(new TextEncoder().encode(JSON.stringify(result)));
+  } else if(challenge.rulesVersion===1) {
+    const legacy=replay as ReplayInput;
+    const result=simulateArena(legacy);
+    score=result.score;inputHash=await replayHash(legacy);stateHash=await resultHash(result);
+  } else throw new Error("Unsupported rules version");
   return {
+    ...(challenge.rulesVersion===2?{contractId:challenge.contractId}:{}),
     challengeId: challenge.id,
     crownId: challenge.crownId,
     playerId,
     rulesVersion: challenge.rulesVersion,
     seed: challenge.seed,
     loadoutHash: challenge.loadoutHash,
-    replayHash: await replayHash(replay),
-    finalStateHash: await resultHash(result),
-    score: result.score,
+    replayHash: inputHash,
+    finalStateHash: stateHash,
+    score,
     expiresAtMs: challenge.expiresAtMs,
   };
 }
