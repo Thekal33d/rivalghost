@@ -8,3 +8,4 @@ export * from "./competition.js";
 export * from "./guest.js";
 
 export * from "./districts.js";
+export * from "./social.js";

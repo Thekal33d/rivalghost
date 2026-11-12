@@ -26,6 +26,9 @@ importers:
       '@rivalghost/game-data':
         specifier: workspace:*
         version: link:../../packages/game-data
+      '@rivalghost/sim':
+        specifier: workspace:*
+        version: link:../../packages/sim
       near-api-js:
         specifier: 7.5.3
         version: 7.5.3
