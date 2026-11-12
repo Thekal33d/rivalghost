@@ -277,6 +277,7 @@ impl RivalGhost {
             "Cannot challenge your own Crown"
         );
         require!(crown.active_challenge_id.is_none(), "Crown already has a live challenge");
+        require!(crown.bounty_credits >= MINIMUM_BOUNTY_CREDITS, "Winner must fund a defense before challenges reopen");
         let balance = self.get_balance(challenger.clone());
         require!(balance >= CHALLENGE_ENTRY_CREDITS, "Insufficient CR");
 
@@ -393,6 +394,7 @@ impl RivalGhost {
         require!(crown.holder == holder, "Crown holder only");
         require!(crown.active_challenge_id.is_none(), "Crown already has a live challenge");
         require!(!crown.defense_used, "Defense already used");
+        require!(crown.bounty_credits == 0, "Only a won Crown can be defended");
         let balance = self.get_balance(holder.clone());
         require!(balance >= DEFEND_CREDITS, "Insufficient CR");
 
@@ -803,6 +805,39 @@ mod tests {
         assert!(game.get_crown(challenge.crown_id).unwrap().active_challenge_id.is_none());
         assert!(game.get_active_challenge(account("player.testnet")).is_none());
         assert_eq!(game.get_balance(account("player.testnet")), 100);
+    }
+
+    #[test]
+    fn empty_won_crown_requires_explicit_defense_and_conserves_credits() {
+        context("operator.testnet", 1000);
+        let key = verifier_key(); let mut game = contract(&key);
+        let challenge = open_expedition(&mut game);
+        context("relayer.testnet", 1002);
+        game.settle_challenge(certificate(&key, &challenge, 14001));
+        context("other.testnet", 1003);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.start_challenge(0))).is_err());
+        assert_eq!(game.get_balance(account("other.testnet")), 100);
+        context("player.testnet", 1004);
+        let defended = game.defend_crown(0);
+        assert_eq!(defended.bounty_credits, 20);
+        assert_eq!(game.get_balance(account("player.testnet")), 120);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(0))).is_err());
+        context("other.testnet", 1005);
+        game.start_challenge(0);
+        let total = game.get_balance(account("player.testnet")) + game.get_balance(account("hound.testnet")) + game.get_balance(account("other.testnet")) + game.get_crown(0).unwrap().bounty_credits + 10;
+        assert_eq!(total, 300);
+    }
+
+    #[test]
+    fn opening_holder_cannot_charge_a_defense_before_a_win() {
+        context("operator.testnet", 1000);
+        let key = verifier_key(); let mut game = contract(&key);
+        let challenge = open_challenge(&mut game);
+        context("relayer.testnet", challenge.expires_at_ms);
+        game.expire_challenge(challenge.id);
+        context("hound.testnet", challenge.expires_at_ms + 1);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(0))).is_err());
+        assert_eq!(game.get_balance(account("hound.testnet")), 60);
     }
 
     #[test]
