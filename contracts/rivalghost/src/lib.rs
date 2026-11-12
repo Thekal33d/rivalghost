@@ -789,4 +789,21 @@ mod tests {
         assert_eq!(game.get_balance(account("player.testnet")), 100);
     }
 
+    #[test]
+    fn settles_the_actual_typescript_verifier_fixture() {
+        context("operator.testnet", 1000);
+        let key = verifier_key(); let mut game = contract(&key);
+        let challenge = open_expedition(&mut game);
+        let fixture: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(include_str!("../../../fixtures/expedition-v2-settlement.json")).unwrap();
+        let cert: SettlementCertificate = near_sdk::serde_json::from_value(fixture["contractCertificate"].clone()).unwrap();
+        let score = fixture["verified"]["score"].as_u64().unwrap();
+        assert_eq!(cert.challenge_id, challenge.id);
+        context("relayer.testnet", 1002);
+        let settlement = game.settle_challenge(cert.clone());
+        assert!(settlement.challenger_won);
+        assert_eq!(game.get_crown(0).unwrap().score_to_beat, score);
+        assert_eq!(settlement.challenger_credits, 140);
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(cert))).is_err());
+    }
+
 }

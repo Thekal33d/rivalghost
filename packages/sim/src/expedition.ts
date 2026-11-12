@@ -203,8 +203,12 @@ export function simulateExpedition(replay:ExpeditionReplay) {
   for(const run of replay.runs) for(let i=0;i<run.ticks;i++){if(session.snapshot().finished) return session.result();session.step(run.input);}
   return session.result();
 }
-export async function expeditionReplayHash(replay:ExpeditionReplay) {
+export function canonicalExpeditionReplayJson(replay:ExpeditionReplay):string {
   validateExpedition(replay);
   const canonical={rulesVersion:replay.rulesVersion,seed:replay.seed,chapter:replay.chapter,rig:replay.rig,runs:replay.runs.map(r=>({input:r.input,ticks:r.ticks}))};
-  return sha256Hex(new TextEncoder().encode(JSON.stringify(canonical)));
+  return JSON.stringify(canonical);
+}
+
+export async function expeditionReplayHash(replay:ExpeditionReplay) {
+  return sha256Hex(new TextEncoder().encode(canonicalExpeditionReplayJson(replay)));
 }

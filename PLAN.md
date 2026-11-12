@@ -4,9 +4,9 @@
 
 The playable local alpha now includes ten Ghost Signal chapters, three rigs, thirty medals, personal best ghosts and a daily challenge. The frontend uses React and Canvas with the approved illustrated arcade style; earlier Phaser/pixel-art items below are historical planning choices, not the current implementation.
 
-Phase 0 and the deterministic simulation foundation are implemented. Game-client work is substantially playable locally. Crown v1 contract, verifier and typed-client cores exist, but guest bootstrap, the actual relay, autonomous HOUND, competitive v2 binding and deployed end-to-end integration remain unfinished. This is **not yet a testnet release candidate**.
+Phase 0 and the deterministic simulation foundation are implemented. Game-client work is substantially playable locally. Crown v1 / expedition v2 mission binding, finalized RPC reads, an internal authenticated HTTP verifier, replay storage and wallet transport now exist. Guest bootstrap/gateway, the sponsored relay, browser competitive flow, autonomous HOUND and deployed end-to-end integration remain unfinished. This is **not yet a testnet release candidate**.
 
-See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 28 TypeScript tests plus production build/type checking, and four Rust contract tests pass. Live storage/gas measurements and physical-device playtests remain outstanding.
+See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 40 TypeScript tests plus production build/type checking, and nine Rust contract tests pass. The optimized 220,885-byte Wasm artifact fails the unchanged 100,000-byte ceiling. Live storage/gas measurements and physical-device playtests remain outstanding.
 
 ## Overview
 

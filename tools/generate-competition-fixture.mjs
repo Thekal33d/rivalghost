@@ -1,0 +1,20 @@
+// PUBLIC TEST FIXTURE ONLY. The deterministic [7;32] test key is never a deployment key.
+import {writeFile} from 'node:fs/promises';
+import {createPrivateKey,createPublicKey} from 'node:crypto';
+import {competitionHash} from '../packages/game-data/dist/index.js';
+import {createExpedition} from '../packages/sim/dist/index.js';
+import {verifyReplay,issueSettlementCertificate} from '../apps/verifier/dist/index.js';
+import {toContractCertificate} from '../packages/contracts-client/dist/index.js';
+const privateKey=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),Buffer.alloc(32,7)]),format:'der',type:'pkcs8'});
+const key=await crypto.subtle.importKey('pkcs8',privateKey.export({format:'der',type:'pkcs8'}),'Ed25519',false,['sign']);
+const mission={revision:1,chapter:0,rig:'fan'};
+const challenge={id:'0',crownId:'0',contractId:'rivalghost.testnet',playerId:'player.testnet',seed:313,rulesVersion:2,mission,loadoutHash:await competitionHash(313,mission),expiresAtMs:121001,settled:false};
+const game=createExpedition({seed:313,chapter:0,rig:'fan'});
+while(!game.snapshot().finished)game.step(0);
+const replay=game.replay();
+const verified=await verifyReplay(challenge,challenge.playerId,replay,1002);
+const certificate=await issueSettlementCertificate(verified,1002,key);
+const publicKey=createPublicKey(privateKey).export({format:'jwk'});
+const fixture={note:'Public deterministic test fixture. Never use this verifier key for deployment.',publicKey,challenge,replay,verified,certificate,contractCertificate:toContractCertificate(certificate)};
+await writeFile(new URL('../fixtures/expedition-v2-settlement.json',import.meta.url),JSON.stringify(fixture,null,2)+'\n');
+console.log(`Generated v2 replay → certificate fixture: ${verified.score} points`);

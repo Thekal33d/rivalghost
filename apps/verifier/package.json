@@ -6,10 +6,12 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "@rivalghost/game-data": "workspace:*",
-    "@rivalghost/sim": "workspace:*"
+    "@rivalghost/sim": "workspace:*",
+    "@rivalghost/contracts-client": "workspace:*"
   }
 }

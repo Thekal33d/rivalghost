@@ -77,3 +77,11 @@ The deployment checklist must stop if release Wasm is 100 KB or more, a method p
 ## Explicit exclusions
 
 This hackathon build does not deploy mainnet contracts, fund mainnet accounts, issue transferable tokens, or provide cash-out. Any of those requires a new cost assessment and explicit approval.
+
+## Measured local artifact — November 12, 2026
+
+`cargo build --release --target wasm32-unknown-unknown -p rivalghost-contract` with size optimization, LTO, one codegen unit and symbol stripping produces **220,885 bytes**. SHA-256: `a0d62428501afe9a8908ec4f843ab7999b24f75ab8f3b3724f495b68c344ae15`.
+
+`pnpm contract:size` fails against the unchanged **100,000-byte ceiling**. Deployment remains gated on size optimization; the budget was not raised. This measures compiled code only, not deployed runtime compatibility, storage growth, gas receipts or an actual bill. Native unit tests do not replace a deployed smoke test. The std-based dependency graph builds with `wasm32-unknown-unknown`; the no-std `wasm32v1-none` target is not compatible with its current features.
+
+Competitive metadata adds a compact mission, a fingerprint on each Crown, and an exclusive Crown lock. Replay bodies stay off-chain in bounded storage. The next cost work is code-size reduction, followed by per-method state growth and receipt measurements.

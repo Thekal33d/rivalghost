@@ -51,7 +51,7 @@ Escape or Pause freezes the local flight, ghost, and cooldowns. Leaving the wind
 
 Expedition uses a separate **rules version 2** replay containing seed, chapter, rig, and compressed per-tick direction/pulse inputs. Legacy Crown v1 replay bytes and outcomes remain unchanged. Chapters 01–03 also retain their original expedition v2 physics; their replay outcomes and hashes have regression fixtures. Three-chapter saves expand to ten slots without discarding medals, attempts, or best ghosts. The daily challenge retains its chapter-three rules and separate UTC-date records. Local campaign progress can be edited by its owner and carries no monetary or competitive authority.
 
-The current contract supports fixed-loadout Crown v1. Campaign results must never be signed as v1 settlement certificates. Keep story saves, pickups, medals, and ordinary combat off-chain: no additional contract storage, transactions, or gas in this slice. A later competitive v2 deployment needs a canonical mission/rig configuration hash on the Crown and Challenge, verifier support for that hash, separate rules-version ladders, and tests for mismatched loadouts before enabling payouts. Persistent story power must never silently affect a Crown run.
+The contract and verifier now support separately bound competitive v2 missions alongside fixed-loadout Crown v1. A mission/rig/revision/seed fingerprint is computed by the contract; v2 certificates are bound to the testnet deployment. Story saves, pickups, medals and ordinary campaign combat stay off-chain. The browser campaign is not yet connected to a competitive gateway or deployed contract. Persistent story power never affects the competitive simulation. See [the integration runbook](verifier-runbook.md) for implemented boundaries and outstanding guest/relay work.
 
 ## Build steps
 
@@ -66,10 +66,10 @@ Watch five new players without explaining the controls. Can they move, identify 
 
 ## Implementation validation — November 12, 2026
 
-- Full workspace type checking, 28 TypeScript tests, and production build pass.
+- Full workspace type checking, 40 TypeScript tests, and production build pass.
 - Input-only automated pilots clear all thirty chapter/rig combinations without mutating the game state; the chapter-three Fan route rescues three couriers, reaches weapon level three, and activates Surge more than once. This is an attainability check, not a substitute for human balance testing.
 - Full browser flights exercised chapter-one clear, a failed rematch, medal persistence, chapter-two unlock, saved-ghost rendering and score comparison, pulse cooldown, pause/resume, and daily launch with Guard's shield.
 - A portrait viewport check confirms no horizontal overflow and keeps Pulse reachable. Physical phone touch feel and audible sound quality still require human testing.
 - The expanded chapter map was checked in the browser, including preserved progress, chapter selection, correct 01–10 numbering, locked destinations, and a phone-sized viewport without horizontal overflow. Automated progression tests cover the full unlock chain, save migration, all thirty best-record slots, and thirty-medal completion.
-- All four existing Rust contract tests pass. Their coverage is limited; adversarial settlement, defense, cleanup, and deployed end-to-end tests remain release gates.
-- Contract storage and transactions are unchanged. No deployment or funding was performed. Local progression and daily scores are not a trusted leaderboard.
+- Nine Rust contract tests pass, including signed mismatch rejection, Crown locks, expiry, duplicate settlement, and a certificate produced by the real TypeScript verifier. Cleanup, deployed end-to-end checks and broader threat review remain release gates.
+- Campaign transactions remain unchanged. Competitive contract metadata now includes mission binding and a Crown lock; storage measurements remain outstanding. No deployment or funding was performed. Local progression and daily scores are not a trusted leaderboard.

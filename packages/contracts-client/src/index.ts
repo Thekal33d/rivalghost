@@ -111,3 +111,5 @@ function assertSafeId(value: number, name: string): number {
   if (!Number.isSafeInteger(value) || value < 0) throw new Error(`${name} must be a safe non-negative integer`);
   return value;
 }
+export * from "./rpc.js";
+export * from "./wallet-transport.js";

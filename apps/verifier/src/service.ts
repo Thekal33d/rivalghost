@@ -10,6 +10,10 @@ export interface ChallengeSource {
   getChallenge(challengeId: string): Promise<StoredChallenge | null>;
 }
 
+export interface ReplayStore {
+  put(hash:string,replay:ReplayInput|ExpeditionReplay):Promise<void>;
+}
+
 export interface ReplaySubmission {
   challengeId: string;
   playerId: string;
@@ -25,6 +29,8 @@ export class ReplayVerificationService {
     private readonly challenges: ChallengeSource,
     private readonly signingKey: CryptoKey,
     private readonly verifierKeyVersion = 1,
+    private readonly replays?:ReplayStore,
+    private readonly clock?:()=>number,
   ) {}
 
   async verifyAndIssue(
@@ -40,9 +46,10 @@ export class ReplayVerificationService {
       submission.replay,
       nowMs,
     );
+    if(this.replays)await this.replays.put(verified.replayHash,submission.replay);
     return issueSettlementCertificate(
       verified,
-      nowMs,
+      this.clock?.()??nowMs,
       this.signingKey,
       this.verifierKeyVersion,
     );

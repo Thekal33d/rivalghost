@@ -8,3 +8,7 @@ coverage
 .vite
 target
 *.wasm
+
+# Local verifier data and credentials
+replays/
+*.private.jwk
