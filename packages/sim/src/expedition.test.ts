@@ -37,6 +37,7 @@ describe("Ghost Signal rules v2",()=>{
     expect(simulateExpedition(replay)).toEqual(result);
     expect(result).toMatchObject({cleared:true,rescues:3,weapon:3,maxCombo:5,health:100});
     expect(result.surges).toBeGreaterThan(1);
+    expect(result.durationTicks).toBeLessThan(3600);
     expect(result.pulses).toBeGreaterThan(0);
     expect(await expeditionReplayHash(replay)).toHaveLength(64);
     expect(await expeditionReplayHash({...replay,rig:"needle"})).not.toBe(await expeditionReplayHash(replay));

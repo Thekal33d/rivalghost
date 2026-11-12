@@ -2,7 +2,7 @@
 export const EXPEDITION_VERSION = 2 as const;
 export const EXPEDITION_TICKS = 3600;
 export const RIGS = [
-  { id: "needle", name: "NEEDLE", title: "Precision pilot", description: "Fast twin-damage rounds. Line up your shot.", cadence: 9, damage: 2 },
+  { id: "needle", name: "NEEDLE", title: "Precision pilot", description: "A tight, fast cannon. Line up your shot.", cadence: 9, damage: 2 },
   { id: "fan", name: "FAN", title: "Crowd breaker", description: "Three-way spread. Catch whole formations.", cadence: 14, damage: 1 },
   { id: "guard", name: "GUARD", title: "Second chances", description: "A shield absorbs one hit. Rescues restore it.", cadence: 11, damage: 2 },
 ] as const;
@@ -11,7 +11,7 @@ export const CHAPTERS = [
   { id: 0, name: "DEAD AIR", district: "The Relay Yard", boss: "SWITCHBOARD", color: "#a1e7bf", seed: 313,
     briefing: "A distress signal is repeating your call sign. Three couriers are trapped in the relay yard. Bring them home. Find who is calling.",
     transmission: "MOTH: That voice on the channel? It’s yours. From a run you haven’t flown yet.",
-    ending: "The rescued courier hands you a damaged flight recorder. Its last entry is tomorrow. HOUND has the other half.",
+    ending: "Inside Switchboard’s wreck is a damaged flight recorder. Its last entry is tomorrow. HOUND has the other half.",
     objective: "Defeat Switchboard and survive the extraction.", medalRescues: 2 },
   { id: 1, name: "GLASS MILE", district: "The Interceptor Trench", boss: "PRISM", color: "#efb775", seed: 729,
     briefing: "HOUND’s trail cuts through the laser trench. Watch the warning lanes. The couriers know a route the patrols don’t.",

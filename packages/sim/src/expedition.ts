@@ -28,7 +28,7 @@ export function createExpedition(config:ExpeditionConfig) {
   const rand=()=>{random^=random<<13;random^=random>>>17;random^=random<<5;return random>>>0;};
   let tick=0,id=0,score=0,kills=0,rescues=0,grazes=0,surges=0,charge=0,surge=0;
   let combo=0,comboUntil=0,maxCombo=0,pulseCooldown=0,pulses=0,weapon=1,cells=0,damageTaken=0;
-  let bossDefeated=false,finished=false;
+  let bossDefeated=false,finished=false,extractionAtTick=EXPEDITION_TICKS;
   let player={x:180,y:540,health:100,invulnerable:0,shield:rig==="guard" ? 1 : 0};
   let foes:Foe[]=[],bolts:Bolt[]=[],pickups:Pickup[]=[],hazards:Hazard[]=[];
   const events:CombatEvent[]=[];
@@ -48,7 +48,7 @@ export function createExpedition(config:ExpeditionConfig) {
     combo=Math.min(5,combo+1);maxCombo=Math.max(maxCombo,combo);comboUntil=tick+210;kills++;
     const points=(foe.kind==="boss" ? 2500 : foe.kind==="turret" ? 180 : 90)*combo*(surge>0 ? 2 : 1);
     score+=points;emit("kill",foe.x,foe.y,points);
-    if(foe.kind==="boss") {bossDefeated=true;bolts=bolts.filter(b=>b.friendly);hazards=[];}
+    if(foe.kind==="boss") {bossDefeated=true;extractionAtTick=Math.min(EXPEDITION_TICKS,tick+120);bolts=bolts.filter(b=>b.friendly);hazards=[];}
     else if(kills%3===0) drop(foe.x,foe.y,"power");
   };
   const spawn=(kind:FoeKind,x:number)=>{
@@ -145,7 +145,7 @@ export function createExpedition(config:ExpeditionConfig) {
     for(const h of hazards) if(tick-h.born>=55 && tick-h.born<85 && Math.abs(player.x-h.x)<18) hurt();
     hazards=hazards.filter(h=>tick-h.born<85);
     tick++;
-    if(player.health===0 || tick===EXPEDITION_TICKS) finished=true;
+    if(player.health===0 || tick>=extractionAtTick) finished=true;
   }
   function snapshot() {
     return {tick,player:{...player},score,kills,rescues,grazes,surges,charge,surge,combo,maxCombo,pulseCooldown,pulses,weapon,cells,damageTaken,bossDefeated,finished,

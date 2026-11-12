@@ -1,68 +1,74 @@
 import { useCallback, useEffect, useState } from "react";
-import { ArenaPrototype, type ArenaStats } from "./ArenaPrototype";
+import { CHAPTERS, RIGS, dailySignal, type ChapterId, type Rig } from "@rivalghost/game-data";
+import type { ExpeditionConfig, ExpeditionReplay } from "@rivalghost/sim";
+import { ExpeditionArena, type FlightReport } from "./ExpeditionArena";
 import { Pilot } from "./Pilot";
+import { PROFILE_KEY, callsign, emptyProfile, flightKey, isUnlocked, medalCount, parseProfile, recordFlight } from "./flight-profile";
 
-const rivals = [{ name: "PUP", score: 9000, label: "Warm-up" }, { name: "HOUND", score: 14000, label: "The rivalry" }];
-function readBest() { try { const n=Number(localStorage.getItem("rivalghost.practice.best")); return Number.isFinite(n) && n>0 ? n : 0; } catch { return 0; } }
-const number = (n:number) => n.toLocaleString();
+type Mode="story"|"daily";
+interface Flight { config:ExpeditionConfig; mode:Mode; dailyKey?:string; ghost?:ExpeditionReplay }
+const number=(n:number)=>n.toLocaleString();
+const medalNames=["Break the signal","Rescue 2 couriers","Clear without hull damage"];
 
 export default function App() {
   const [screen,setScreen]=useState<"lobby"|"run"|"result">("lobby");
-  const [rivalIndex,setRivalIndex]=useState(1);
-  const [sound,setSound]=useState(false);
-  const [help,setHelp]=useState(false);
-  const [best,setBest]=useState(readBest);
-  const [result,setResult]=useState<ArenaStats|null>(null);
-  const [newBest,setNewBest]=useState(false);
-  const rival=rivals[rivalIndex];
+  const [mode,setMode]=useState<Mode>("story"),[chapterId,setChapterId]=useState<ChapterId>(0),[rig,setRig]=useState<Rig>("fan");
+  const [sound,setSound]=useState(false),[help,setHelp]=useState(false),[saveError,setSaveError]=useState(false);
+  const [profile,setProfile]=useState(()=>{try{return parseProfile(localStorage.getItem(PROFILE_KEY));}catch{return emptyProfile();}});
+  const [day,setDay]=useState(()=>dailySignal());
+  const [flight,setFlight]=useState<Flight|null>(null),[report,setReport]=useState<FlightReport|null>(null);
+  const [newBest,setNewBest]=useState(false),[earned,setEarned]=useState(0);
+  const chapter=CHAPTERS[mode==="daily"?2:chapterId];
+  const bests=mode==="story"?profile.bests:profile.daily.key===day.key?profile.daily.bests:{};
+  const best=bests[flightKey(chapter.id,rig)];
   useEffect(()=>{window.scrollTo(0,0);},[screen]);
-  const finish=useCallback((stats:ArenaStats)=>{
-    const previous=readBest();
-    setNewBest(stats.score>previous); setBest(Math.max(previous,stats.score));
-    try {localStorage.setItem("rivalghost.practice.best",String(Math.max(previous,stats.score)));} catch { /* Storage is optional. */ }
-    setResult(stats); setScreen("result");
-  },[]);
-  const launch=()=>{setHelp(false);setScreen("run");};
+  useEffect(()=>{if(screen!=="lobby")return;setDay(dailySignal());const id=setInterval(()=>setDay(dailySignal()),30000);return()=>clearInterval(id);},[screen]);
+
+  const launch=()=>{
+    if(mode==="story"&&!isUnlocked(profile,chapter.id))return;
+    const config={chapter:chapter.id,rig,seed:mode==="daily"?day.seed:chapter.seed};
+    const ghost=best?.replay.seed===config.seed?best.replay:undefined;
+    setFlight({config,mode,dailyKey:mode==="daily"?day.key:undefined,ghost});setHelp(false);setScreen("run");
+  };
+  const finish=useCallback((next:FlightReport)=>{
+    if(!flight)return;
+    const key=flightKey(next.result.chapter,next.result.rig);
+    const old=flight.dailyKey?(profile.daily.key===flight.dailyKey?profile.daily.bests[key]:undefined):profile.bests[key];
+    setNewBest(!old||next.result.score>old.score);
+    const updated=recordFlight(profile,next.result,next.replay,flight.dailyKey);
+    setEarned(flight.dailyKey?0:updated.medals[next.result.chapter]&~profile.medals[next.result.chapter]);
+    setProfile(updated);try{localStorage.setItem(PROFILE_KEY,JSON.stringify(updated));setSaveError(false);}catch{setSaveError(true);}
+    setReport(next);setScreen("result");
+  },[flight,profile]);
+  const download=()=>{
+    if(!report)return;
+    const url=URL.createObjectURL(new Blob([JSON.stringify(report.replay,null,2)],{type:"application/json"}));
+    const link=document.createElement("a");link.href=url;link.download=`rivalghost-chapter-${report.result.chapter+1}-${report.result.rig}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
+  const result=report?.result;
+  const playedChapter=result?CHAPTERS[result.chapter]:chapter;
+
   return <main className={`game-shell screen-${screen}`}>
-    <header className="masthead">
-      <a className="wordmark" href="#" onClick={e=>{e.preventDefault();setScreen("lobby");}} aria-label="RivalGhost lobby"><span className="brand-emblem">R↗</span>RIVAL<span>GHOST</span></a>
-      <div className="header-tools"><span className="build-label">ARCADE LAB / 001</span><button className="sound-button" aria-pressed={sound} onClick={()=>setSound(s=>!s)}>SOUND {sound ? "ON ♪" : "OFF"}</button></div>
-    </header>
-    {screen==="lobby" && <>
-      <div className="lobby-grid">
-        <section className="intro-panel">
-          <p className="eyebrow"><span className="tiny-star">✳</span> SIXTY SECONDS. SOMETHING TO PROVE.</p>
-          <h1>FLY CLOSE.<br/>HIT HARD.<br/><em>TAKE OVER.</em></h1>
-          <p className="intro-copy">Thread the fire. Charge your Surge.<br/>Give your rival a score to worry about.</p>
-          <div className="launch-block"><button className="primary-button" onClick={launch}>LET’S PLAY <span>↗</span></button><p>60-second run · Free local practice · No wallet</p></div>
-          <div className="personal-best"><span>YOUR PERSONAL BEST</span><strong>{best ? number(best) : "MAKE YOUR MARK"}</strong></div>
-        </section>
-        <section className="hangar" aria-label={`${rival.name} practice target`}>
-          <div className="hangar-top"><span>MEET YOUR RIVAL</span><span>GHOST DIVISION / 02</span></div>
-          <div className="rival-name" aria-hidden="true">{rival.name}</div>
-          <div className="orbit orbit-one"/><div className="orbit orbit-two"/>
-          <div className="rival-portrait"><Pilot rival/></div>
-          <div className="rival-quote">{rivalIndex ? "“THAT ALL YOU GOT?”" : "“CATCH ME IF YOU CAN.”"}<span>↙</span></div>
-          <div className="pilot-tag">HOUND-CLASS / 02</div>
-          <div className="target-panel"><div><small>SCORE TO BEAT</small><strong>{number(rival.score)}<span>PTS</span></strong></div><div className="target-switch" aria-label="Choose practice target">{rivals.map((r,i)=><button key={r.name} aria-pressed={rivalIndex===i} onClick={()=>setRivalIndex(i)}><b>{r.name}</b><small>{r.label}</small></button>)}</div></div>
-        </section>
+    <header className="masthead"><a className="wordmark" href="#" onClick={e=>{e.preventDefault();setScreen("lobby");}} aria-label="RivalGhost hangar"><span className="brand-emblem">R↗</span>RIVAL<span>GHOST</span></a><div className="header-tools"><span className="build-label">{callsign(profile)} / {medalCount(profile)} {medalCount(profile)===1?"MEDAL":"MEDALS"}</span><button className="sound-button" aria-pressed={sound} onClick={()=>setSound(s=>!s)}>SOUND {sound?"ON ♪":"OFF"}</button></div></header>
+    {saveError&&<p role="status" className="save-notice">This browser couldn’t save your flight. Progress stays available here until you close or reload. You can download the replay from the result.</p>}
+
+    {screen==="lobby"&&<>
+      <div className="mode-switch" aria-label="Game mode"><button aria-pressed={mode==="story"} onClick={()=>setMode("story")}>GHOST SIGNAL <small>STORY / 3 CHAPTERS</small></button><button aria-pressed={mode==="daily"} onClick={()=>setMode("daily")}>DAILY SIGNAL <small>EXPERT / {day.key}</small></button></div>
+      <div className="lobby-grid campaign-lobby">
+        <section className="intro-panel"><p className="eyebrow"><span className="tiny-star">✳</span>{mode==="story"?"YOUR BEST FLIGHT. THEIR DEADLIEST WEAPON.":"ONE SIGNAL. A NEW LINE EVERY DAY."}</p><h1>STEAL YOUR<br/><em>GHOST</em><br/>BACK.</h1><p className="intro-copy">{mode==="story"?"Someone turned your flight recorder into a weapon. Three districts. One signal to break.":"The Ghost Engine changed its pattern. Same seed for today’s runs. How clean can you fly?"}</p><div className="launch-block"><button className="primary-button" onClick={launch}>{mode==="story"?`FLY CHAPTER 0${chapter.id+1}`:"FLY TODAY’S SIGNAL"}<span>↗</span></button><p>60 seconds · {rig.toUpperCase()} rig · Free local play</p></div><div className="personal-best"><span>BEST / THIS RIG</span><strong>{best?number(best.score):"MAKE YOUR MARK"}</strong>{best&&<small>GHOST READY</small>}</div></section>
+        <section className="hangar" aria-label={`${chapter.name} mission`}><div className="hangar-top"><span>INCOMING / HOUND</span><span>{mode==="daily"?"DAILY FREQUENCY":`CHAPTER 0${chapter.id+1}`}</span></div><div className="rival-name" aria-hidden="true">GHOST</div><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="rival-portrait"><Pilot rival/></div><div className="rival-quote">{chapter.id===0?"“THAT SIGNAL KNOWS YOU.”":chapter.id===1?"“STAY OUT OF THE RED.”":"“MAKE IT REGRET IT.”"}<span>↙</span></div><div className="pilot-tag">ENCRYPTED TRANSMISSION / HOUND</div><div className="target-panel"><div><small>{chapter.district.toUpperCase()}</small><strong className="chapter-title">{chapter.name}</strong></div><span className="chapter-number">0{chapter.id+1}</span></div></section>
       </div>
-      <section className="mechanics-strip" aria-label="How to play">
-        <div><span className="mechanic-number">01</span><p><b>FIND YOUR LINE</b><small>Drag or use WASD / arrows. We fire.</small></p></div>
-        <div><span className="mechanic-number">02</span><p><b>FLIRT WITH DANGER</b><small>Move close to bullets. Graze for +250.</small></p></div>
-        <div><span className="mechanic-number">03</span><p><b>GO FULL SURGE</b><small>4 grazes → 3 seconds of double kill score.</small></p></div>
-      </section>
-      <footer className="lobby-footer"><span>ONE ARENA. YOUR NEXT BETTER RUN.</span><button className="text-button" onClick={()=>setHelp(v=>!v)} aria-expanded={help}>{help ? "CLOSE FLIGHT MANUAL −" : "FLIGHT MANUAL +"}</button></footer>
-      {help && <aside className="flight-manual"><h2>A little danger pays.</h2><p>Your craft fires automatically. Move near a passing bullet without touching its center to earn a graze. Keep moving: sitting next to a bullet doesn’t count. Four grazes unlock one Surge per run. Getting hit clears your charge and ends an active Surge.</p><p>Targets change the score to beat, not the arena difficulty. This is a fixed practice arena; HOUND is a score target, not a live opponent. Leaving the window does not pause a run.</p></aside>}
+
+      {mode==="story"&&<section className="chapter-track" aria-label="Story chapters">{CHAPTERS.map(c=><button key={c.id} disabled={!isUnlocked(profile,c.id)} aria-pressed={chapterId===c.id} onClick={()=>setChapterId(c.id)}><span className="chapter-index">0{c.id+1}</span><span><b>{c.name}</b><small>{isUnlocked(profile,c.id)?c.district:`CLEAR CHAPTER 0${c.id} TO UNLOCK`}</small></span><span className="medal-dots" aria-label={`${[1,2,4].filter(bit=>profile.medals[c.id]&bit).length} of 3 medals`}>{[1,2,4].map(bit=><i key={bit} className={profile.medals[c.id]&bit?"won":""}/>)}</span></button>)}</section>}
+      <section className="mission-brief"><div><p className="eyebrow">{mode==="daily"?"DAILY BRIEF / LOCAL RECORD":"MISSION BRIEF"}</p><h2>{chapter.objective}</h2></div><p>{chapter.briefing}</p></section>
+      <section className="rig-section" aria-label="Choose a ship rig"><div className="section-caption"><h2>YOUR SHIP. YOUR LINE.</h2><span>ALL RIGS FREE / POWER RESETS EACH RUN</span></div><div className="rig-grid">{RIGS.map(r=><button key={r.id} aria-pressed={rig===r.id} onClick={()=>setRig(r.id)}><span className={`rig-icon rig-${r.id}`} aria-hidden="true">{r.id==="needle"?"↑":r.id==="fan"?"↖↑↗":"◇"}</span><div><b>{r.name}</b><small>{r.title}</small><p>{r.description}</p></div><span className="rig-check">{rig===r.id?"✓":"+"}</span></button>)}</div><button className="loadout-launch" onClick={launch}>LAUNCH {rig.toUpperCase()} / {mode==="daily"?"DAILY SIGNAL":`CHAPTER 0${chapter.id+1}`} ↗</button></section>
+      <section className="mechanics-strip" aria-label="Flight tactics"><div><span className="mechanic-number">01</span><p><b>BREAK FORMATION</b><small>Rescue couriers. Catch cells to evolve your guns.</small></p></div><div><span className="mechanic-number">02</span><p><b>TURN DANGER INTO POWER</b><small>4 grazes → Surge. Chain kills up to ×5.</small></p></div><div><span className="mechanic-number">03</span><p><b>MAKE AN EXIT</b><small>Space / tap Pulse clears nearby fire.</small></p></div></section>
+      <footer className="lobby-footer"><span>BEST GHOSTS & MEDALS SAVED ON THIS DEVICE</span><button className="text-button" aria-expanded={help} onClick={()=>setHelp(v=>!v)}>{help?"CLOSE FLIGHT MANUAL −":"FLIGHT MANUAL +"}</button></footer>
+      {help&&<aside className="flight-manual"><h2>Don’t just survive. Make a better flight.</h2><p>Drag, WASD, or arrows to steer and aim. Your guns fire upward automatically. The white center is your vulnerable core; wings are cosmetic. Pass near bullets while moving to charge a repeatable Surge. Keep killing to maintain your chain. Hull damage breaks your chain and Surge.</p><p>Gold cells upgrade your gun every two pickups, up to level three. Mint courier pods give 500 points and repair 15 hull. Guard also regains its shield. Pulse clears nearby bullets and damages nearby enemies; it recharges every eight seconds. Yellow lane warnings turn into damaging red beams.</p><p>Defeat the boss and survive the short extraction to clear a chapter. Earn separate medals for clearing, rescuing two couriers, and clearing without hull damage. Your best replay returns as a pale, non-colliding ghost. Daily records are separate from story progression. Escape or Pause stops a flight; switching windows pauses it automatically. These are local records, not verified leaderboards or on-chain rewards.</p></aside>}
     </>}
-    {screen==="run" && <div className="run-layout">
-      <aside className="run-brief"><p className="eyebrow">PRACTICE / FIXED ARENA</p><h1>MAKE<br/>IT <em>COUNT.</em></h1><div className="small-pilot"><Pilot/></div><p className="pilot-label">YOU / ROOKIE ACE</p><p>Stay moving. Pass close.<br/>Make every graze count.</p><button className="text-button" onClick={()=>setScreen("lobby")}>← EXIT RUN</button></aside>
-      <ArenaPrototype onFinish={finish} target={rival.score} sound={sound}/>
-      <aside className="run-guide"><p className="eyebrow">YOUR RIVAL</p><h2>{rival.name}</h2><strong className="guide-target">{number(rival.score)}</strong><small>POINTS TO BEAT</small><hr/><h3>4 GRAZES.<br/>ONE BIG MOMENT.</h3><p>Fill your charge. Surge doubles takedown points for 3 seconds.</p><div className="keycaps"><kbd>W</kbd><span><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></div><p className="control-note">Arrows or drag work too.<br/>Auto-fire is on.</p></aside>
-    </div>}
-    {screen==="result" && result && <section className={`result-layout ${result.score>rival.score ? "result-win" : ""}`}>
-      <div className="result-art"><span className="result-stamp">{result.score>rival.score ? "TARGET / TOPPLED" : "REMATCH / READY"}</span><Pilot rival={result.score<=rival.score}/><p>{result.score>rival.score ? "“OKAY. NOW YOU HAVE MY ATTENTION.”" : "“YOU’VE GOT ANOTHER RUN IN YOU.”"}</p></div>
-      <div className="result-detail"><p className="eyebrow">{newBest ? "✳ NEW PERSONAL BEST" : "PRACTICE RUN COMPLETE"}</p><h1>{result.score>rival.score ? <>RIVAL.<br/><em>OUTSCORED.</em></> : <>{rival.name}<br/><em>HOLDS ON.</em></>}</h1><div className="final-score">{number(result.score)}<small>POINTS</small></div><p className="score-gap">{result.score>rival.score ? `${number(result.score-rival.score)} above the target. That’s your line to beat.` : `${number(Math.max(0,rival.score-result.score+1))} more points to beat ${rival.name}. ${result.surgeActivations ? "Keep the hull intact. Find a cleaner line." : "Chase four grazes for your Surge."}`}</p><dl className="result-stats"><div><dt>GRAZES</dt><dd>{result.grazes}</dd></div><div><dt>SURGES</dt><dd>{result.surgeActivations}</dd></div><div><dt>TAKEDOWNS</dt><dd>{result.enemiesDestroyed}</dd></div></dl><button className="primary-button" onClick={launch}>RUN IT BACK <span>↻</span></button><button className="text-button result-back" onClick={()=>setScreen("lobby")}>← BACK TO HANGAR</button><p className="replay-note">LOCAL PRACTICE {result.replayHash ? ` / REPLAY ${result.replayHash.slice(0,12).toUpperCase()}` : ""}</p></div>
-    </section>}
+
+    {screen==="run"&&flight&&<div className="run-layout"><aside className="run-brief"><p className="eyebrow">{flight.mode==="daily"?"DAILY SIGNAL":`GHOST SIGNAL / 0${flight.config.chapter+1}`}</p><h1>{CHAPTERS[flight.config.chapter].name.split(" ").map((word,i)=><span className={i?"accent":""} key={word}>{word}<br/></span>)}</h1><div className="small-pilot"><Pilot/></div><p className="pilot-label">{flight.config.rig.toUpperCase()} / {callsign(profile)}</p><p>Move to aim. Rescue the couriers.<br/>Space or tap Pulse to break through.</p><button className="text-button" onClick={()=>setScreen("lobby")}>← EXIT FLIGHT</button></aside><ExpeditionArena config={flight.config} sound={sound} ghost={flight.ghost} onFinish={finish}/><aside className="run-guide"><p className="eyebrow">MISSION</p><h3>{CHAPTERS[flight.config.chapter].objective}</h3><hr/><div className="radio-message"><span>HOUND / OPEN CHANNEL</span><p>{profile.attempts[flight.config.chapter]>0?"“You’ve seen their line. This time, make them follow yours.”":"“Couriers in mint. Power cells in gold. Bring them home.”"}</p></div><h3 className="tactic-title">CATCH CELLS.<br/>CHANGE THE FIGHT.</h3><p>Two cells evolve your guns.<br/>Rescues repair your hull.</p>{flight.ghost&&<p className="ghost-legend">△ Pale outline = your best flight. It cannot hit you.</p>}</aside></div>}
+
+    {screen==="result"&&result&&report&&flight&&<section className={`result-layout campaign-result ${result.cleared?"result-win":""}`}><div className="result-art"><span className="result-stamp">{result.cleared?"SIGNAL / BROKEN":result.health===0?"FLIGHT / LOST":"SIGNAL / STILL ACTIVE"}</span><Pilot rival={!result.cleared}/><p>{result.cleared?"“YOUR GHOST. YOUR RULES.”":"“YOU GOT OUT ONCE. YOU’LL FIND THE LINE.”"}</p><div className="story-reveal"><small>{result.cleared?"TRANSMISSION RECOVERED":"CHANNEL STILL OPEN"}</small><p>{result.cleared?playedChapter.ending:result.rescues>0?`${result.rescues} courier${result.rescues===1?" is":"s are"} safe. ${playedChapter.transmission}`:playedChapter.transmission}</p></div></div><div className="result-detail"><p className="eyebrow">{newBest?"✳ NEW BEST / GHOST READY":`${playedChapter.name} / ${result.rig.toUpperCase()}`}</p><h1>{result.cleared?<>GHOST.<br/><em>RECLAIMED.</em></>:<>FIND A<br/><em>NEW LINE.</em></>}</h1><div className="final-score">{number(result.score)}<small>POINTS</small></div><p className="score-gap">{result.cleared?(flight.mode==="daily"?"Today’s signal is down. Your best ghost is ready for a rematch.":result.chapter<2?`${CHAPTERS[result.chapter+1].name} unlocked. The signal goes deeper.`:"Ghost Signal complete. Chase the remaining medals or take on the daily signal."):result.health===0?"Try pulsing before a cluster reaches you. Rescue pods repair your hull.":"The boss held the signal. Line up beneath it and collect cells to strengthen your gun."}</p><dl className="result-stats"><div><dt>RESCUES</dt><dd>{result.rescues}/3</dd></div><div><dt>MAX CHAIN</dt><dd>×{result.maxCombo}</dd></div><div><dt>SURGES</dt><dd>{result.surges}</dd></div></dl>{flight.mode==="story"&&<div className="medal-results" aria-label="Chapter medals">{medalNames.map((name,i)=><p key={name} className={profile.medals[result.chapter]&(1<<i)?"earned":""}><span>{profile.medals[result.chapter]&(1<<i)?"◆":"◇"}</span>{name}{Boolean(earned&(1<<i))&&<b>NEW</b>}</p>)}</div>}<button className="primary-button" onClick={launch}>RACE MY BEST GHOST <span>↻</span></button>{result.cleared&&flight.mode==="story"&&result.chapter<2&&<button className="next-chapter" onClick={()=>{setChapterId((result.chapter+1) as ChapterId);setScreen("lobby");}}>NEXT / {CHAPTERS[result.chapter+1].name} →</button>}<div className="result-actions"><button className="text-button" onClick={()=>setScreen("lobby")}>← HANGAR / CHANGE RIG</button><button className="text-button" onClick={download}>SAVE REPLAY ↓</button></div><p className="replay-note">LOCAL RULES V2 {report.hash?` / ${report.hash.slice(0,12).toUpperCase()}`:""}</p></div></section>}
   </main>;
 }

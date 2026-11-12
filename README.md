@@ -1,6 +1,6 @@
 # RivalGhost
 
-RivalGhost is a 60-second arcade rivalry game being built for NEAR testnet. The intended competitive loop is to beat a recorded rival run, claim its Crown and Bounty, and leave the next challenger a replay to beat. The current browser build is free local practice with fixed Pup and HOUND score targets.
+RivalGhost is a 60-second arcade rivalry game being built for NEAR testnet. The browser now includes **Ghost Signal**, a three-chapter local campaign: rescue couriers, evolve your weapons, break a boss signal, and race your saved best ghost. A UTC-seeded daily signal offers a separate expert run. The intended on-chain Crown loop remains a separate versioned competition.
 
 ## Workspace
 
@@ -26,6 +26,10 @@ Copy the relevant `.env.example` file before configuring a verifier or relayer. 
 
 ## Current scope
 
-Drag or use WASD/arrows to steer; firing is automatic. Graze bullets while moving to earn points. Four grazes unlock one three-second Surge per run, doubling takedown points. Practice needs no wallet and makes no contract calls. Results save a local personal best and show a replay hash, not an on-chain settlement claim. See [the arcade design pass](docs/arcade-design-pass.md) for the visual direction, implemented feedback, and remaining playtesting.
+Drag or use WASD/arrows to steer and aim; firing is automatic. Press Space or tap Pulse to clear nearby fire. Collect two gold cells to evolve your weapon. Mint rescue pods repair hull. Four moving grazes trigger a repeatable three-second Surge; chained kills build a multiplier up to five. Bosses change patterns at half health, and yellow laser lanes warn before firing.
+
+Choose Needle, Fan, or Guard before a flight. Each chapter offers clear, rescue, and no-hull-damage medals. Clearing a chapter unlocks the next. A boss clear ends after a short extraction, with a maximum mission length of 60 seconds. Escape or Pause stops the action, and leaving the window pauses automatically. Personal best replays are separated by chapter and rig; daily records are also separated by UTC date. The pale ghost is a previous local flight and cannot collide with you. Profile data stays on this device and is not trusted for competitive rewards.
+
+The expedition uses rules version 2; the existing Crown simulator and contract remain on version 1. Campaign flights make no contract calls and cannot be issued a v1 settlement certificate. See [the gameplay research and expansion plan](docs/ghost-signal-design.md) for design sources and the future competitive v2 integration gate. [The earlier visual pass](docs/arcade-design-pass.md) records the established art direction.
 
 The first vertical slice is testnet-only. Credits are game credits with no cash value. Contract deployment, account funding, and public publishing happen only after explicit approval.

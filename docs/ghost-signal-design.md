@@ -25,9 +25,11 @@ Three 60-second chapters follow a repeating distress signal through the Relay Ya
 3. Break formation to collect power cells or rescue falling courier pods. Two cells increase weapon level, up to three. A rescue repairs hull and adds points.
 4. Graze four bullets while moving to trigger a repeatable three-second Surge. Keep kills flowing for a capped five-times combo; taking damage resets the combo.
 5. Use a pulse with Space or the touch button: clear nearby bullets, damage nearby enemies, and gain a brief protected window. It recharges in eight seconds of simulation time.
-6. Read laser warning lanes and fight a moving boss whose attack pattern changes at half health. Defeat it and survive the extraction to clear the chapter.
+6. Read laser warning lanes and fight a moving boss whose attack pattern changes at half health. Defeat it and survive a two-second extraction to clear the chapter. A mission lasts at most 60 seconds; early boss clears do not force an empty wait.
 
 Enemy movement, shots, pickups, hazards, pulses, and outcomes all run in the shared deterministic simulator. The renderer adds no damaging objects of its own.
+
+Escape or Pause freezes the local flight, ghost, and cooldowns. Leaving the window pauses automatically; resuming is explicit. Pauses add no simulation ticks, so the recorded active inputs still reproduce the outcome.
 
 ## Reasons to return
 
@@ -35,6 +37,7 @@ Enemy movement, shots, pickups, hazards, pulses, and outcomes all run in the sha
 - **Between runs:** unlock the next chapter; earn three medals per chapter (clear, two rescues, no hull damage); compare personal bests separately per chapter and rig.
 - **On another day:** a UTC-date seeded signal, with a separate local best for each rig. It is a repeatable local challenge, not a claimed global leaderboard.
 - **After the story:** master unearned medals and try another rig. The campaign ends honestly after chapter three.
+- **RivalGhost-specific rematch:** the highest-scoring saved replay for the same mission, seed, and rig is re-simulated alongside the next flight. Its pale non-colliding craft and live score difference give the player a concrete line to beat. Daily ghosts are separated by UTC date.
 
 ## Replay and contract boundary
 
@@ -52,3 +55,11 @@ The current contract supports fixed-loadout Crown v1. Campaign results must neve
 ## Playtest gates
 
 Watch five new players without explaining the controls. Can they move, identify a rescue, and use pulse in their first run? Can they explain why a hit happened? Do they retry voluntarily? Track first rescue, first weapon upgrade, boss reach/clear, chosen rig, and voluntary second run with consent before drawing conclusions about engagement. Tune cadence and warnings from these observations rather than adding more systems by default.
+
+## Implementation validation — November 12, 2026
+
+- Full workspace type checking, 25 tests, and production build pass.
+- Input-only automated pilots clear all nine chapter/rig combinations without mutating the game state; the final-chapter Fan route rescues three couriers, reaches weapon level three, and activates Surge more than once. This is an attainability check, not a substitute for human balance testing.
+- Full browser flights exercised chapter-one clear, a failed rematch, medal persistence, chapter-two unlock, saved-ghost rendering and score comparison, pulse cooldown, pause/resume, and daily launch with Guard's shield.
+- A portrait viewport check confirms no horizontal overflow and keeps Pulse reachable. Physical phone touch feel and audible sound quality still require human testing.
+- Contract storage and transactions are unchanged. No deployment or funding was performed. Local progression and daily scores are not a trusted leaderboard.
