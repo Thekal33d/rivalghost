@@ -1,5 +1,6 @@
 import {createServer,type IncomingMessage,type ServerResponse} from "node:http";
 import {SocialService,SocialError} from "./social.js";
+import {EconomyService,EconomyError,simulateEconomyWeek} from "./economy.js";
 import {GuestService} from "./guest-service.js";
 import type {Guest} from "./guest-store.js";
 export interface VerificationGateway {verify(guest:Guest,submission:{challengeId:string;replay:unknown}):Promise<unknown>}
@@ -9,10 +10,13 @@ async function json(req:IncomingMessage){const chunks:Buffer[]=[];let size=0;for
 export function createGuestServer(service:GuestService,gateway?:VerificationGateway){
   const store=service.store,social=new SocialService(store),secure=store.origin.startsWith("https:");
   const cookie=(value:string,age=43200)=>`rg_guest=${value}; HttpOnly; SameSite=Strict; Path=/api/guest; Max-Age=${age}${secure?"; Secure":""}`;
+  let economy:EconomyService|undefined;
+  const pit=()=>economy??(economy=new EconomyService(store));
   const server=createServer(async(req,res)=>{
     try {
     const session=token(req),guest=store.session(session);
     if(req.method==="GET"&&req.url==="/api/guest/me"){send(res,200,{guest,onlineAvailable:service.configured});return;}
+    if(req.method==="GET"&&req.url==="/api/guest/economy"){store.rate("pit-read-global",180);store.rate("pit-read-ip:"+req.socket.remoteAddress,60);send(res,200,pit().view(guest));return;}
     if(req.method==="GET"&&req.url?.startsWith("/api/guest/social/")){
       store.rate("social-read-global",300);store.rate("social-read-ip:"+req.socket.remoteAddress,90);
       const url=new URL(req.url,store.origin);
@@ -33,6 +37,11 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
         const signed=store.authenticate(input.nonce,input.publicKey,input.signature);send(res,200,{guest:signed.guest,onlineAvailable:service.configured},cookie(signed.token));return;
       }
       if(!guest){send(res,401,{error:"Reconnect your saved pilot"});return;}
+      if(req.url==="/api/guest/economy/join"){send(res,200,pit().join(guest));return;}
+      if(req.url==="/api/guest/economy/start"){send(res,200,pit().start(guest,input.crown));return;}
+      if(req.url==="/api/guest/economy/settle"){send(res,200,pit().settle(guest,input.id,input.replay));return;}
+      if(req.url==="/api/guest/economy/defend"){send(res,200,pit().defend(guest,input.crown));return;}
+      if(req.url==="/api/guest/economy/lab"){store.rate("pit-lab-global",3);send(res,200,simulateEconomyWeek());return;}
       if(req.url==="/api/guest/social/profile"){send(res,200,{profile:social.saveProfile(guest,input)});return;}
       if(req.url==="/api/guest/social/publish"){send(res,200,social.publish(guest,input));return;}
       if(req.url==="/api/guest/social/rival"){send(res,200,social.follow(guest,input.id,input.follow));return;}
@@ -47,6 +56,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
         try{send(res,200,await gateway.verify(guest,{challengeId:input.challengeId,replay:input.replay}));}catch{send(res,503,{error:"Replay verification is unavailable or rejected. No settlement was claimed."});}return;
       }
       send(res,404,{error:"Route not found"});
-    }catch(error){send(res,error instanceof Error&&/Too many attempts/.test(error.message)?429:400,{error:error instanceof SocialError?error.message:error instanceof Error&&/attempts|capacity|proof|public key/.test(error.message)?error.message:"Invalid guest request"});}
-  });server.requestTimeout=10000;server.headersTimeout=5000;server.timeout=20000;server.maxHeadersCount=30;return server;
+    }catch(error){send(res,error instanceof Error&&/Too many attempts/.test(error.message)?429:400,{error:error instanceof SocialError||error instanceof EconomyError?error.message:error instanceof Error&&/attempts|capacity|proof|public key/.test(error.message)?error.message:"Invalid guest request"});}
+  });server.requestTimeout=10000;server.headersTimeout=5000;server.timeout=20000;server.maxHeadersCount=30;
+  const heartbeat=setInterval(()=>{try{economy?.tick();}catch{console.error('HOUND tick failed; no partial economy write committed.');}},15000);heartbeat.unref();server.on('close',()=>clearInterval(heartbeat));return server;
 }
