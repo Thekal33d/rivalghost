@@ -4,13 +4,15 @@
 
 The playable local alpha now includes ten Ghost Signal chapters, three rigs, thirty medals, personal best ghosts and a daily challenge. The frontend uses React and Canvas with the approved illustrated arcade style; earlier Phaser/pixel-art items below are historical planning choices, not the current implementation.
 
-Phase 0 and the deterministic simulation foundation are implemented. Game-client work is substantially playable locally. Crown v1 / expedition v2 mission binding, finalized RPC reads, an internal authenticated HTTP verifier, replay storage and wallet transport now exist. Local guest authentication, the verifier gateway and an opt-in testnet provisioning adapter are implemented. Real provisioning validation, the sponsored relay, browser competitive flow, autonomous HOUND and deployed end-to-end integration remain unfinished. This is **not yet a testnet release candidate**.
+Phase 0 and the deterministic simulation foundation are implemented. Game-client work is substantially playable locally. Crown v1 / expedition v2 mission binding, finalized RPC reads, an internal authenticated HTTP verifier, replay storage and wallet transport now exist. Local guest authentication, the verifier gateway and an opt-in testnet provisioning adapter are implemented. Real provisioning validation, the sponsored relay, on-chain browser competitive flow, funded NEAR HOUND execution and deployed end-to-end integration remain unfinished. This is **not yet a testnet release candidate**.
 
 The local campaign now uses versioned v3 chapter twists and a full-window responsive flight camera; v2 competitive behavior and original ghosts remain separate. See [the immersive update](docs/immersive-flight.md).
 
 Pilot identities, free avatar customization, replay-checked shared boards, rival lists and ghost challenges are now implemented off-chain. Public social use still needs hosting and multi-device validation. See [social play](docs/social-play.md).
 
-See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 67 TypeScript tests plus production build/type checking, and ten Rust contract tests pass. The optimized 171,283-byte Wasm artifact fails the unchanged 100,000-byte ceiling. Live storage/gas measurements and physical-device playtests remain outstanding.
+See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 75 TypeScript tests plus production build/type checking, and 12 Rust contract tests pass. The optimized 171,363-byte Wasm artifact fails the unchanged 100,000-byte ceiling. Live storage/gas measurements and physical-device playtests remain outstanding.
+
+Local HOUND competition is now implemented with a finite persistent Crown ledger, real input-only ghosts, autonomous bounded counterattacks, honest receipts and an isolated seven-day workbench. This is not yet NEAR wallet execution. See [the economy milestone](docs/economy-npc.md).
 
 ## Overview
 

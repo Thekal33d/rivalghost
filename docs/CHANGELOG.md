@@ -1,5 +1,14 @@
 # Changelog
 
+## November 12, 2026 — Crown economy and autonomous local HOUND
+
+- Corrected the contract to block empty-bounty challenges and premature defense.
+- Added a finite server-authoritative demo CR ledger, reserved flights, replay-bound/idempotent receipts, optional defense and expiry refunds.
+- Added three input-only HOUND styles, autonomous counterflights with reserve/daily/cooldown limits and visible factual reasoning.
+- Added the responsive Crown Pit, pause-aware reservation timer, recovered result retries and isolated seven-day economy workbench.
+- Verified 75 TypeScript tests, 12 Rust tests, build/type checks, optimized Wasm smoke equivalence and browser grant/flight/loss flow.
+- Kept NEAR spending disabled. The 171,363-byte optimized contract still fails the original 100,000-byte gate; deployed NPC wallets and v3 settlement remain pending.
+
 ## November 12, 2026 — Pilot identities and social rivalry
 
 - Added editable unique usernames and 36 free avatar combinations, shown in profiles, navigation, results and leaderboard entries.

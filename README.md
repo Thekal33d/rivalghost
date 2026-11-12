@@ -32,6 +32,12 @@ See [the development checkpoint](docs/development-status.md) for implemented fea
 
 Open **Your Pilot** to set a username and customize armor, helmet and insignia. The **Leaderboard** shows real, server-replayed submissions by chapter and rig. Post a finished flight or a saved best to create a ghost challenge; add other pilots as rivals and race their recorded lines. See [social play](docs/social-play.md) for endpoints, quotas and the hosting boundary. The local preview has no invented players, and localhost links need public hosting before friends elsewhere can use them.
 
+## Crown economy and NPC
+
+Open **Crown Pit** with the guest service running. Claim 100 demo CR once, reserve a HOUND ghost challenge for 10 CR, and receive a replay-checked local ledger receipt. A winner chooses whether to fund a 20 CR defense. HOUND makes autonomous, budget-limited counterflight decisions using its own finite ledger balance. The seven-day workbench simulates the economy without changing player balances. See [the NPC economy design and evidence](docs/economy-npc.md).
+
+This is a **local server-ledger economy**, not a deployed NEAR wallet or transferable item market. No gas is spent. It does not yet establish full track readiness: testnet NPC signing, protocol promotion, sponsorship, public hosting and anti-abuse validation remain outstanding. The contract does include the corrected empty-bounty/defense rules.
+
 ## Current scope
 
 Drag or use WASD/arrows to steer and aim; firing is automatic. Press Space or tap Pulse to clear nearby fire. Collect two gold cells to evolve your weapon. Mint rescue pods repair hull. Four moving grazes (three in Null Choir) trigger a repeatable three-second Surge; chained kills build a multiplier up to five. Bosses change patterns at half health, and yellow laser lanes warn before firing.
@@ -42,4 +48,4 @@ The browser campaign now uses local rules version 3 with ten distinct chapter tw
 
 The first vertical slice is testnet-only. Credits are game credits with no cash value. Contract deployment, account funding, and public publishing happen only after explicit approval.
 
-See [the verifier runbook](docs/verifier-runbook.md) for startup, internal-service authentication, finalized transaction recovery, and remaining integration gates. `pnpm contract:size` enforces the original 100,000-byte deployment ceiling; the current 171,283-byte optimized artifact fails that gate. No deployment has occurred.
+See [the verifier runbook](docs/verifier-runbook.md) for startup, internal-service authentication, finalized transaction recovery, and remaining integration gates. `pnpm contract:size` enforces the original 100,000-byte deployment ceiling; the current 171,363-byte optimized artifact fails that gate. No deployment has occurred.

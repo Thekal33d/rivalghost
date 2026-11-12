@@ -5,10 +5,13 @@ import { drawExpedition } from "./expedition-art";
 import {flightView,worldPoint,screenDirection} from "./flight-view";
 
 export interface FlightReport { result:ExpeditionResult; replay:ExpeditionReplay; hash:string }
-interface Props { pilotName?:string; ghostLabel?:string; config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
+interface Props { reservationExpires?:number; pilotName?:string; ghostLabel?:string; config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
 const keysOfMovement=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"]);
 
-export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,pilotName,ghostLabel="BEST"}:Props) {
+export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,reservationExpires,pilotName,ghostLabel="BEST"}:Props) {
+  const [wallClock,setWallClock]=useState(Date.now);
+  useEffect(()=>{if(!reservationExpires)return;const timer=setInterval(()=>setWallClock(Date.now()),1000);return()=>clearInterval(timer);},[reservationExpires]);
+  const reservedSeconds=reservationExpires?Math.max(0,Math.ceil((reservationExpires-wallClock)/1000)):0;
   const stageRef=useRef<HTMLElement>(null);
   const [wide,setWide]=useState(false),[fullError,setFullError]=useState("");
   const canvasRef=useRef<HTMLCanvasElement>(null),soundRef=useRef(sound),pulseRef=useRef(false),pauseRef=useRef(false);
@@ -90,7 +93,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,pilo
   const boss=hud.foes.find(f=>f.kind==="boss"),hp=boss?Math.ceil(100*boss.hp/boss.maxHp):0,sector=flightSector(hud.tick),target=grazeTarget(config.chapter,config.rulesVersion??2);
   const sectorAge=hud.tick-(sector===0?0:sector===1?1200:2400);
   const fullscreen=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await stageRef.current?.requestFullscreen();setFullError("");}catch{setFullError("Fullscreen is unavailable here. The arena already fits this window.");}};
-  return <section ref={stageRef} className={`arena-stage expedition-stage immersive-flight ${wide?"flight-wide":"flight-portrait"} ${hud.surge>0?"is-surge":""}`} aria-label="Ghost Signal arena">
+  return <section ref={stageRef} className={`arena-stage expedition-stage immersive-flight ${wide?"flight-wide":"flight-portrait"} ${hud.surge>0?"is-surge":""} ${reservationExpires?"has-reservation":""}`} aria-label="Ghost Signal arena">
     <header className="flight-topbar">
       <button className="flight-exit" onClick={onExit} aria-label="Exit flight">← <span>HANGAR</span></button>
       <div className="flight-identity"><small>{pilotName?`@${pilotName}`:"GHOST SIGNAL"} / {String(chapter.id+1).padStart(2,"0")}</small><b>{chapter.name}</b></div>
@@ -111,6 +114,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,pilo
       {count===0&&!paused&&sectorAge<150&&<div className="sector-banner" key={sector}><small>{sector===2?"BOSS CONTACT":`SECTOR 0${sector+1}`}</small><h2>{sector===2?chapter.boss:district.route[sector]}</h2><p>{sector===2?"Stay on target. Watch the warning lanes.":district.cue}</p></div>}
       {count>0&&<div className="launch-countdown"><span>{chapter.name} / {district.name}</span><strong key={count}>{count}</strong><small>{wide?"FLY RIGHT / WASD TO STEER":"FLY UP / DRAG TO STEER"} · SPACE / TAP TO PULSE</small><p>{district.twist}</p></div>}
       {paused&&<div className="flight-paused"><span>FLIGHT PAUSED / {chapter.name}</span><h2>HOLD YOUR<br/>FLIGHT LINE.</h2><p>{district.twist}</p><button onClick={togglePause}>RESUME FLIGHT →</button><button className="pause-exit" onClick={onExit}>RETURN TO HANGAR</button><small>ESC TO RESUME</small></div>}
+      {reservationExpires&&<p className="pit-flight-timer">{reservedSeconds>0?`ENTRY HELD / ${Math.floor(reservedSeconds/60)}:${String(reservedSeconds%60).padStart(2,'0')} · pauses still count`:'ENTRY EXPIRED / check refund in Crown Pit'}</p>}
       {fullError&&<button className="fullscreen-note" onClick={()=>setFullError("")}>{fullError} ×</button>}
     </div>
     <footer className="flight-dashboard">
