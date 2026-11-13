@@ -75,8 +75,8 @@ Keep local demo usable until on-chain mode is validated. Deploy to a new testnet
 - [x] Inspect existing implementation, budget and deployment state.
 - [x] Compact v3 contract builds below 100,000 bytes (98,677 bytes).
 - [x] Core conservation, ownership, signed result/action and bounded-history Wasm checks pass; live two-player integration also passes.
-- [ ] Auth sponsor and real callback validated.
-- [x] Browser economic actions route to the signed relay; NPC actions settle on-chain. Human browser spending awaits personal login.
+- [x] Auth sponsor and localhost callback validated. Hosted callback remains pending.
+- [x] Browser economic actions route to the signed relay; NPC actions settle on-chain. Browser job rewards and MOTH spending are verified.
 - [x] Real runtime gas/storage and bounded growth measured.
 - [x] Public testnet economic end-to-end receipts recorded with isolated test identities.
 - [ ] Public hosting configured.
@@ -94,7 +94,7 @@ Keep local demo usable until on-chain mode is validated. Deploy to a new testnet
 
 ## Open Questions
 - [x] Fresh economy used; no demo assets imported.
-- [ ] Final domain and VPS deployment access/method; existing CX23 server capacity alone is not a deployment configuration.
+- [x] Final domain is rivalghost.xyz; existing Hetzner access verified and isolated staging installed.
 - [x] Dedicated auth/game/NPC accounts, protected key files and measured testnet allowance.
 
 ## Decision Log
@@ -108,3 +108,6 @@ Keep local demo usable until on-chain mode is validated. Deploy to a new testnet
 
 ## November 13 live checkpoint
 User approved up to 4 test NEAR; 3.3 allocated across game/auth/relay/HOUND/MOTH accounts, plus account-creation fees. Final 98,677-byte upgrade preserves state. Callback corrected to the official localhost:3000 root; real login form reached, personal login pending. 114 application tests pass. No paid AI calls or mainnet spending in this milestone.
+
+## November 13 hosting checkpoint
+Private Hetzner staging is running with a restricted systemd service, loopback-only API, trusted proxy handling and verified SQLite backup/restore. Prior application services were retired after rollback verification; its database and backup schedule remain retained. The creator reports craft/equip and recovery tests passed. The final domain is rivalghost.xyz (Namecheap). DNS and hosted callback allowlisting are pending; a provider preflight rejected the public callback. No live player database or signer credentials have moved yet. 133 application tests, typechecks and builds pass. Social browser testing is deferred until public cutover. See docs/hetzner-deployment.md for the remaining sequence.

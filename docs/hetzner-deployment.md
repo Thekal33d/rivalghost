@@ -19,3 +19,19 @@ The SQLite backup script uses the online backup API, verifies integrity, publish
 Before public cutover, configure the final HTTPS domain and an accepted NEAR Auth callback. Stop the previous signer process, reconcile uncertain transactions, and migrate the consistent live database, required protected credentials and budgets. Keep only one active process per signing key. Set the exact application origin, switch the backup source to the live database and test authentication and recovery from the public URL. Keep credentials and machine-specific access/rollback details out of the public repository.
 
 Initially use DNS-only unless trusted Cloudflare proxy ranges and caching are explicitly configured and verified. Never trust arbitrary client-provided forwarding headers.
+
+## November 13 checkpoint
+
+The isolated Hetzner preview and API are running. Health, static delivery, proxy-header spoof rejection, resource limits and SQLite snapshot restoration passed. The previous application's web, worker and browser services were stopped and disabled after its archive and database restore were verified. Its database service and existing backup schedule remain available for rollback. Machine-specific access details and protected backup locations stay in the operator's private runbook.
+
+The selected public domain is **rivalghost.xyz**, purchased through Namecheap. Public DNS returned NXDOMAIN at the initial check. With Namecheap BasicDNS, add an apex A record pointing to the existing server's public IPv4; remove conflicting apex parking/redirect records. The operator has the address privately. Leave IPv6 and www unconfigured until explicitly tested. Cloudflare is optional for the first cutover; changing nameservers is unnecessary if using BasicDNS.
+
+`deploy/Caddyfile.public` prepares automatic HTTPS and same-origin API routing. It is a pending configuration, not proof of public availability. Before importing it, migrate the live service consistently and set `APP_ORIGIN=https://rivalghost.xyz`. The private staging database must never replace the real player database.
+
+A non-authenticated authorization preflight returned HTTP 403 / **Callback URL mismatch** for `https://rivalghost.xyz/auth/callback`. Request that the NEAR Auth testnet provider register this exact callback and the web origin `https://rivalghost.xyz`, preserving the existing testnet identity provider. Do not substitute the localhost callback in a public build. No sign-in, transaction or paid inference was performed in this preflight.
+
+Suggested provider request (send manually):
+
+> We are building RivalGhost for the NEAR hackathon on testnet. Please allow `https://rivalghost.xyz/auth/callback` as a callback and `https://rivalghost.xyz` as a web origin for testnet client `np8paqIpMWmNbzT4xAvOOapZBjsOpptl`, or provide an app-specific client on the same testnet provider. OIDC PKCE identity login and explicit delegate-action signing work at localhost:3000; the hosted callback currently returns Callback URL mismatch. We need to preserve existing testnet player identities. This is not a request to migrate to mainnet.
+
+Reference: [official testnet configuration](https://docs.auth.near.org/resources/testnet). The documented [production-access form](https://docs.auth.near.org/home/apply) concerns mainnet; testnet hosted-origin support needs confirmation from the provider.

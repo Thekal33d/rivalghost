@@ -2,7 +2,7 @@
 
 November 13, 2026
 
-**Stage: playable game with a deployed, integrated NEAR testnet economy.** Personal NEAR Auth login and game-session authorization are verified live. Public hosting and a human browser job/claim remain next.
+**Stage: playable game with a deployed, integrated NEAR testnet economy.** Personal NEAR Auth login and game-session authorization are verified live. Browser job reward and MOTH sale receipts are verified. The creator reports craft/equip and account recovery tests passed. Private Hetzner staging is running; public DNS, hosted authentication and live-data cutover remain next.
 
 ## Implemented
 
@@ -18,14 +18,14 @@ November 13, 2026
 
 ## Evidence
 
-`pnpm check`: 130 tests plus typechecks/builds pass. `pnpm economy:check`: 20 native Rust tests across crates, raw/optimized Wasm parity, 34 rejected calls per artifact and bounded repeated-job storage. Live testnet receipts and measured gas are in `docs/evidence/economy-v3-testnet.json`. Personal sign-in/session evidence is in `docs/evidence/near-auth-live-testnet.json`. See [contract review](contract-review.md).
+`pnpm check`: 133 tests plus typechecks/builds pass. `pnpm economy:check`: 20 native Rust tests across crates, raw/optimized Wasm parity, 34 rejected calls per artifact and bounded repeated-job storage. Live testnet receipts and measured gas are in `docs/evidence/economy-v3-testnet.json`. Personal sign-in/session evidence is in `docs/evidence/near-auth-live-testnet.json`. See [contract review](contract-review.md).
 
 The creator authorized up to 4 test NEAR; 3.3 allocated, plus approximately 0.035575 account-creation fees. No mainnet transfers. One paid NEAR AI decision succeeded in the earlier milestone; recurring inference stays disabled and no additional AI credit was used here.
 
 ## Next
 
-1. Complete a human browser Workshop job/claim with the verified pilot. The first grant is confirmed at 100 CR. Then test logout and second-device recovery.
-2. Choose the public hostname and provide an existing SSH alias/deployment method for the shared Hetzner server. Inspect capacity, isolate RivalGhost, back up SQLite/replays and register the exact hosted callback/origin.
+1. Point the purchased `rivalghost.xyz` domain to the existing Hetzner server. The isolated private preview, health checks, proxy handling and restored SQLite backup are verified. The previous app is retired with rollback data retained.
+2. Register the exact hosted NEAR Auth callback/origin: provider preflight currently rejects the callback. Then migrate the live database and protected keys with one active signer, enable HTTPS, and repeat login/recovery plus the deferred two-player browser test online.
 3. Add the separately bounded operator path for AI decisions to update contract focus before calling inference-driven economic behavior live. Stake-to-compute remains future work.
 4. Human difficulty/retention tests, real-phone performance and fresh-player public rehearsal; capture actual gameplay and receipts for judges.
 
