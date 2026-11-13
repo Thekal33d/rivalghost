@@ -53,7 +53,7 @@ The browser hashes the canonical UTF-8 JSON bytes it submits. The verifier expan
 
 ### Focus and interruption
 
-A competitive run never pauses. If the window loses focus, the client records neutral input for elapsed fixed ticks and shows the player that the timer is still live. A new challenge cannot be opened while one is unresolved. If the client cannot obtain a valid settlement certificate, the challenge remains unresolved until its 120-second expiry, then the documented expiry path returns the 10 CR entry; it is never shown as a loss.
+A competitive run never pauses. If the window loses focus, the client records neutral input for elapsed fixed ticks and shows the player that the timer is still live. A new challenge cannot be opened while one is unresolved. If the client cannot obtain a valid settlement certificate, the challenge remains unresolved until its 120-second expiry. At that deadline the 10 CR entry is forfeited: 8 CR to the bounty and 2 CR to the holder. Show an expired/forfeited result, not a verified gameplay loss.
 
 ## Combat and score
 
@@ -116,9 +116,9 @@ Each eligible guest account receives one 100 CR grant. Practice has no CR moveme
 | --- | --- | --- |
 | Win: challenger score is strictly higher | Return the challenger’s 10 CR entry; transfer the entire pre-challenge Bounty to the challenger. | Challenger becomes holder. Their verified Ghost and score replace the prior record. |
 | Loss or tie | Add 8 CR of the entry to the Bounty; credit 2 CR to the current holder. | Current holder and Ghost remain. |
-| Challenge expires without a certificate | Return the entire 10 CR entry. | Crown remains unchanged. |
+| Challenge expires without settlement | Add 8 CR of the entry to the Bounty; credit 2 CR to the holder. | Current holder and Ghost remain. |
 | Round expires | Credit the remaining Bounty to the current holder. | Crown closes permanently. |
-| Documented verifier-service failure | Return the entire 10 CR entry through the narrowly authorized cancellation path. | Crown remains unchanged. |
+| Verifier-service failure | No special cancellation/refund method exists yet. Unsettled entries currently forfeit at expiry. | Pause new ranked starts operationally during known outages; a narrow remedy remains a release requirement. |
 
 The current holder may select **Defend · 20 CR** once during the original 30-minute round. This locks 20 CR into the current Bounty. It is an explicit action, never an automatic deduction, and it does not extend the round expiry.
 
@@ -141,7 +141,7 @@ HOUND can choose a legal revenge Challenge, another eligible Crown, a new Crown,
 | Entry is pending | `Locking 10 CR…` | The run stays disabled until finality. |
 | Replay upload/check is pending | `Checking replay…` | No payout animation appears. |
 | Settlement is pending | `Settling Crown…` | Board waits for final contract state. |
-| Certificate mismatch/expiry | `Replay could not be verified` with retry/support details | No loss is declared; expiry or authorized cancellation returns entry. |
+| Certificate mismatch/expiry | `Replay could not be verified` with retry/support details | Do not claim a verified loss; unresolved entries forfeit at expiry. No outage-refund method is implemented. |
 | Chain/RPC outage | `Settlement delayed` | Challenge cannot be duplicated; refresh from contract state when available. |
 | No CR | Explain the exact missing amount and offer free practice. | No automatic refill. |
 

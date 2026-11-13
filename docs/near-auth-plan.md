@@ -1,41 +1,31 @@
-# RivalGhost — NEAR Auth integration decision
+# RivalGhost — NEAR Auth integration checkpoint
 
-November 13, 2026. The creator selected https://docs.auth.near.org/ as the game's sign-in provider. Status: selected and researched; **not implemented or live yet**. The existing device-key pilot remains the working local path until migration is tested.
+November 13, 2026 · implementation `7dda7c5`
 
-## Current position
+The testnet sign-in/linking milestone is implemented locally. It is **disabled pending operator setup and a live end-to-end test**. The game remains playable without a wallet. The current game contract is 99,448 bytes; adding authentication did not add JWT parsing to it.
 
-Playable local alpha: ten story chapters, combat/replays, usernames/avatars/leaderboards, Crown Pit, Workshop crafting/trading/restoration and bounded NPC policies. The NEAR settlement candidate is 99,428 bytes, with 19 Rust and 88 application tests passing. No deployment, public host, Cloud activation or remote repository is configured. Current v3 gameplay and the Workshop economy do not settle on NEAR.
+## What was implemented
 
-## Chosen sign-in approach
+- Optional pilot linking and returning-player sign-in; a callback at `/auth/callback`; disabled/error states; sign-in kept outside active flight.
+- A server-issued, one-use NEP-413 message bound to the exact origin, callback, browser cookie and current pilot session when linking. The message grants no game entry or token transfer permission.
+- Local RS256 JWT issuer/audience/freshness verification before sponsoring a signature; exact approved payload comparison; independent Ed25519 proof verification; derived-account/full-access-key checks before session issuance.
+- A stable server identity across logins. Linking preserves the existing guest ID and its server records. Accounts are never merged, and signing in itself grants no CR. Linking invalidates old device sessions and recovery through the old browser key. Campaign medals and best flights remain device-local.
+- A testnet-only signing relay with a fixed contract/action, explicit gas/deposit limits, durable daily request/budget reservations and no automatic transaction retry. Uncertain sends retain their reservation. Tokens, keys and proofs are not logged.
 
-Keep free play accessible. Offer NEAR Auth when saving/linking a pilot and entering online features. Preserve the current pilot's identity and server inventory during linking; do not grant another 100 CR for logging in. Local chapter progress needs a separately defined persistence/merge policy before promising cross-device saves.
+## Package compatibility decision
 
-Use the Browser SDK and JavaScript provider inside React, behind a small adapter. NEAR Auth documents NEP-413 message signing for the Browser SDK; the React SDK does not currently support it. This is the path for independently establishing a backend session. Message signing still entails a funded NEAR Auth contract call, despite the player's account not sending its own transaction. Server-issued one-use challenges must be bound to the initiating session, with signature and account ownership checked before issuing a game session. [Message-signing guide](https://docs.auth.near.org/home/guides/sign-messages)
+The docs describe Browser SDK `requestMessageSignature`, but published `@fast-auth-near/browser-sdk` 1.4.2 and JavaScript provider 1.4.1 did not expose it when inspected. Instead, the small lazy-loaded adapter uses pinned Auth0 SPA 2.11.3 and the upstream NEP-413/provider protocol at commit `bef019afd049c6637dd21be6629050762b943c18`. The backend uses JOSE 6.1.3 and near-api-js 7.5.3. This is a compatibility bridge, not a claim that the missing published SDK API was exercised. [Official upstream provider](https://github.com/Peersyst/fast-auth/blob/bef019afd049c6637dd21be6629050762b943c18/packages/providers/javascript/src/provider.ts), [message-signing docs](https://docs.auth.near.org/home/guides/sign-messages).
 
-Keep signing outside combat. Save pending actions before popup/redirect, recover after return, and distinguish authenticated, account-ready, submitted and finalized states. Integrate the existing method-limited game transport through an explicit adapter: the Auth SDK's transaction shape differs from our Wallet Selector-style interface. [Quickstart](https://docs.auth.near.org/home/quickstart)
+Testnet uses the published shared client, `fast-auth.testnet` and `v1.signer-prod.testnet`. No new Auth0 tenant is needed for this testnet setup; callback/origin acceptance still requires a real test. Mainnet is a separate configuration and approval milestone. [Official testnet resources](https://docs.auth.near.org/resources/testnet)
 
-The external authentication contracts are separate from RivalGhost's Wasm. No Auth0/JWT parser should be added to the game contract. The 100,000-byte game-contract gate stays enforced. Auth/MPC sponsorship has its own gas, deposit, request and rate-limit budget; test credentials do not mean free unlimited signing.
+## Evidence and limits
 
-## Network and configuration
+`pnpm check` passes 99 application tests, typechecking and production builds. Eleven new tests cover message encoding, real JWT cryptography, origin/cookie/session binding, replay rejection, linking conflicts, stable profile/balance, stale-session recovery rejection, invalid proof/ownership, concurrency, HTTP sessions, RPC failure and durable sponsor reservation. NEAR calls use test doubles. Browser QA covers local pilot reconnection, disabled sign-in, mobile panel scrolling and the expiry warning. No live NEAR Auth transaction or cross-device sign-in has occurred.
 
-Start on testnet. Published shared testnet credentials mean no new Auth0 tenant or production approval is needed to begin development. Confirm allowed local/deployed callback origins during integration; do not assume every preview URL is accepted. [Testnet resources](https://docs.auth.near.org/resources/testnet)
+## Next integration steps
 
-Mainnet is a later release decision. It needs provider approval and app-specific configuration. Prepare RivalGhost's description, HTTPS logo, expected user bracket, exact callback URL, web origin and a contact email once the hosting URL exists. [Production access](https://docs.auth.near.org/home/apply)
-
-## Implementation milestones — commit each
-
-1. Inspect/pin compatible SDK packages; add a testnet-only adapter, callback handling, disabled/unavailable states and an optional sign-in entry. Validate existing free play and cancellation recovery.
-2. Add server challenge/session verification and authenticated pilot linking. Require ownership of the current guest pilot as well as the new identity. Reject linking conflicts and replayed/wrong-session proofs; preserve balances, listings, username and inventories without merging untrusted balances.
-3. Wire bounded funded signing/relay and the existing finalized-transaction recovery. Confirm signer/account/key permissions, network, receiver and allowed methods. Measure Auth/MPC costs independently from game execution. Do not fund or broadcast a live test without a configured operator and concrete approved budget.
-4. Resolve the contract review's expiry, legacy domain, finite supply and storage-cap issues. Promote current v3 rules through shared verifier/contract fixtures and recheck artifact size.
-5. Deploy the testnet slice only after runtime validation and configuration; run fresh-user, returning-user, logout, second-device, timeout, popup-blocked and duplicate-submit checks. Cross-device progress requires its own tested synchronization, not just social login.
-
-## Creator actions and open decisions
-
-- Provide the intended GitHub repository URL; create an empty repository under Thekal33d if none exists.
-- Create a NEAR testnet operator wallet, obtain testnet faucet funding and provide only its public account ID. Configure signing credentials privately when the deployment/relay flow is ready.
-- Provide the available hosting account/provider and monthly hosting/AI spending ceiling. The persistent server/database needs a durable host; an HTTPS origin is needed for public callbacks. No paid plan has been selected or purchased.
-- Create a NEAR AI Cloud organization for live NPC compute; provide its public identifier/setup status, and configure secrets privately later. This is separate from NEAR Auth and does not block building the sign-in adapter.
-- Decide ranked expiry: recommendation is forfeiture of the 10-CR entry for a voluntarily unresolved flight, paired with an explicitly designed verifier-outage remedy. Existing refunds remain unchanged pending the creator's decision.
-
-No user action is required to start local adapter/backend work. Live funded signing, deployed callbacks, inference and publication remain distinct setup gates.
+1. Obtain the operator's public testnet account ID and faucet funds. Configure a dedicated protected sponsor key and a concrete testnet request/budget cap.
+2. Confirm the local callback and deployed HTTPS callback are accepted by the shared provider. Exercise actual sign-in, cancellation, return, logout, wrong-account linking, expired proof and second-device recovery.
+3. Measure real signing receipts and provider latency, then tune the reserved budget. A login proves identity; it does not mean the account is funded or that v3 ranked settlement exists.
+4. Retire or bind legacy v1 certificates, align finite supply/storage limits, and promote v3 into the contract/verifier before on-chain competition. Ranked expiry forfeiture is now implemented; an outage remedy is still separate work.
+5. Complete hosting and the public demo. Read [operator setup](operator-setup.md) for the creator's next actions and the approved $5 AI pilot.

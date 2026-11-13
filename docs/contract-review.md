@@ -1,19 +1,19 @@
 # RivalGhost — contract review and size evidence
 
-November 13, 2026 · implementation commit `89daba2`
+November 13, 2026 · size optimization `89daba2`; approved expiry correction `bf0f0aa`; sign-in milestone `7dda7c5`
 
-The optimized contract is **99,428 bytes**, below the strict **100,000-byte** ceiling. This is an implemented size/correctness review with regression checks, not an independent security audit or approval to deploy valuable assets.
+The optimized contract is **99,448 bytes**, below the strict **100,000-byte** ceiling. This is an implemented size/correctness review with regression checks, not an independent security audit or approval to deploy valuable assets.
 
 ## Artifact and reproducible check
 
 | Measurement | Result |
 | --- | --- |
 | Previous optimized artifact | 171,363 bytes |
-| Current raw Cargo artifact | 123,147 bytes |
-| Current optimized artifact | 99,428 bytes / about 97.10 KiB |
-| Strict gate | `< 100000`, passing; 572 bytes of headroom |
-| Reduction from previous optimized build | 71,935 bytes / 42.0% |
-| SHA-256 | `13c00ccfe2294110283287b930cf960a44d175211e96036313baae968ff8e3a9` |
+| Current raw Cargo artifact | 123,175 bytes |
+| Current optimized artifact | 99,448 bytes / about 97.12 KiB |
+| Strict gate | `< 100000`, passing; 552 bytes of headroom |
+| Reduction from previous optimized build | 71,915 bytes / 42.0% |
+| SHA-256 | `6815039240bff8213dc860f35939d8cb78c63d16cc0f78ab77d014803bbf858b` |
 | Toolchain measured | rustc 1.98.1; near-sdk 5.29.0; serde-json-wasm 1.0.1; Binaryen 132.0.0 |
 | Deployable candidate | `target/near/rivalghost_contract.wasm` |
 
@@ -34,19 +34,22 @@ Run `pnpm contract:check` from the repository. It checks Rust formatting, native
 The review covered initialization and caller authorization; grant uniqueness; balance/escrow movements; Crown and player locks; win/tie/loss behavior; defense and closure; certificate domains, identity, mission, timing and signature binding; public input parsing; retained storage; and the build artifact.
 
 - **19 Rust tests pass**, including signed win/loss, mission binding, grant reuse, initialization authorization, defense timing, storage compatibility and challenge pruning.
-- **88 TypeScript tests pass**, together with application typechecking and production builds.
+- **99 TypeScript tests pass**, together with application typechecking and production builds.
 - Both actual Wasm artifacts execute the same TypeScript-generated v2 signed payout and a signed legacy tie/loss. Resulting storage is byte-identical between raw and optimized builds.
-- The Wasm exercise rejects **62 calls per artifact**: uninitialized access, init takeover/reinitialization, invalid keys/accounts, attached deposits, malformed/oversized/deep JSON, unauthorized grants/seeding, lock conflicts, altered certificates, late settlement, duplicate payout/refund and invalid defense/closure.
+- The Wasm exercise rejects **62 calls per artifact**: uninitialized access, init takeover/reinitialization, invalid keys/accounts, attached deposits, malformed/oversized/deep JSON, unauthorized grants/seeding, lock conflicts, altered certificates, late settlement, duplicate settlement/expiry and invalid defense/closure.
 - Ten repeated flight/expiry cycles retain **798 bytes of key/value payload** for the tested fixture, without growth. This number excludes NEAR trie/account overhead and code storage; it is not a deployed storage bill.
 - Failed-call storage rollback is checked by a deterministic host double. The double models NEAR receipt rollback; it does not independently validate the network's VM, gas instrumentation or deployment compatibility.
 
 The contract performs no asynchronous cross-contract calls, token transfers or NEAR withdrawals. CR is an internal integer ledger, not a redeemable token. Anyone may relay a valid settlement, but recipients come from the stored challenge and Crown, not a caller-supplied payout address. A trusted verifier attests gameplay; the contract does not replay the game itself.
 
+## Resolved expiry finding
+
+The creator approved forfeiture on November 13. Expired contract challenges and newly opened local ranked attempts now move the 10-CR entry as 8 CR to the bounty and 2 CR to the holder, exactly once. Withholding a losing replay no longer produces a refund. The Crown Pit warns about the two-minute settlement deadline, including pauses and disconnections, before entry. Already-open local attempts from the old version retain their original refund terms. There is no deployed contract to migrate. A separate verifier-outage remedy is still unimplemented; do not promise automatic outage refunds.
+
 ## Findings still open before public ranked value
 
 | Priority | Finding and concrete consequence | Required follow-through |
 | --- | --- | --- |
-| High — economy | Expired flights still refund 10 CR. A player can withhold a losing replay and expire it for a refund instead of paying the normal loss. Repeated locks can also delay challengers. | Creator decision is pending: recommended ranked expiry forfeiture, with a clear entry warning and a separately designed service-outage remedy. Existing refund semantics remain unchanged. |
 | High — legacy replay | v1 certificates omit the deployment domain. If the same verifier key is reused and challenge fields match, a certificate can be accepted on another deployment. v2 checks `near:testnet` and the exact contract account. | Retire v1 creation/settlement or migrate it to deployment-bound signatures before public operation. Use separate verifier keys in any interim isolated demo. Do not represent v1 as deployment-bound. |
 | High — economic alignment | The on-chain operator grants 100 CR per new account; the contract has no global reserve cap. The local Workshop instead transfers grants from a finite 100,100-CR ledger. These are different economies. | Define and implement one funded supply model before connecting Workshop balances to NEAR. Add admission/Sybil controls; a browser identity is not proof of one human. |
 | Medium — storage budget | Per-player challenge history is now bounded, but operator-created accounts and Crown records have no global quota or pruning. Closed Crowns remain stored. | Add bounded registration/active-round capacity and archival/cleanup, plus sponsor limits, before unattended public operation. A trusted operator is not a storage budget. |
@@ -56,8 +59,8 @@ The contract performs no asynchronous cross-contract calls, token transfers or N
 
 ## Cost implications
 
-The size reduction lowers code-storage collateral, but does not remove execution or state costs. NEAR currently documents roughly **1 NEAR per 100 KB**. On that approximation, code alone is about **0.9943 NEAR** versus **1.7136 NEAR** previously, saving about **0.7194 NEAR** of locked collateral. Account/state overhead is additional. [NEAR storage documentation](https://docs.near.org/smart-contracts/anatomy/storage)
+The size reduction lowers code-storage collateral, but does not remove execution or state costs. NEAR currently documents roughly **1 NEAR per 100 KB**. On that approximation, code alone is about **0.9945 NEAR** versus **1.7136 NEAR** previously, saving about **0.7192 NEAR** of locked collateral. Account/state overhead is additional. [NEAR storage documentation](https://docs.near.org/smart-contracts/anatomy/storage)
 
-Using the documented deployment formula `0.58 + 0.13 × KB` with decimal KB gives about **13.506 Tgas**, or **0.001351 NEAR** at the example burn-price floor. These are planning calculations, not measured receipts. Current documentation also distinguishes upfront gas purchase price from burn price, so a sponsor needs more available balance than the eventual burned amount. Refresh network configuration when deploying. [NEAR gas documentation](https://docs.near.org/protocol/transactions/gas)
+Using the documented deployment formula `0.58 + 0.13 × KB` with decimal KB gives about **13.508 Tgas**, or **0.001351 NEAR** at the example burn-price floor. These are planning calculations, not measured receipts. Current documentation also distinguishes upfront gas purchase price from burn price, so a sponsor needs more available balance than the eventual burned amount. Refresh network configuration when deploying. [NEAR gas documentation](https://docs.near.org/protocol/transactions/gas)
 
 No funds were spent, accounts created, or contracts deployed during this work. NPC inference and staking costs are separate from this game contract's size. Developer-funded compute remains the chosen first-release model; player staking is future work.

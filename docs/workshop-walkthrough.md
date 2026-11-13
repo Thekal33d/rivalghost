@@ -48,4 +48,4 @@ The server integration can let NEAR AI select MOTH's featured recovery job withi
 
 **Crown Pit** is a separate competitive loop. The current browser economy is server-authoritative and local; the optimized NEAR contract is a tested candidate for v1/v2 Crown settlement. Workshop ownership, crafting, markets and current v3 gameplay are not on-chain yet.
 
-The next coherent release milestone is to reconcile the finite economy with v3 settlement and bounded asset storage, resolve ranked expiry and legacy signatures, then validate the contract in NEAR's runtime. Account/Cloud setup and a concrete compute allowance can proceed alongside that work. See the accompanying contract review for findings and the passing 99,428-byte artifact.
+The next coherent release milestone is to reconcile the finite economy with v3 settlement and bounded asset storage, resolve legacy signatures, then validate the contract in NEAR's runtime. Account/Cloud setup and a concrete compute allowance can proceed alongside that work. See the accompanying contract review for findings and the passing 99,448-byte artifact.

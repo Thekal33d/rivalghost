@@ -74,7 +74,7 @@ This hackathon build does not deploy mainnet contracts, fund mainnet accounts, i
 
 ## Measured local artifact — November 13, 2026
 
-Optimized **99,428 bytes**, raw **123,147 bytes**, SHA-256 `13c00ccfe2294110283287b930cf960a44d175211e96036313baae968ff8e3a9`. `pnpm contract:check` passes the unchanged `<100000` byte gate, 19 native tests and raw/optimized Wasm regression checks. Ten repeat flight/expiry cycles retained 798 key/value bytes in the host-double fixture, without growth. This excludes trie/account overhead and is not a network storage charge.
+Optimized **99,448 bytes**, raw **123,175 bytes**, SHA-256 `6815039240bff8213dc860f35939d8cb78c63d16cc0f78ab77d014803bbf858b`. `pnpm contract:check` passes the unchanged `<100000` byte gate, 19 native tests and raw/optimized Wasm regression checks. Ten repeat flight/expiry cycles retained 798 key/value bytes in the host-double fixture, without growth. This excludes trie/account overhead and is not a network storage charge.
 
 Code-only collateral is approximately 0.9943 NEAR under the documentation's rough ratio. Deployment formula estimate: 13.506 Tgas, about 0.001351 NEAR at the example burn floor. Neither figure is an actual receipt. Current gas documentation distinguishes purchase and burn prices; refresh the sponsor's upfront funding reservation against network configuration before enabling provisioning. Global account/Crown limits, v3 settlement, real NEAR VM execution and per-method gas measurements remain open.
 

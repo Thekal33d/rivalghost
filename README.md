@@ -48,7 +48,7 @@ The browser campaign now uses local rules version 3 with ten distinct chapter tw
 
 The first vertical slice is testnet-only. Credits are game credits with no cash value. Contract deployment, account funding, and public publishing happen only after explicit approval.
 
-See [the verifier runbook](docs/verifier-runbook.md) for startup, internal-service authentication, finalized transaction recovery, and remaining integration gates. `pnpm contract:size` enforces the original 100,000-byte deployment ceiling; the current 99,428-byte optimized artifact passes that gate. No deployment has occurred.
+See [the verifier runbook](docs/verifier-runbook.md) for startup, internal-service authentication, finalized transaction recovery, and remaining integration gates. `pnpm contract:size` enforces the original 100,000-byte deployment ceiling; the current 99,448-byte optimized artifact passes that gate. No deployment has occurred.
 
 ## Living economy and NPC compute
 

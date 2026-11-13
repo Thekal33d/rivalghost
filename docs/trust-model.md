@@ -60,7 +60,7 @@ HOUND’s policy service is trusted only to pick from contract-valid options. Co
 | Oversized replay or storage griefing | Fixed tick count, input size limit, hash-only contract storage, and relay preflight reject it. |
 | Guest sponsors unlimited calls | One unresolved Challenge, method allowlist, per-account/IP limits, gas cap, and daily pause. |
 | Relayer key leak | Keep key server-only; rotate/revoke service credentials and pause relay. It still cannot settle invalid results without a verifier certificate. |
-| Verifier unavailable | Stop issuing starts if needed; let Challenge expiry or restricted cancellation return the entry. Never mark a player as losing. |
+| Verifier unavailable | Stop issuing starts operationally. Expiry forfeits the entry under the approved policy; distinguish forfeiture from a verified loss. A narrow outage-refund/cancellation path remains unimplemented. |
 | Verifier compromised | It could issue bad certificates until key rotation. This is the primary trusted-service risk and is disclosed in the Proof drawer. |
 | Operator misuse | Audit restricted calls and keep the operator scope narrow. This remains a trusted-admin risk for the testnet MVP. |
 | HOUND model prompt injection | Give the model structured legal options only; validate selection and narration separately; fall back to templates. |

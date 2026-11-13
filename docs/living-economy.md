@@ -66,7 +66,7 @@ Future individual staking needs its own authenticated account-binding/consent/wi
 - Browser QA: a real free recovery produced a checked cargo receipt; that salvage crafted Afterglow, which was equipped and visibly rendered in desktop flight. Mobile Workshop layout and truthful disabled Reactor status were inspected. Prior medals and canonical chapter best stayed intact.
 - This is not proof of human play. Automated/copy-generated inputs and new identities are not safe foundations for valuable rewards. Public operation needs abuse controls, stronger identity, moderation and recovery.
 - Multi-device market interaction, live Cloud/model compatibility, stake activation, real phones and public hosting remain unverified.
-- NEP-245 asset custody/trading and v3 settlement are **not implemented on NEAR**. The subsequent contract review reduced the optimized artifact to 99,428 bytes, below the original 100,000-byte target, and tightened initialization, challenge retention and defense timing. See [the review](contract-review.md) for unresolved release findings. No deployment costs were incurred.
+- NEP-245 asset custody/trading and v3 settlement are **not implemented on NEAR**. The subsequent contract review reduced the optimized artifact to 99,448 bytes, below the original 100,000-byte target, and tightened initialization, challenge retention and defense timing. See [the review](contract-review.md) for unresolved release findings. No deployment costs were incurred.
 - OutLayer replay attestation is not integrated: it would require a compatible deterministic WASM verifier, version binding, funded execution and verified result callbacks. The current provider choice is NEAR AI Cloud for bounded NPC decisions.
 
 ## Next release milestones

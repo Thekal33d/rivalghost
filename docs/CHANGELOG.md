@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-13 — NEAR Auth, ranked expiry and operator setup
+
+- Implemented testnet NEAR Auth compatibility adapter, one-use proof/session checks, stable pilot linking and a bounded signing sponsor. Live signing remains disabled pending configuration and end-to-end provider validation.
+- Applied approved expiry forfeiture: new ranked entries distribute 8 CR to bounty and 2 CR to holder at deadline. Older pending local entries retain their original terms. Added the pre-entry deadline/disconnection notice.
+- Contract artifact is now 99,448 bytes (552 bytes below strict limit); 19 Rust tests and raw/optimized Wasm checks pass. Full application checks pass 99 tests.
+- Published the project to Thekal33d/rivalghost. Recorded the $5 total, four-decisions/day AI pilot with no automatic top-ups; no paid calls or purchases enabled.
+- Added wallet/AI/Hetzner setup guidance. Existing CX23 sharing awaits resource and Trialoom deployment inspection; no new server purchased.
+
 ## November 13 — contract review and size gate
 - Reduced optimized Wasm from 171,363 to 99,428 bytes; retained strict `<100000` gate and signature/overflow checks.
 - Restricted initialization, bounded per-player challenge retention and required a full flight window for defense.
