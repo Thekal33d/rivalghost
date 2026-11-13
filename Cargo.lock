@@ -2906,6 +2906,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rivalghost-economy"
+version = "0.1.0"
+dependencies = [
+ "ed25519-dalek",
+ "near-sdk",
+ "serde-json-wasm",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"

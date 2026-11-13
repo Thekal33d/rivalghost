@@ -15,3 +15,5 @@ export * from './hound-policy.js';
 export * from './workshop.js';
 
 export * from './near-auth.js';
+
+export * from "./economy-v3.js";

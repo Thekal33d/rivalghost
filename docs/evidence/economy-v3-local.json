@@ -1,0 +1,12 @@
+{
+  "artifact": "target/near/rivalghost_economy.wasm",
+  "bytes": 98620,
+  "budgetBytes": 100000,
+  "sha256": "297a0018a08b41156b8e2e7e682f594e4f688f9c07e86020b9d542a57c9386bf",
+  "rawOptimizedParity": true,
+  "rejectedCallsPerArtifact": 32,
+  "jobCyclesWithoutStorageGrowth": 10,
+  "tests": 106,
+  "deployed": false,
+  "runtimeGasMeasured": false
+}

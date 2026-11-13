@@ -73,8 +73,8 @@ Keep local demo usable until on-chain mode is validated. Deploy to a new testnet
 
 ## Verification Checklist
 - [x] Inspect existing implementation, budget and deployment state.
-- [ ] Compact v3 contract builds below 100,000 bytes.
-- [ ] All economy invariants and signature tests pass.
+- [x] Compact v3 contract builds below 100,000 bytes (98,620 bytes).
+- [x] Core conservation, ownership, signed result/action and bounded-history Wasm checks pass; live integration checks remain.
 - [ ] Auth sponsor and real callback validated.
 - [ ] Browser economic actions and NPC actions settle on-chain.
 - [ ] Real runtime gas/storage and bounded growth measured.

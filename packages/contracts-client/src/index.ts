@@ -113,3 +113,5 @@ function assertSafeId(value: number, name: string): number {
 }
 export * from "./rpc.js";
 export * from "./wallet-transport.js";
+
+export * from "./economy.js";

@@ -124,3 +124,5 @@ export async function verifyReplay(
     expiresAtMs: challenge.expiresAtMs,
   };
 }
+
+export * from "./economy.js";

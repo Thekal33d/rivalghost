@@ -17,7 +17,8 @@
     "contract:smoke": "pnpm contract:build && node tools/contract-wasm-smoke.mjs",
     "guest:serve": "pnpm --filter @rivalghost/relayer... build && pnpm --filter @rivalghost/relayer start",
     "contract:check": "cargo fmt --all -- --check && cargo test --locked --workspace && pnpm contract:size && node tools/contract-wasm-smoke.mjs",
-    "compute:check": "pnpm --filter @rivalghost/relayer... build && node tools/check-near-ai.mjs"
+    "compute:check": "pnpm --filter @rivalghost/relayer... build && node tools/check-near-ai.mjs",
+    "economy:check": "pnpm --filter @rivalghost/game-data build && cargo fmt --all -- --check && cargo test --locked --workspace && node tools/build-contract.mjs --economy && node tools/economy-wasm-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
