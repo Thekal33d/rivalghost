@@ -56,7 +56,7 @@ Gameplay runs locally with no wallet prompt. Competitive confirmation should be 
 
 ## Configuration needed later
 
-The repository is published at https://github.com/Thekal33d/rivalghost. Testnet integration still needs a public operator account ID, protected signing configuration and an explicit testnet signing budget. The creator has a Hetzner CX23 (2 vCPU, 4 GB RAM, 40 GB disk) used by Trialoom; shared hosting is proposed pending actual resource/deployment inspection. Namecheap is domain-only; no game domain is chosen. The $5 total AI pilot is approved for planning, with no automatic top-ups and at most four shared decisions per day; no credits were purchased and no live paid requests enabled.
+The repository is published at https://github.com/Thekal33d/rivalghost. Testnet operator `rivalghost-ops-thekal33d.testnet` is funded with 10 testnet NEAR, confirmed by finalized RPC at block 277514809. Protected service-signing configuration and an explicit testnet signing budget are still needed. No contract is deployed. The creator has a Hetzner CX23 (2 vCPU, 4 GB RAM, 40 GB disk) used by Trialoom; shared hosting is proposed pending actual resource/deployment inspection. Namecheap is domain-only; no game domain is chosen. The $5 total AI pilot is approved for planning, with no automatic top-ups and at most four shared decisions per day; no credits were purchased and no live paid requests enabled.
 
 See [the guest onboarding runbook](guest-onboarding.md) and [contract build measurements](contract-build.md). Local authentication is running with provisioning disabled; no real account, grant or chain payout is claimed.
 

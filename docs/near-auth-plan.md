@@ -24,7 +24,7 @@ Testnet uses the published shared client, `fast-auth.testnet` and `v1.signer-pro
 
 ## Next integration steps
 
-1. Obtain the operator's public testnet account ID and faucet funds. Configure a dedicated protected sponsor key and a concrete testnet request/budget cap.
+1. Operator funding is complete: `rivalghost-ops-thekal33d.testnet` has 10 testnet NEAR (finalized RPC block 277514809). Configure a dedicated protected sponsor key and a concrete testnet request/budget cap.
 2. Confirm the local callback and deployed HTTPS callback are accepted by the shared provider. Exercise actual sign-in, cancellation, return, logout, wrong-account linking, expired proof and second-device recovery.
 3. Measure real signing receipts and provider latency, then tune the reserved budget. A login proves identity; it does not mean the account is funded or that v3 ranked settlement exists.
 4. Retire or bind legacy v1 certificates, align finite supply/storage limits, and promote v3 into the contract/verifier before on-chain competition. Ranked expiry forfeiture is now implemented; an outage remedy is still separate work.

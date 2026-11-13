@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-13 — funded operator account
+
+- Recorded `rivalghost-ops-thekal33d.testnet`, created by the developer using the CLI; finalized RPC confirms 10 testnet NEAR and no deployed contract.
+- Account setup is complete. Service signing, a testnet signing allowance, live Auth validation and game deployment remain separate steps. No key was read or transaction sent during verification.
+
 ## 2026-11-13 — NEAR Auth, ranked expiry and operator setup
 
 - Implemented testnet NEAR Auth compatibility adapter, one-use proof/session checks, stable pilot linking and a bounded signing sponsor. Live signing remains disabled pending configuration and end-to-end provider validation.

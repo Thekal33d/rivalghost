@@ -55,7 +55,7 @@ The creator approved forfeiture on November 13. Expired contract challenges and 
 | Medium — storage budget | Per-player challenge history is now bounded, but operator-created accounts and Crown records have no global quota or pruning. Closed Crowns remain stored. | Add bounded registration/active-round capacity and archival/cleanup, plus sponsor limits, before unattended public operation. A trusted operator is not a storage budget. |
 | Medium — availability | The verifier key is fixed after initialization; there is no contract pause, key rotation or service-outage cancellation method. Verifier compromise can authorize fraudulent scores; outage can prevent settlement. | Design rotation/version overlap and a narrow recovery policy with regression tests. Contract-account upgrade access is powerful and must be secured. Never use the public test-fixture signing key live. |
 | Release blocker — scope | This contract supports Crown rules v1 and expedition v2. Current gameplay/economy additions use v3 locally. Workshop items, market, restoration, NPC wallets and compute funding are not settled by this artifact. | Complete v3 protocol and asset/supply design before claiming on-chain ownership or linking valuable rewards. |
-| Release blocker — runtime | No NEAR VM sandbox deployment, testnet receipt, measured per-method gas, live storage bill or funded account exists. | Validate the exact hashed artifact in the NEAR runtime, record costs, then prepare a concrete deployment. |
+| Release blocker — runtime | No NEAR VM sandbox deployment, game-contract testnet receipt, measured per-method gas or live contract-storage bill exists. The operator is now funded with 10 testnet NEAR; the game contract remains undeployed. | Validate the exact hashed artifact in the NEAR runtime, record costs, then prepare a concrete deployment. |
 
 ## Cost implications
 
@@ -64,3 +64,7 @@ The size reduction lowers code-storage collateral, but does not remove execution
 Using the documented deployment formula `0.58 + 0.13 × KB` with decimal KB gives about **13.508 Tgas**, or **0.001351 NEAR** at the example burn-price floor. These are planning calculations, not measured receipts. Current documentation also distinguishes upfront gas purchase price from burn price, so a sponsor needs more available balance than the eventual burned amount. Refresh network configuration when deploying. [NEAR gas documentation](https://docs.near.org/protocol/transactions/gas)
 
 No funds were spent, accounts created, or contracts deployed during this work. NPC inference and staking costs are separate from this game contract's size. Developer-funded compute remains the chosen first-release model; player staking is future work.
+
+## Operator setup follow-up
+
+The creator has now created and funded `rivalghost-ops-thekal33d.testnet`. Read-only finalized RPC at block 277514809 confirms 10 testnet NEAR, 182 bytes of account storage and no contract code. This is account readiness only, not game deployment or runtime validation. No signing key was accessed during the verification.

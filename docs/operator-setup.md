@@ -8,7 +8,13 @@ The project is in [Thekal33d/rivalghost](https://github.com/Thekal33d/rivalghost
 
 The creator approved **$5 total for the AI pilot**, no automatic top-ups, and at most **four shared NPC decisions per UTC day**. This records a budget, not a purchase or activation. Testnet funds, AI credits and hosting bills are separate budgets.
 
-## 1. Create the testnet operator wallet
+## 1. Testnet operator account — complete
+
+The creator created `rivalghost-ops-thekal33d.testnet` using the official CLI after MyNearWallet's testnet flow failed. A read-only finalized RPC check at block **277514809** confirmed **10 testnet NEAR**, **182 bytes** of account storage, zero validator stake and no deployed contract. The creator's CLI output reports one full-access key. No private key was read and no transaction was sent by this verification.
+
+The operator account creation/funding step is complete. Keep its CLI keychain credentials private. NEAR Social profile setup is unnecessary for the game. The steps below are reference instructions only; do not create another operator account.
+
+### Reference wallet instructions
 
 1. Open [MyNearWallet Testnet](https://testnet.mynearwallet.com/), check that you are on testnet, and follow its create-account flow.
 2. Choose an available account name if offered. `rivalghost-ops.testnet` is an example, not a reserved name. Save the recovery phrase privately using the wallet's instructions.
@@ -18,7 +24,7 @@ The creator approved **$5 total for the AI pilot**, no automatic top-ups, and at
 
 If wallet account creation needs initial funding, the official CLI also supports faucet-sponsored account creation with locally stored keys. We can use that route if the wallet flow is unavailable; the key must remain on your computer. [Official NEAR CLI guide](https://docs.near.org/tools/cli)
 
-The operator is infrastructure for testnet sponsorship/deployment. Players use NEAR Auth; they should not receive or use the operator key. For unattended signing, configure a separate service key/account with restricted access and its own small allowance, rather than exporting the wallet recovery phrase. We will prepare the exact account/key commands after the public ID is known.
+The operator is infrastructure for testnet sponsorship/deployment. Players use NEAR Auth; they should not receive or use the operator key. For unattended signing, configure a separate service key/account with restricted access and its own small allowance, rather than exporting the wallet recovery phrase. The public ID is now known. A dedicated service key/account, explicit testnet signing allowance and callback test are the next authentication setup steps; live signing stays disabled.
 
 ## 2. Configure NEAR Auth sponsorship
 
@@ -92,7 +98,7 @@ Namecheap is the registrar only. No domain has been chosen. Pick a domain or an 
 
 ## Next inputs and implementation order
 
-1. Public testnet operator account ID after faucet funding.
+1. **Completed:** funded operator `rivalghost-ops-thekal33d.testnet`. Signing credentials and a dedicated testnet authentication allowance remain unconfigured.
 2. NEAR AI Cloud setup status and available credit-purchase/budget controls; keep the API key private.
 3. Trialoom's deployment method or an existing SSH alias for read-only server inspection. The server model is now known; no need to repeat it.
 4. Chosen game hostname when ready.
