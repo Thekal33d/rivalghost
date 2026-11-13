@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-13 — bounded AI pilot configuration
+
+- Configured the reviewed NEAR-hosted Qwen instruction model privately, with paid inference still disabled.
+- Added a persistent $1 reservation allowance, $0.003 per attempt, four attempts/day, six-hour spacing and model/price checks before each inference request. Failures retain reservations; restarts and midnight do not reset the total.
+- Added `pnpm compute:check` for non-secret, read-only provider/configuration validation. Live catalog check passed; no paid inference call was sent.
+- Full application checks pass 103 tests, including durable restart/day-boundary and changed-price regressions. The contract remains unchanged at 99,448 bytes.
+
 ## 2026-11-13 — funded operator account
 
 - Recorded `rivalghost-ops-thekal33d.testnet`, created by the developer using the CLI; finalized RPC confirms 10 testnet NEAR and no deployed contract.

@@ -18,14 +18,14 @@ November 13, 2026
 | Guest/relay | Browser pilot keys and signed login; HttpOnly sessions; authenticated verification gateway; opt-in testnet account bootstrap with scoped keys and durable budgets | Real provisioning validation, NEP-366 delegation, relay quotas/accounting and circuit breaker |
 | Economy / HOUND | Playable local Crown Pit; finite persistent CR ledger; NPC wallet, three input-only styles, autonomous policy-limited counterflights; replay receipts, defense, ranked expiry forfeiture and isolated seven-day workbench | Funded NEAR NPC wallet and sponsored execution, v3 protocol decision, stronger identity/anti-abuse, NEP-245 item custody and v3 settlement (local markets now implemented) |
 | Living world | MOTH recovery jobs/exchange; craftable and tradeable cosmetic trails; HOUND commissions and raceable archive; ten shared restoration tracks | Public market/abuse validation and NEAR asset settlement |
-| Compute | Server-only NEAR AI focus adapter, bounded/cached fallback; read-only farm reporting and Reactor UI | Operator accounts, funded activation, live API checks, attestation verification and later individual staking |
+| Compute | Server-only NEAR AI focus adapter, bounded/cached fallback; read-only farm reporting and Reactor UI | First paid inference test, attestation verification and later individual staking; funded account/key, live catalog preflight and $1 durable reservation cap are ready |
 | Release | Local commits, build instructions and public GitHub repository `Thekal33d/rivalghost` | Hosted demo, fresh-clone checks, judge walkthrough, real captures and submission |
 
 See [the living economy checkpoint](living-economy.md) for gameplay, parameters, compute setup and evidence. No NEAR funds have been spent.
 
 ## Validation completed
 
-- `pnpm test` and `pnpm typecheck`: 99 TypeScript tests, type checking and production build pass.
+- `pnpm test` and `pnpm typecheck`: 103 TypeScript tests, type checking and production build pass.
 - Input-only automated pilots clear all 30 chapter/rig combinations in both v2 and v3; their replays reproduce results. This proves attainability, not human fun or retention.
 - Regression fixtures preserve original chapters 01–03 outcomes and replay hashes.
 - Save tests cover migration from three chapters, the entire unlock chain, thirty medals, all thirty personal-best slots, and separation of daily records and v2/v3 bests.
@@ -64,10 +64,14 @@ The browser campaign currently plays **local v3**. Competition remains v2; promo
 
 See [social play](social-play.md) for the new off-chain leaderboard and ghost-challenge loop.
 
-The [NPC economy milestone](economy-npc.md) implements and tests the local credit loop. The contract now blocks empty-bounty challenges until a winner funds a valid defense. All 99 TypeScript and 19 Rust tests pass; optimized Wasm smoke verification and the unchanged size gate pass. Browser QA exercised grant → reserve → fly → replay-checked loss → 8/2 distribution.
+The [NPC economy milestone](economy-npc.md) implements and tests the local credit loop. The contract now blocks empty-bounty challenges until a winner funds a valid defense. All 103 TypeScript and 19 Rust tests pass; optimized Wasm smoke verification and the unchanged size gate pass. Browser QA exercised grant → reserve → fly → replay-checked loss → 8/2 distribution.
 
 ## Selected sign-in provider
 
 The creator selected **NEAR Auth**. The testnet compatibility adapter, OAuth callback, NEP-413 proof verification, identity linking and capped sponsorship are implemented and tested locally. The sign-in panel remains disabled until a sponsor and callback configuration are validated. Local device-key login remains functional. Live signing, second-device login and account provisioning have not been validated. See [the integration notes](near-auth-plan.md) and [operator setup guide](operator-setup.md).
 
-Browser QA confirms local pilot reconnection, the honest disabled NEAR Auth state, a scrollable phone-sized account panel with its close action reachable, and the ranked deadline/forfeiture notice. The full application check passes 99 tests; 11 cover the new authentication boundary. External provider calls are mocked in those tests except for real local JWT cryptography.
+Browser QA confirms local pilot reconnection, the honest disabled NEAR Auth state, a scrollable phone-sized account panel with its close action reachable, and the ranked deadline/forfeiture notice. The full application check passes 103 tests; 11 cover the new authentication boundary. External provider calls are mocked in those tests except for real local JWT cryptography.
+
+## AI pilot preparation
+
+The creator confirms at least $1 of Cloud credits and has privately configured the API key. The model catalog preflight passes for `Qwen/Qwen3-VL-30B-A3B-Instruct`. A durable $1 application allowance reserves $0.003 per attempt, with four attempts/day and fresh price checks before inference. Paid inference remains disabled. See [the AI pilot checkpoint](ai-pilot.md).

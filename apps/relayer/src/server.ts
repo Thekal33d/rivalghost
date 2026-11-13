@@ -43,7 +43,7 @@ async function main(){
     authRelay=new AuthRelay(store,authNetwork,{accountId:required('NEAR_AUTH_SPONSOR_ID'),privateKey,dailyBudget:BigInt(required('NEAR_AUTH_DAILY_BUDGET_YOCTO')),maxDailyRequests:Number(required('NEAR_AUTH_MAX_DAILY_REQUESTS')),gasPriceCap:BigInt(required('NEAR_AUTH_GAS_PRICE_CAP_YOCTO'))});
   }
   const server=createGuestServer(service,gateway,new NearCompute(store,computeConfig(process.env)),new NearAuthService(store,authNetwork,authRelay));
-  server.listen(port,"127.0.0.1",()=>console.log(`RivalGhost guest gateway: 127.0.0.1:${port}; ${service.configured?"testnet provisioning enabled":"local pilot authentication only; no chain spending"}`));
+  server.listen(port,"127.0.0.1",()=>console.log(`RivalGhost guest gateway: 127.0.0.1:${port}; ${service.configured?"testnet provisioning enabled":"provisioning disabled"}; NEAR Auth ${authRelay?"enabled":"disabled"}; NPC Cloud ${process.env.NEAR_AI_ENABLED==="true"?"enabled":"disabled"}`));
   for(const signal of ["SIGINT","SIGTERM"] as const)process.once(signal,()=>server.close(()=>store.close()));
 }
 main().catch(()=>{console.error("Guest gateway startup failed. Check its configuration and private key file; no credentials are logged.");process.exitCode=1;});
