@@ -7,7 +7,7 @@ case "$1" in /*) ;; *) echo 'Use an absolute output directory' >&2; exit 1;; esa
 if [ -e "$1" ]; then echo 'Output directory must not exist' >&2; exit 1; fi
 pnpm build
 mkdir -p "$1"
-pnpm --filter @rivalghost/relayer deploy --legacy --prod --offline --ignore-scripts "$1/api"
+pnpm --filter @rivalghost/relayer deploy --legacy --prod --frozen-lockfile --ignore-scripts "$1/api"
 cp -R apps/web/dist "$1/web"
 cp -R deploy "$1/deploy"
 # Fail before upload if private data or native platform-specific addons leaked in.
