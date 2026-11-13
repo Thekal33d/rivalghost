@@ -377,3 +377,7 @@ HOUND has a separate game account and follows deterministic hard limits before a
 | Use a two-step final result | Prevents the UI from presenting a verified local score as a settled payout | single ambiguous verification state |
 | Require explicit defense stake | Makes the risk legible and avoids silently withholding a winner’s credits | automatically roll Bounty into next defense |
 | Use portrait phone and desktop support | v3 requires equivalent gameplay on both; the logical playfield stays identical | landscape-only mobile or desktop-only game |
+
+## NEAR Auth sign-in decision — November 13
+
+Use NEAR Auth for online player identity/signing, starting with its shared testnet configuration. Preserve free guest play and safely link existing pilots. Browser SDK integration, server proofs, relay budgeting and callbacks are planned, not yet implemented. See [the integration plan](docs/near-auth-plan.md).

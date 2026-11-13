@@ -65,3 +65,7 @@ The browser campaign currently plays **local v3**. Competition remains v2; promo
 See [social play](social-play.md) for the new off-chain leaderboard and ghost-challenge loop.
 
 The [NPC economy milestone](economy-npc.md) implements and tests the local credit loop. The contract now blocks empty-bounty challenges until a winner funds a valid defense. All 88 TypeScript and 19 Rust tests pass; optimized Wasm smoke verification and the unchanged size gate pass. Browser QA exercised grant → reserve → fly → replay-checked loss → 8/2 distribution.
+
+## Selected sign-in provider
+
+The creator selected **NEAR Auth**. Integration is planned, not live: Browser SDK in React, server-verified proofs, safe guest linking and bounded signing sponsorship. Local device-key login remains functional. See [the plan and creator setup checklist](near-auth-plan.md).
