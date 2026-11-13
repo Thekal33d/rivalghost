@@ -39,7 +39,7 @@ export function GuestPilot({username,disabled=false}:{username?:string;disabled?
       {error&&<p role="status" className="pilot-error">{error}</p>}
       {!guest&&<button className="pilot-save" disabled={busy} onClick={()=>void connect()}>{busy?"SAVING YOUR PILOT…":hasKey?"RECONNECT THIS PILOT ↗":"SAVE IN THIS BROWSER ↗"}</button>}
       {guest&&!near&&guest.state!=="ready"&&session.onlineAvailable&&<button className="pilot-save" disabled={busy} onClick={()=>void connect()}>{busy?"CHECKING ACCOUNT…":"RETRY ONLINE SETUP ↗"}</button>}
-      {near?<><p className="pilot-status">NEAR identity verified · authorize a game session below to use on-chain CR and items<small>{guest?.accountId}</small></p><button className="text-button" disabled={busy} onClick={()=>void logout()}>SIGN OUT →</button></>:null}<NearAuthPanel hasPilot={!near&&!!guest} connected={near} onChanged={refresh}/>
+      {near?<><p className="pilot-status">NEAR identity verified<small>{guest?.accountId}</small></p><button className="text-button" disabled={busy} onClick={()=>void logout()}>SIGN OUT →</button></>:null}<NearAuthPanel hasPilot={!near&&!!guest} connected={near} onChanged={refresh}/>
       <button className="text-button" onClick={()=>setOpen(false)}>{guest?"BACK TO THE HANGAR":"KEEP PLAYING FOR NOW"} →</button>
     </section>}
   </div>;

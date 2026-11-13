@@ -2,7 +2,7 @@
 
 November 13, 2026
 
-The funded testnet integration now separates **OIDC identity login** from **signed game-session authorization**. Use **http://localhost:3000** exactly. The revised login reaches the real provider form; a human login return and subsequent MPC approval still require end-to-end validation.
+The funded testnet integration now separates **OIDC identity login** from **signed game-session authorization**. Use **http://localhost:3000** exactly. Personal login and subsequent MPC delegate approval now completed successfully on testnet. The pilot has 100 starter CR and session epoch 1, confirmed at finalized block 277563686.
 
 ## Player steps
 
@@ -41,4 +41,6 @@ Game relays persist signed bytes/hash before broadcast and reconcile the same tr
 
 `pnpm check`: **130 tests**, typechecks and production builds pass. Coverage includes real RS256 identity-token verification, PKCE generation/exchange binding, nonce/state/cookie mismatch, expiry/cancellation, duplicate callbacks, identity linking conflicts, delegated-session checks and relay recovery. Browser inspection confirms that a fresh request reaches the real provider login form and that authorization is disabled before login.
 
-The deployed contract/relay path was exercised with isolated test keys. This does not prove the personal OIDC return or provider MPC delegate approval end to end. Those checks, second-device recovery and hosted callback validation remain open. Contract Wasm is unchanged at **98,677 bytes**.
+The personal OIDC login and provider MPC delegate approval both completed. The finalized authorization receipt is `zsMkjS9bQHuBsQcTVnTVKRzuAP3S4orztEW1GrDhtJi`. A direct finalized `get_pilot` query confirmed 100 CR, session epoch 1 and expiry `2026-11-14T09:07:29.493Z`. See `docs/evidence/near-auth-live-testnet.json`. Human browser job/claim, second-device recovery and hosted callback validation remain open. Contract Wasm is unchanged at **98,677 bytes**.
+
+The follow-up UI shows active session, balance and local expiry only when the on-chain session key matches this browser and has not expired. It refreshes on window focus and after authorization; unavailable status requests a recheck rather than another authorization. The identity banner no longer asks an already-authorized user to authorize. Frontend typecheck/build pass; the active-state visual update still needs confirmation in the user’s signed-in browser.

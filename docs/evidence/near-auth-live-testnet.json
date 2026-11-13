@@ -1,0 +1,21 @@
+{
+  "network": "testnet",
+  "contract": "game.rivalghost-ops-thekal33d.testnet",
+  "actor": "b2bb8d2ca4956d764e826b2ebe9b579f34dd93c03eeaa3b3b21409746dcee443",
+  "identityFlow": "complete",
+  "gameSessionFlow": "complete",
+  "transactionHash": "zsMkjS9bQHuBsQcTVnTVKRzuAP3S4orztEW1GrDhtJi",
+  "settled": true,
+  "observation": {
+    "finalBlockHeight": 277563686,
+    "cr": 100,
+    "sessionEpoch": 1,
+    "sessionUntil": 1794647249493,
+    "expiresUtc": "2026-11-14T09:07:29.493Z"
+  },
+  "remaining": [
+    "Human browser job and claim",
+    "Second-device recovery",
+    "Hosted callback"
+  ]
+}
