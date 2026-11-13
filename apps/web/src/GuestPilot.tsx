@@ -10,7 +10,7 @@ async function request(path:string,body?:unknown){
 }
 export function GuestPilot({username,disabled=false}:{username?:string;disabled?:boolean}){
   const toggle=useRef<HTMLButtonElement>(null);
-  const [open,setOpen]=useState(isNearAuthReturn()),[busy,setBusy]=useState(false),[error,setError]=useState("");
+  const [open,setOpen]=useState(isNearAuthReturn()||Boolean(sessionStorage.getItem('rivalghost.auth.error'))),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const [session,setSession]=useState<Session>({guest:null,onlineAvailable:false}),[hasKey,setHasKey]=useState(false);
   useEffect(()=>{let active=true;void Promise.all([readPilotKey(),request("me")]).then(([key,data])=>{if(active){setHasKey(Boolean(key));if(data.authMethod==="near"||(key&&data.guest?.publicKey===key.publicKey))setSession(data);else setSession({guest:null,onlineAvailable:data.onlineAvailable});}}).catch(()=>{});return()=>{active=false;};},[username]);
   useEffect(()=>{if(!open)return;const escape=(event:KeyboardEvent)=>{if(event.key==="Escape"){setOpen(false);toggle.current?.focus();}};window.addEventListener("keydown",escape);return()=>window.removeEventListener("keydown",escape);},[open]);

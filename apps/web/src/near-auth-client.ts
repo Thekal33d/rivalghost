@@ -13,23 +13,30 @@ async function setup(){const c:Config=await authRequest('config');if(!c.enabled)
  if(c.domain!=='login.testnet.fast-auth.com'||c.signingAudience!=='auth0.jwt.fast-auth.testnet'||![location.origin,location.origin+'/auth/callback'].includes(c.callbackUrl))throw new Error('Sign-in configuration does not match this game.');
  client??=new Auth0Client({domain:c.domain,clientId:c.clientId,cacheLocation:'memory',authorizationParams:{redirect_uri:c.callbackUrl}});return {client,c};}
 export async function beginNearLogin(mode:'link'|'signin'){
- sessionStorage.removeItem('rivalghost.auth.error');
+ sessionStorage.removeItem('rivalghost.auth.error');finishing=undefined;
  const {client,c}=await setup(),challenge:NearLoginChallenge=await authRequest('begin',{mode});
  sessionStorage.setItem(PENDING,JSON.stringify({challenge,returnTo:location.pathname+location.search}));
  await client.loginWithRedirect({authorizationParams:{audience:c.signingAudience,scope:'transaction:sign',nep413:Array.from(encodeNearLogin(challenge)),redirect_uri:c.callbackUrl}});
 }
 async function finish(){
  const pending=JSON.parse(sessionStorage.getItem(PENDING)??'null');if(!pending?.challenge?.id)throw new Error('No pending login in this browser. Start again from the hangar.');
- const {client,c}=await setup();await client.handleRedirectCallback();
- const jwt=await client.getTokenSilently({authorizationParams:{audience:c.signingAudience}});
+ const {client,c}=await setup();
+ try{await client.handleRedirectCallback();}catch(error){throw new Error('NEAR sign-in callback: '+(error instanceof Error?error.message:'The provider could not finish login.'));}
+ // Use the exact token returned for this approved payload. A silent login must not
+ // replace a transaction-bound token with an unrelated identity-only token.
+ const jwt=await client.getTokenSilently({cacheMode:'cache-only',authorizationParams:{audience:c.signingAudience,scope:'transaction:sign'}});
+ if(!jwt)throw new Error('NEAR Auth returned without the approved signing token. Start a fresh sign-in in this same browser tab.');
  const result=pending.economy?await(await import('./chain-client')).chainHttp('chain/session/complete',{id:pending.challenge.id,jwt}):await authRequest('complete',{id:pending.challenge.id,jwt});
  sessionStorage.removeItem('rivalghost.auth.error');sessionStorage.removeItem(PENDING);history.replaceState({},'',typeof pending.returnTo==='string'&&pending.returnTo.startsWith('/')&&!pending.returnTo.startsWith('//')&&!pending.returnTo.startsWith('/auth/')?pending.returnTo:'/');
- return result;
+ return {...result,economyAuthorized:!!pending.economy};
 }
 export function finishNearLogin(){return finishing??=finish().catch(e=>{sessionStorage.setItem('rivalghost.auth.error',e instanceof Error?e.message:'Sign-in could not finish.');sessionStorage.removeItem(PENDING);history.replaceState({},'','/');throw e;});}
 export async function clearNearLogin(){sessionStorage.removeItem(PENDING);if(client)await client.logout({openUrl:false});}
 
 export async function beginEconomySession(publicKey:string){
+ const me=await(await import('./chain-client')).chainHttp('me');
+ if(me.authMethod!=='near'||!me.guest?.accountId)throw new Error('Complete step 1: sign in with NEAR before authorizing a game session.');
+ sessionStorage.removeItem('rivalghost.auth.error');finishing=undefined;
  const {client,c}=await setup();const flow=await(await import('./chain-client')).chainHttp('chain/session/begin',{publicKey});
  sessionStorage.setItem(PENDING,JSON.stringify({economy:true,challenge:{id:flow.id},returnTo:location.pathname+location.search}));
  await client.loginWithRedirect({authorizationParams:{audience:c.signingAudience,scope:'transaction:sign',delegateAction:flow.payload,redirect_uri:c.callbackUrl}});

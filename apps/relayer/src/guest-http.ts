@@ -56,7 +56,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
         if(req.url.endsWith('/complete')){req.setTimeout(90000);const signed=await nearAuth.complete(input.id,authBinding,session,input.jwt);send(res,200,{guest:signed.guest,authMethod:'near',onlineAvailable:service.configured},cookie(signed.token));return;}
         send(res,404,{error:'Auth route not found'});return;
       }
-      if(!guest){send(res,401,{error:"Reconnect your saved pilot"});return;}
+      if(!guest){send(res,401,{error:req.url?.startsWith('/api/guest/chain/')?"Sign in with NEAR before authorizing a game session or using the on-chain economy.":"Reconnect your saved pilot"});return;}
       if(req.url?.startsWith('/api/guest/chain/')){
         if(!chain){send(res,503,{error:'On-chain economy is not enabled'});return;}
         if(store.authMethod(session)!=='near')throw new NearAuthError('Sign in with NEAR before using the on-chain economy.');

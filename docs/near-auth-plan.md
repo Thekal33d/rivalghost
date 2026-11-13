@@ -33,4 +33,12 @@ Testnet uses the published shared client, `fast-auth.testnet` and `v1.signer-pro
 
 ## Validation status
 
-114 application tests pass, including JWT cryptography, ownership/payload/cookie binding, delegated-session rejection/recovery and relay idempotency. Actual testnet delegated sessions were signed by isolated test keys; this validates the contract/relay path, not Auth0/MPC end to end. The real browser login form is reachable; the personal login step is currently pending. Cross-device recovery and hosted callback validation are still open.
+119 application tests pass, including JWT cryptography, ownership/payload/cookie binding, delegated-session rejection/recovery and relay idempotency. Actual testnet delegated sessions were signed by isolated test keys; this validates the contract/relay path, not Auth0/MPC end to end. The real browser login form is reachable; the personal login step is currently blocked by a provider signup error. Cross-device recovery and hosted callback validation are still open.
+
+## Login troubleshooting checkpoint
+
+The shared NEAR Auth provider's password-signup page displayed “Something went wrong, please try again later” before returning to RivalGhost. At this checkpoint the local database contained no completed NEAR identities or authentication signing attempts. This observation does not establish a provider-wide outage or a contract failure. A fresh Google login in Chrome remains to be tested; start from the game at `http://localhost:3000`, rather than reusing an old provider signup URL.
+
+The game now disables session authorization until NEAR identity login completes and checks the same prerequisite before creating an authorization flow. Callback errors persist across reloads with the pilot panel open. A new login clears the previous failed callback promise. The callback uses only the cached token for the approved signing audience/scope; it never silently obtains a replacement token. Optional profile refresh cannot turn successful authentication into a reported login failure.
+
+Five new browser-client regression tests cover these boundaries, and the HTTP test checks that anonymous session authorization is rejected with an explicit sign-in instruction. All 119 application tests, typechecks and production builds pass. Browser inspection confirms the pre-login authorization controls are disabled. Real Google login, MPC return and the human browser game-session approval remain unverified.
