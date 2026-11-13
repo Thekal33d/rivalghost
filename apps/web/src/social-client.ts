@@ -13,7 +13,9 @@ export async function socialRequest(path:string,body?:unknown){
   if(!response.ok)throw new Error(data.error??'The request could not be completed.');return data;
 }
 export async function ensurePilotSession(){
-  const key=await getOrCreatePilotKey(),current=await socialRequest('me');
+  const current=await socialRequest('me');
+  if(current.authMethod==='near'&&current.guest)return;
+  const key=await getOrCreatePilotKey();
   if(current.guest?.publicKey===key.publicKey)return;
   const challenge=await socialRequest('challenge',{publicKey:key.publicKey});
   const signature=await signGuestChallenge(key,challenge,location.origin);

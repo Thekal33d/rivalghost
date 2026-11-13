@@ -13,3 +13,5 @@ export * from "./social.js";
 export * from './hound-policy.js';
 
 export * from './workshop.js';
+
+export * from './near-auth.js';

@@ -1,3 +1,4 @@
+import {NearAuthService,NearAuthError} from './near-auth.js';
 import type {NearCompute} from './near-compute.js';
 import {WorkshopError} from './workshop.js';
 import {createServer,type IncomingMessage,type ServerResponse} from "node:http";
@@ -9,7 +10,7 @@ export interface VerificationGateway {verify(guest:Guest,submission:{challengeId
 const token=(req:IncomingMessage)=>req.headers.cookie?.split(";").map(s=>s.trim()).find(s=>s.startsWith("rg_guest="))?.slice(9)??"";
 function send(res:ServerResponse,status:number,body:unknown,cookie?:string){res.writeHead(status,{"Content-Type":"application/json","Cache-Control":"no-store","X-Content-Type-Options":"nosniff",...(cookie?{"Set-Cookie":cookie}:{})});res.end(JSON.stringify(body));}
 async function json(req:IncomingMessage){const chunks:Buffer[]=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>128*1024)throw new Error("Request too large");chunks.push(chunk);}return JSON.parse(Buffer.concat(chunks).toString("utf8"));}
-export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute){
+export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService){
   const store=service.store,social=new SocialService(store),secure=store.origin.startsWith("https:");
   const cookie=(value:string,age=43200)=>`rg_guest=${value}; HttpOnly; SameSite=Strict; Path=/api/guest; Max-Age=${age}${secure?"; Secure":""}`;
   let economy:EconomyService|undefined;
@@ -17,7 +18,10 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
   const server=createServer(async(req,res)=>{
     try {
     const session=token(req),guest=store.session(session);
-    if(req.method==="GET"&&req.url==="/api/guest/me"){send(res,200,{guest,onlineAvailable:service.configured});return;}
+    const authBinding=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith('rg_near_flow='))?.slice(13)??'';
+    const authCookie=(value:string)=>`rg_near_flow=${value}; HttpOnly; SameSite=Strict; Path=/api/guest/near-auth; Max-Age=600${secure?'; Secure':''}`;
+    if(req.method==='GET'&&req.url==='/api/guest/near-auth/config'){send(res,200,nearAuth?.status()??{enabled:false});return;}
+    if(req.method==="GET"&&req.url==="/api/guest/me"){send(res,200,{guest,onlineAvailable:service.configured,authMethod:store.authMethod(session)});return;}
     if(req.method==="GET"&&req.url==="/api/guest/compute"){store.rate("compute-read",60);send(res,200,{...(compute?.status()??{enabled:false,dailyLimit:0,callsToday:0,source:"local"}),stake:await compute?.stake()??{state:"not-configured"}});return;}
     if(req.method==="GET"&&req.url==="/api/guest/workshop"){store.rate("workshop-read",180);send(res,200,pit().workshop(guest));return;}
     if(req.method==="GET"&&req.url==="/api/guest/economy"){store.rate("pit-read-global",180);store.rate("pit-read-ip:"+req.socket.remoteAddress,60);send(res,200,pit().view(guest));return;}
@@ -40,6 +44,14 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
         if(typeof input.nonce!=="string"||typeof input.publicKey!=="string"||typeof input.signature!=="string")throw new Error("Invalid guest proof");
         const signed=store.authenticate(input.nonce,input.publicKey,input.signature);send(res,200,{guest:signed.guest,onlineAvailable:service.configured},cookie(signed.token));return;
       }
+      if(req.url?.startsWith('/api/guest/near-auth/')){
+        if(!nearAuth){send(res,503,{error:'NEAR Auth sponsorship is not configured.'});return;}
+        if(req.url.endsWith('/begin')){const flow=nearAuth.begin(input.mode,session,req.socket.remoteAddress??'unknown');send(res,200,flow.challenge,authCookie(flow.binding));return;}
+        if(typeof input.id!=='string')throw new NearAuthError('Invalid login request.');
+        if(req.url.endsWith('/cancel')){nearAuth.cancel(input.id,authBinding,session);send(res,200,{ok:true},authCookie(''));return;}
+        if(req.url.endsWith('/complete')){req.setTimeout(90000);const signed=await nearAuth.complete(input.id,authBinding,session,input.jwt);send(res,200,{guest:signed.guest,authMethod:'near',onlineAvailable:service.configured},cookie(signed.token));return;}
+        send(res,404,{error:'Auth route not found'});return;
+      }
       if(!guest){send(res,401,{error:"Reconnect your saved pilot"});return;}
       if(req.url==="/api/guest/workshop/action"){send(res,200,pit().work(guest,input));return;}
       if(req.url==="/api/guest/economy/join"){send(res,200,pit().join(guest));return;}
@@ -52,6 +64,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
       if(req.url==="/api/guest/social/rival"){send(res,200,social.follow(guest,input.id,input.follow));return;}
       if(req.url==="/api/guest/logout"){store.logout(session);send(res,200,{ok:true},cookie("",0));return;}
       if(req.url==="/api/guest/provision"){
+        if(store.authMethod(session)==="near"){send(res,409,{error:"NEAR Auth account provisioning uses a separate flow."});return;}
         if(!service.configured){send(res,503,{error:"Online rivalry is not available yet. Your local pilot is saved."});return;}
         try{send(res,200,{guest:await service.provision(guest),onlineAvailable:true});}catch{send(res,503,{error:"Account setup is pending or sponsorship is paused. Keep playing locally and retry later."});}return;
       }
@@ -61,7 +74,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
         try{send(res,200,await gateway.verify(guest,{challengeId:input.challengeId,replay:input.replay}));}catch{send(res,503,{error:"Replay verification is unavailable or rejected. No settlement was claimed."});}return;
       }
       send(res,404,{error:"Route not found"});
-    }catch(error){send(res,error instanceof Error&&/Too many attempts/.test(error.message)?429:400,{error:error instanceof WorkshopError||error instanceof SocialError||error instanceof EconomyError?error.message:error instanceof Error&&/attempts|capacity|proof|public key/.test(error.message)?error.message:"Invalid guest request"});}
+    }catch(error){send(res,error instanceof Error&&/Too many attempts/.test(error.message)?429:400,{error:error instanceof NearAuthError||error instanceof WorkshopError||error instanceof SocialError||error instanceof EconomyError?error.message:error instanceof Error&&/attempts|capacity|proof|public key/.test(error.message)?error.message:"Invalid guest request"});}
   });server.requestTimeout=10000;server.headersTimeout=5000;server.timeout=20000;server.maxHeadersCount=30;
   let stopped=false,thinking=false;
   const heartbeat=setInterval(()=>{try{economy?.tick();if(economy&&compute&&!thinking){thinking=true;const world=economy.workshop(null);void compute.decide(world.moth.stock,world.districts.filter(n=>n>=60).length).then(d=>{if(!stopped)economy?.setFocus(d.focus);}).catch(()=>{}).finally(()=>{thinking=false;});}}catch{console.error('HOUND tick failed; no partial economy write committed.');}},15000);heartbeat.unref();server.on('close',()=>{stopped=true;clearInterval(heartbeat);});return server;

@@ -10,8 +10,9 @@
     "start": "node --env-file-if-exists=.env dist/server.js"
   },
   "dependencies": {
-    "near-api-js": "7.5.3",
     "@rivalghost/game-data": "workspace:*",
-    "@rivalghost/sim": "workspace:*"
+    "@rivalghost/sim": "workspace:*",
+    "jose": "6.1.3",
+    "near-api-js": "7.5.3"
   }
 }

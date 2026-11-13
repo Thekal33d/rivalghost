@@ -18,6 +18,7 @@ export class GuestStore {
       CREATE TABLE IF NOT EXISTS rate_windows(id TEXT PRIMARY KEY, count INTEGER NOT NULL, expires INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS bootstrap_budget(day TEXT PRIMARY KEY, attempts INTEGER NOT NULL, reserved TEXT NOT NULL);
     `);
+    if(!this.db.prepare("PRAGMA table_info(sessions)").all().some(c=>c.name==="auth_method"))this.db.exec("ALTER TABLE sessions ADD COLUMN auth_method TEXT NOT NULL DEFAULT 'device'");
   }
   close(){this.db.close();}
   private clean(){const now=this.now();for(const table of ["nonces","sessions","rate_windows"])this.db.prepare(`DELETE FROM ${table} WHERE expires <= ?`).run(now);}
@@ -40,12 +41,13 @@ export class GuestStore {
     const key=createPublicKey({key:Buffer.concat([Buffer.from("302a300506032b6570032100","hex"),Buffer.from(publicKey,"hex")]),type:"spki",format:"der"});
     if(!verify(null,Buffer.from(guestAuthMessage({nonce,publicKey,origin:this.origin,expiresAt:Number(row.expires)})),key,Buffer.from(signature,"hex")))throw new Error("Guest proof is invalid");
     const id=hash(publicKey),token=randomBytes(32).toString("hex");
+    if(this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='near_identities'").get()&&this.db.prepare("SELECT account_id FROM near_identities WHERE guest_id=?").get(id))throw new Error("Use NEAR Auth for this linked pilot");
     this.db.exec("BEGIN IMMEDIATE");
     try {
       if(!this.guest(id)&&Number(this.db.prepare("SELECT count(*) AS n FROM guests").get()!.n)>=10000)throw new Error("Guest registration is at capacity");
       this.db.prepare("INSERT OR IGNORE INTO guests(id,public_key) VALUES(?,?)").run(id,publicKey);
       this.db.prepare("DELETE FROM sessions WHERE guest_id=?").run(id);
-      this.db.prepare("INSERT INTO sessions VALUES(?,?,?)").run(hash(token),id,this.now()+12*60*60*1000);
+      this.db.prepare("INSERT INTO sessions(hash,guest_id,expires) VALUES(?,?,?)").run(hash(token),id,this.now()+12*60*60*1000);
       this.db.exec("COMMIT");
     }catch(error){this.db.exec("ROLLBACK");throw error;}
     return {token,guest:this.guest(id)!};
@@ -58,6 +60,7 @@ export class GuestStore {
     if(!/^[a-f0-9]{64}$/.test(token))return null;
     const row=this.db.prepare("SELECT guest_id FROM sessions WHERE hash=? AND expires>?").get(hash(token),this.now());return row?this.guest(String(row.guest_id)):null;
   }
+  authMethod(token:string):string|null{return this.session(token)?String(this.db.prepare("SELECT auth_method FROM sessions WHERE hash=?").get(hash(token))!.auth_method):null;}
   logout(token:string){this.db.prepare("DELETE FROM sessions WHERE hash=?").run(hash(token));}
   setProvisioning(id:string,accountId:string,state:"pending"|"ready"){this.db.prepare("UPDATE guests SET account_id=?,state=? WHERE id=?").run(accountId,state,id);}
   reserve(id:string,cost:bigint,dailyBudget:bigint,maxAttempts:number){
