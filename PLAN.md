@@ -10,7 +10,7 @@ The local campaign now uses versioned v3 chapter twists and a full-window respon
 
 Pilot identities, free avatar customization, replay-checked shared boards, rival lists and ghost challenges are now implemented off-chain. Public social use still needs hosting and multi-device validation. See [social play](docs/social-play.md).
 
-See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 88 TypeScript tests plus production build/type checking, and 12 Rust contract tests pass. The optimized 171,363-byte Wasm artifact fails the unchanged 100,000-byte ceiling. Live storage/gas measurements and physical-device playtests remain outstanding.
+See [the development checkpoint](docs/development-status.md) for evidence and the ordered next milestones. The ten-chapter expansion preserves the first three v2 encounters and existing local saves. Story progression adds no contract writes. Current checks: 88 TypeScript tests plus production build/type checking, and 19 Rust contract tests pass. The optimized 99,428-byte Wasm artifact passes the unchanged 100,000-byte ceiling; see docs/contract-review.md for unresolved release gates. Live storage/gas measurements and physical-device playtests remain outstanding.
 
 Local HOUND competition is now implemented with a finite persistent Crown ledger, real input-only ghosts, autonomous bounded counterattacks, honest receipts and an isolated seven-day workbench. This is not yet NEAR wallet execution. See [the economy milestone](docs/economy-npc.md).
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## November 13 — contract review and size gate
+- Reduced optimized Wasm from 171,363 to 99,428 bytes; retained strict `<100000` gate and signature/overflow checks.
+- Restricted initialization, bounded per-player challenge retention and required a full flight window for defense.
+- Added `pnpm contract:check`: 19 native tests and actual Wasm checks with 62 rejected calls and ten constant-storage cycles per artifact.
+- Recorded open expiry, legacy signature, supply/storage and v3 deployment findings; no funds or deployment actions.
+- Added the Workshop walkthrough. Full application checks pass all 88 tests.
+
+
 ## November 12, 2026 — Crown economy and autonomous local HOUND
 
 - Corrected the contract to block empty-bounty challenges and premature defense.

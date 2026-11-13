@@ -1,9 +1,11 @@
 # Contract build and size gate
 
-The production candidate is `target/near/rivalghost_contract.wasm`, produced by `pnpm contract:build`. The build uses the NEAR host configuration (`--cfg near`) and pinned Binaryen 132.0.0 size optimization. It retains the Rust module's supported features instead of enabling experimental encodings.
+The candidate is `target/near/rivalghost_contract.wasm`, produced by `pnpm contract:build`. Run **`pnpm contract:check`** for formatting, native tests, strict size enforcement and actual raw/optimized Wasm execution.
 
-The initial 220,885-byte measurement included local implementations of hashing/panics because the installed `near-sdk-env` requires explicit NEAR configuration. Correcting the configuration and optimizing reduced that version to 169,809 bytes. With guest-grant lookup and the Crown defense eligibility checks, the current raw artifact is 209,693 bytes and the optimized artifact is **171,363 bytes** (SHA-256 `ecdabd606fda0ea717528b5eff2582c83ce19b60a8712552583a981c4c743b6b`). The economy correction adds 80 optimized bytes and no contract fields. This is a 22.5% reduction from the initial measurement, but still exceeds the unchanged **100,000-byte** ceiling.
+The verified November 13 build is **99,428 bytes**, down from 171,363. The raw Cargo output is 123,147 bytes; do not deploy it. The unchanged gate requires **less than 100,000 bytes**, leaving 572 bytes of headroom.
 
-`pnpm contract:smoke` executes the actual raw and optimized Wasm using a deterministic host double. It compares mission binding, a TypeScript-generated signed payout, duplicate-certificate rejection and complete resulting storage. This complements the Rust tests; it does not measure NEAR VM gas or replace sandbox/testnet deployment testing.
+SHA-256: `13c00ccfe2294110283287b930cf960a44d175211e96036313baae968ff8e3a9`.
 
-`pnpm contract:size` intentionally remains failing. Further reduction must preserve the public ABI and settlement checks; the ceiling has not been raised and no chain account has been funded or deployed. Avoid installing an artifact directly from the raw Cargo output.
+Measured with rustc 1.98.1, near-sdk 5.29.0, serde-json-wasm 1.0.1 and pinned Binaryen 132.0.0. Cargo retains overflow checks, LTO, one codegen unit, aborting panics and `--cfg near`. Shared integer JSON glue, immediate-write SDK maps and control-flow optimization remove size overhead while preserving signature checks and storage layout.
+
+Nineteen native tests and the Wasm host-double exercise pass. Both artifacts reject 62 invalid calls, settle signed fixtures and retain the same storage size over ten repeated challenge cycles. The host double is not the NEAR VM and does not measure gas. Read [the full review](contract-review.md) for input tightening, initialization, retention behavior, remaining expiry/legacy/supply issues and deployment gates. No deployment has occurred.

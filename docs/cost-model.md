@@ -4,15 +4,9 @@
 
 ## What the contract stores
 
-The contract stores only the state required to settle a Crown correctly:
+The current contract stores one balance and grant flag per admitted player; Crown records; at most the latest Challenge and its index per player; and operator/verifier metadata. Crown records and operator registration have no global quota yet. Closed Crowns are retained. HOUND policies, replay bodies, Workshop items and activity history are off-chain; they are not fields in this contract.
 
-- one internal CR balance and one grant flag per player;
-- one bounded active Crown record and compact recent settlements;
-- one unresolved Challenge per player;
-- certificate-consumption markers, expiries, rules version, and content hashes;
-- HOUND policy counters.
-
-It never stores replay bytes, raw input streams, Ghost thumbnails, audio, telemetry, generated narration, or unlimited event history. Those are off-chain objects addressed by a content hash when integrity is needed.
+The planned global limits below are requirements, not claims of implemented enforcement. Review findings and local payload measurements are in [the contract review](contract-review.md).
 
 ## Current NEAR cost assumptions
 
@@ -78,13 +72,11 @@ The deployment checklist must stop if release Wasm is 100 KB or more, a method p
 
 This hackathon build does not deploy mainnet contracts, fund mainnet accounts, issue transferable tokens, or provide cash-out. Any of those requires a new cost assessment and explicit approval.
 
-## Measured local artifact — November 12, 2026
+## Measured local artifact — November 13, 2026
 
-`pnpm contract:build` uses NEAR host imports, size-optimized Cargo output and pinned Binaryen optimization to produce **171,283 bytes** at `target/near/rivalghost_contract.wasm`. SHA-256: `b69fed6b495e6ea6daf4e73279bc0ea2cecbf4f1fd637d2c34fd4b2611ea683f`. Raw Cargo output is 209,604 bytes; use the optimized candidate for measurements.
+Optimized **99,428 bytes**, raw **123,147 bytes**, SHA-256 `13c00ccfe2294110283287b930cf960a44d175211e96036313baae968ff8e3a9`. `pnpm contract:check` passes the unchanged `<100000` byte gate, 19 native tests and raw/optimized Wasm regression checks. Ten repeat flight/expiry cycles retained 798 key/value bytes in the host-double fixture, without growth. This excludes trie/account overhead and is not a network storage charge.
 
-`pnpm contract:size` fails against the unchanged **100,000-byte ceiling**. Deployment remains gated on size optimization; the budget was not raised. This measures compiled code only, not deployed runtime compatibility, storage growth, gas receipts or an actual bill. Native unit tests do not replace a deployed smoke test. The std-based dependency graph builds with `wasm32-unknown-unknown`; the no-std `wasm32v1-none` target is not compatible with its current features.
-
-Competitive metadata adds a compact mission, a fingerprint on each Crown, and an exclusive Crown lock. Replay bodies stay off-chain in bounded storage. The next cost work is code-size reduction, followed by per-method state growth and receipt measurements.
+Code-only collateral is approximately 0.9943 NEAR under the documentation's rough ratio. Deployment formula estimate: 13.506 Tgas, about 0.001351 NEAR at the example burn floor. Neither figure is an actual receipt. Current gas documentation distinguishes purchase and burn prices; refresh the sponsor's upfront funding reservation against network configuration before enabling provisioning. Global account/Crown limits, v3 settlement, real NEAR VM execution and per-method gas measurements remain open.
 
 ## Guest bootstrap implementation checkpoint
 

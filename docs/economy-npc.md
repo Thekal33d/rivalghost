@@ -55,7 +55,7 @@ One ledger row stores at most 1,000 player wallets, three Crown replays, the lat
 
 A timeout refund cannot distinguish an outage from a player withholding a losing replay; replay copying and new-browser grant farming are also possible. These limits make this unsuitable for valuable rewards. Before valuable settlement, design and validate anti-abuse rules, identity/recovery, completion/forfeit policy and fair network-failure handling. Practice remains free even when CR is depleted. The NPC needs the local service process running; it does not run independently on NEAR.
 
-No gameplay frame, rehearsal or NPC tick performs a chain call. Future deployment should keep controller/replay data off-chain, store only compact balances/locks/hashes, and sponsor only bounded start/settle/explicit-defense transactions. This change adds no contract fields. Current optimized Wasm is **171,363 bytes**: 80 bytes larger than the preceding artifact and still above the unchanged 100,000-byte ceiling. No measured gas bill or deployed storage figure is available.
+No gameplay frame, rehearsal or NPC tick performs a chain call. Future deployment should keep controller/replay data off-chain, store only compact balances/locks/hashes, and sponsor only bounded start/settle/explicit-defense transactions. This change adds no contract fields. At this milestone the optimized Wasm was 171,363 bytes. The subsequent [contract review](contract-review.md) reduced it to **99,428 bytes**, below the unchanged 100,000-byte ceiling. No measured gas bill or deployed storage figure is available.
 
 ### Evidence and remaining track gaps
 
