@@ -15,7 +15,8 @@
     "contract:size": "pnpm contract:build && node tools/check-contract-size.mjs",
     "contract:build": "node tools/build-contract.mjs",
     "contract:smoke": "pnpm contract:build && node tools/contract-wasm-smoke.mjs",
-    "guest:serve": "pnpm --filter @rivalghost/relayer... build && pnpm --filter @rivalghost/relayer start"
+    "guest:serve": "pnpm --filter @rivalghost/relayer... build && pnpm --filter @rivalghost/relayer start",
+    "contract:check": "cargo fmt --all -- --check && cargo test --locked --workspace && pnpm contract:size && node tools/contract-wasm-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

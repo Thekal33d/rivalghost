@@ -1,5 +1,8 @@
-use near_sdk::store::LookupMap;
+mod abi;
+
+mod storage;
 use near_sdk::{env, near, require, AccountId, BorshStorageKey, PanicOnDefault};
+use storage::StorageMap as LookupMap;
 
 const GUEST_GRANT_CREDITS: u64 = 100;
 const CHALLENGE_ENTRY_CREDITS: u64 = 10;
@@ -24,6 +27,7 @@ enum StorageKey {
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CompetitionMission {
     pub revision: u8,
     pub chapter: u8,
@@ -33,14 +37,38 @@ pub struct CompetitionMission {
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
 #[serde(rename_all = "lowercase")]
-pub enum Rig { Needle, Fan, Guard }
+pub enum Rig {
+    Needle,
+    Fan,
+    Guard,
+}
 
 impl CompetitionMission {
     fn hash(&self, seed: u32) -> String {
-        require!(self.revision == 1 && self.chapter < 10, "Unsupported competitive mission");
-        let rig = match self.rig { Rig::Needle => "needle", Rig::Fan => "fan", Rig::Guard => "guard" };
-        let message = format!("RIVALGHOST-MISSION-v2|{}|3600|{}|{}|{}", self.revision, seed, self.chapter, rig);
-        env::sha256(message.as_bytes()).iter().map(|b| format!("{:02x}", b)).collect()
+        require!(
+            self.revision == 1 && self.chapter < 10,
+            "Unsupported competitive mission"
+        );
+        let rig = match self.rig {
+            Rig::Needle => "needle",
+            Rig::Fan => "fan",
+            Rig::Guard => "guard",
+        };
+        let mut message = String::from("RIVALGHOST-MISSION-v2|");
+        decimal(&mut message, self.revision as u64);
+        message.push_str("|3600|");
+        decimal(&mut message, seed as u64);
+        message.push('|');
+        decimal(&mut message, self.chapter as u64);
+        message.push('|');
+        message.push_str(rig);
+        let mut hash = String::with_capacity(64);
+        const HEX: &[u8; 16] = b"0123456789abcdef";
+        for byte in env::sha256(message.as_bytes()) {
+            hash.push(HEX[(byte >> 4) as usize] as char);
+            hash.push(HEX[(byte & 15) as usize] as char);
+        }
+        hash
     }
 }
 
@@ -51,6 +79,7 @@ pub struct Crown {
     pub loadout_hash: String,
     pub active_challenge_id: Option<u64>,
     pub id: u64,
+    #[borsh(deserialize_with = "read_account")]
     pub holder: AccountId,
     pub score_to_beat: u64,
     pub bounty_credits: u64,
@@ -69,6 +98,7 @@ pub struct Challenge {
     pub mission: Option<CompetitionMission>,
     pub id: u64,
     pub crown_id: u64,
+    #[borsh(deserialize_with = "read_account")]
     pub challenger: AccountId,
     pub entry_credits: u64,
     pub started_at_ms: u64,
@@ -81,7 +111,9 @@ pub struct Challenge {
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
+#[serde(deny_unknown_fields)]
 pub struct CrownSeed {
+    #[borsh(deserialize_with = "read_account")]
     pub holder: AccountId,
     pub score_to_beat: u64,
     pub bounty_credits: u64,
@@ -91,6 +123,7 @@ pub struct CrownSeed {
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone)]
+#[serde(deny_unknown_fields)]
 pub struct SettlementCertificate {
     #[serde(default)]
     pub contract_id: Option<AccountId>,
@@ -123,6 +156,7 @@ pub struct Settlement {
 #[derive(PanicOnDefault)]
 pub struct RivalGhost {
     rules_version: u8,
+    #[borsh(deserialize_with = "read_account")]
     operator: AccountId,
     verifier_public_key: Vec<u8>,
     verifier_key_version: u8,
@@ -135,10 +169,12 @@ pub struct RivalGhost {
     active_challenge_by_player: LookupMap<AccountId, u64>,
 }
 
-#[near]
 impl RivalGhost {
-    #[init]
     pub fn new(operator: AccountId, verifier_public_key: Vec<u8>) -> Self {
+        require!(
+            env::predecessor_account_id() == env::current_account_id(),
+            "Contract account must initialize"
+        );
         require!(
             verifier_public_key.len() == 32,
             "Verifier key must be 32 Ed25519 bytes"
@@ -162,9 +198,13 @@ impl RivalGhost {
         self.rules_version
     }
 
-    pub fn supported_rules_versions(&self) -> Vec<u8> { vec![1, 2] }
+    pub fn supported_rules_versions(&self) -> Vec<u8> {
+        vec![1, 2]
+    }
 
-    pub fn verifier_public_key(&self) -> Vec<u8> { self.verifier_public_key.clone() }
+    pub fn verifier_public_key(&self) -> Vec<u8> {
+        self.verifier_public_key.clone()
+    }
 
     pub fn operator(&self) -> AccountId {
         self.operator.clone()
@@ -175,25 +215,26 @@ impl RivalGhost {
     }
 
     pub fn has_guest_grant(&self, account_id: AccountId) -> bool {
-        self.guest_grants.get(&account_id).copied().unwrap_or(false)
+        self.guest_grants.get(&account_id).unwrap_or(false)
     }
 
     pub fn get_balance(&self, account_id: AccountId) -> u64 {
-        self.balances.get(&account_id).copied().unwrap_or(0)
+        self.balances.get(&account_id).unwrap_or(0)
     }
 
     pub fn get_crown(&self, crown_id: u64) -> Option<Crown> {
-        self.crowns.get(&crown_id).cloned()
+        self.crowns.get(&crown_id)
     }
 
     pub fn get_challenge(&self, challenge_id: u64) -> Option<Challenge> {
-        self.challenges.get(&challenge_id).cloned()
+        self.challenges.get(&challenge_id)
     }
 
     pub fn get_active_challenge(&self, account_id: AccountId) -> Option<Challenge> {
         self.active_challenge_by_player
             .get(&account_id)
-            .and_then(|challenge_id| self.challenges.get(&challenge_id).cloned())
+            .and_then(|challenge_id| self.challenges.get(&challenge_id))
+            .filter(|challenge| !challenge.settled)
     }
 
     /// The authenticated bootstrap service calls this once after confirming account creation.
@@ -219,7 +260,10 @@ impl RivalGhost {
 
     fn seed_competition(&mut self, seed: CrownSeed, mission: Option<CompetitionMission>) -> Crown {
         self.assert_operator();
-        let loadout_hash = mission.as_ref().map(|m| m.hash(seed.seed)).unwrap_or_else(|| FIXED_LOADOUT_HASH.to_string());
+        let loadout_hash = mission
+            .as_ref()
+            .map(|m| m.hash(seed.seed))
+            .unwrap_or_else(|| FIXED_LOADOUT_HASH.to_string());
         require!(
             seed.bounty_credits >= MINIMUM_BOUNTY_CREDITS,
             "Bounty is below the minimum"
@@ -260,14 +304,13 @@ impl RivalGhost {
     pub fn start_challenge(&mut self, crown_id: u64) -> Challenge {
         let challenger = env::predecessor_account_id();
         require!(
-            self.active_challenge_by_player.get(&challenger).is_none(),
+            self.get_active_challenge(challenger.clone()).is_none(),
             "Player already has a live challenge"
         );
         let mut crown = self
             .crowns
             .get(&crown_id)
-            .cloned()
-            .expect("Crown not found");
+            .unwrap_or_else(|| env::panic_str("Crown not found"));
         require!(
             crown.active && now_ms() + CHALLENGE_EXPIRY_MS <= crown.expires_at_ms,
             "Crown is not open for a full Challenge"
@@ -276,11 +319,21 @@ impl RivalGhost {
             crown.holder != challenger,
             "Cannot challenge your own Crown"
         );
-        require!(crown.active_challenge_id.is_none(), "Crown already has a live challenge");
-        require!(crown.bounty_credits >= MINIMUM_BOUNTY_CREDITS, "Winner must fund a defense before challenges reopen");
+        require!(
+            crown.active_challenge_id.is_none(),
+            "Crown already has a live challenge"
+        );
+        require!(
+            crown.bounty_credits >= MINIMUM_BOUNTY_CREDITS,
+            "Winner must fund a defense before challenges reopen"
+        );
         let balance = self.get_balance(challenger.clone());
         require!(balance >= CHALLENGE_ENTRY_CREDITS, "Insufficient CR");
 
+        // Keep at most one challenge record per admitted player. Archive receipts off-chain.
+        if let Some(previous) = self.active_challenge_by_player.get(&challenger) {
+            self.challenges.remove(&previous);
+        }
         self.balances
             .insert(challenger.clone(), balance - CHALLENGE_ENTRY_CREDITS);
         let started_at_ms = now_ms();
@@ -312,24 +365,23 @@ impl RivalGhost {
         let mut challenge = self
             .challenges
             .get(&certificate.challenge_id)
-            .cloned()
-            .expect("Challenge not found");
+            .unwrap_or_else(|| env::panic_str("Challenge not found"));
         require!(!challenge.settled, "Challenge already settled");
         require!(now < challenge.expires_at_ms, "Challenge has expired");
 
         let mut crown = self
             .crowns
             .get(&challenge.crown_id)
-            .cloned()
-            .expect("Crown not found");
-        require!(crown.active && crown.active_challenge_id == Some(challenge.id), "Challenge does not own the Crown lock");
+            .unwrap_or_else(|| env::panic_str("Crown not found"));
+        require!(
+            crown.active && crown.active_challenge_id == Some(challenge.id),
+            "Challenge does not own the Crown lock"
+        );
         self.assert_valid_certificate(&certificate, &challenge, &crown, now);
         crown.active_challenge_id = None;
 
         challenge.settled = true;
         self.challenges.insert(challenge.id, challenge.clone());
-        self.active_challenge_by_player
-            .remove(&challenge.challenger);
 
         let challenger_won = certificate.score > crown.score_to_beat;
         if challenger_won {
@@ -360,8 +412,7 @@ impl RivalGhost {
         let mut challenge = self
             .challenges
             .get(&challenge_id)
-            .cloned()
-            .expect("Challenge not found");
+            .unwrap_or_else(|| env::panic_str("Challenge not found"));
         require!(!challenge.settled, "Challenge already settled");
         require!(
             now_ms() >= challenge.expires_at_ms,
@@ -370,10 +421,15 @@ impl RivalGhost {
 
         challenge.settled = true;
         self.challenges.insert(challenge.id, challenge.clone());
-        self.active_challenge_by_player
-            .remove(&challenge.challenger);
-        let mut crown = self.crowns.get(&challenge.crown_id).cloned().expect("Crown not found");
-        require!(crown.active_challenge_id == Some(challenge.id), "Challenge does not own the Crown lock");
+
+        let mut crown = self
+            .crowns
+            .get(&challenge.crown_id)
+            .unwrap_or_else(|| env::panic_str("Crown not found"));
+        require!(
+            crown.active_challenge_id == Some(challenge.id),
+            "Challenge does not own the Crown lock"
+        );
         crown.active_challenge_id = None;
         self.crowns.insert(crown.id, crown);
         self.credit(challenge.challenger, challenge.entry_credits);
@@ -385,16 +441,21 @@ impl RivalGhost {
         let mut crown = self
             .crowns
             .get(&crown_id)
-            .cloned()
-            .expect("Crown not found");
+            .unwrap_or_else(|| env::panic_str("Crown not found"));
         require!(
-            crown.active && now_ms() < crown.expires_at_ms,
-            "Crown is not open"
+            crown.active && now_ms() + CHALLENGE_EXPIRY_MS <= crown.expires_at_ms,
+            "Crown is not open for a full Challenge"
         );
         require!(crown.holder == holder, "Crown holder only");
-        require!(crown.active_challenge_id.is_none(), "Crown already has a live challenge");
+        require!(
+            crown.active_challenge_id.is_none(),
+            "Crown already has a live challenge"
+        );
         require!(!crown.defense_used, "Defense already used");
-        require!(crown.bounty_credits == 0, "Only a won Crown can be defended");
+        require!(
+            crown.bounty_credits == 0,
+            "Only a won Crown can be defended"
+        );
         let balance = self.get_balance(holder.clone());
         require!(balance >= DEFEND_CREDITS, "Insufficient CR");
 
@@ -409,10 +470,12 @@ impl RivalGhost {
         let mut crown = self
             .crowns
             .get(&crown_id)
-            .cloned()
-            .expect("Crown not found");
+            .unwrap_or_else(|| env::panic_str("Crown not found"));
         require!(crown.active, "Crown already closed");
-        require!(crown.active_challenge_id.is_none(), "Expire the live challenge first");
+        require!(
+            crown.active_challenge_id.is_none(),
+            "Expire the live challenge first"
+        );
         require!(now_ms() >= crown.expires_at_ms, "Crown is still live");
 
         let payout = crown.bounty_credits;
@@ -438,13 +501,24 @@ impl RivalGhost {
         now: u64,
     ) {
         require!(
-            certificate.certificate_version == if challenge.rules_version == 2 { 2 } else { CERTIFICATE_VERSION },
+            certificate.certificate_version
+                == if challenge.rules_version == 2 {
+                    2
+                } else {
+                    CERTIFICATE_VERSION
+                },
             "Certificate version is unsupported"
         );
         if challenge.rules_version == 2 {
-            require!(certificate.contract_id.as_ref() == Some(&env::current_account_id()), "Certificate deployment does not match");
+            require!(
+                certificate.contract_id.as_ref() == Some(&env::current_account_id()),
+                "Certificate deployment does not match"
+            );
         } else {
-            require!(certificate.contract_id.is_none(), "Legacy certificate cannot include a deployment");
+            require!(
+                certificate.contract_id.is_none(),
+                "Legacy certificate cannot include a deployment"
+            );
         }
         require!(
             certificate.crown_id == challenge.crown_id,
@@ -463,7 +537,8 @@ impl RivalGhost {
             "Certificate seed does not match Challenge"
         );
         require!(
-            certificate.loadout_hash == challenge.loadout_hash && certificate.loadout_hash == crown.loadout_hash,
+            certificate.loadout_hash == challenge.loadout_hash
+                && certificate.loadout_hash == crown.loadout_hash,
             "Certificate loadout does not match Challenge"
         );
         require!(
@@ -496,12 +571,12 @@ impl RivalGhost {
             .signature
             .as_slice()
             .try_into()
-            .expect("Invalid signature length");
+            .unwrap_or_else(|_| env::panic_str("Invalid signature length"));
         let public_key: [u8; 32] = self
             .verifier_public_key
             .as_slice()
             .try_into()
-            .expect("Invalid verifier key length");
+            .unwrap_or_else(|_| env::panic_str("Invalid verifier key length"));
         require!(
             env::ed25519_verify(&signature, certificate.message().as_bytes(), &public_key),
             "Certificate signature is invalid"
@@ -516,26 +591,69 @@ impl RivalGhost {
 
 impl SettlementCertificate {
     fn message(&self) -> String {
-        let domain = if self.certificate_version == 2 {
-            format!("RIVALGHOST-CERT-v2|near:testnet|{}", self.contract_id.as_ref().expect("Missing certificate deployment"))
-        } else { "RIVALGHOST-CERT-v1".to_string() };
-        format!(
-            "{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
-            domain,
-            self.challenge_id,
-            self.crown_id,
-            self.player_id,
-            self.rules_version,
-            self.seed,
-            self.loadout_hash,
-            self.replay_hash,
-            self.final_state_hash,
-            self.score,
-            self.issued_at_ms,
-            self.expires_at_ms,
-            self.verifier_key_version,
-        )
+        let mut message = if self.certificate_version == 2 {
+            let mut domain = String::from("RIVALGHOST-CERT-v2|near:testnet|");
+            domain.push_str(
+                self.contract_id
+                    .as_ref()
+                    .unwrap_or_else(|| env::panic_str("Missing certificate deployment"))
+                    .as_str(),
+            );
+            domain
+        } else {
+            String::from("RIVALGHOST-CERT-v1")
+        };
+        number_field(&mut message, self.challenge_id);
+        number_field(&mut message, self.crown_id);
+        text_field(&mut message, self.player_id.as_str());
+        number_field(&mut message, self.rules_version as u64);
+        number_field(&mut message, self.seed as u64);
+        text_field(&mut message, &self.loadout_hash);
+        text_field(&mut message, &self.replay_hash);
+        text_field(&mut message, &self.final_state_hash);
+        number_field(&mut message, self.score);
+        number_field(&mut message, self.issued_at_ms);
+        number_field(&mut message, self.expires_at_ms);
+        number_field(&mut message, self.verifier_key_version as u64);
+        message
     }
+}
+fn text_field(output: &mut String, value: &str) {
+    output.push('|');
+    output.push_str(value);
+}
+fn number_field(output: &mut String, value: u64) {
+    output.push('|');
+    decimal(output, value);
+}
+/// Exact unsigned decimal encoding; covered against Rust formatting and the TS signed fixture.
+fn decimal(output: &mut String, mut value: u64) {
+    let mut digits = [0u8; 20];
+    let mut start = 20;
+    loop {
+        start -= 1;
+        digits[start] = b'0' + (value % 10) as u8;
+        value /= 10;
+        if value == 0 {
+            break;
+        }
+    }
+    for &digit in &digits[start..] {
+        output.push(digit as char);
+    }
+}
+
+// Preserve the SDK's validated string/Borsh layout with a bounded error message.
+fn read_account<R: near_sdk::borsh::io::Read>(
+    reader: &mut R,
+) -> Result<AccountId, near_sdk::borsh::io::Error> {
+    use near_sdk::borsh::{
+        io::{Error, ErrorKind},
+        BorshDeserialize,
+    };
+    String::deserialize_reader(reader)?
+        .parse()
+        .map_err(|_| Error::new(ErrorKind::InvalidData, "Invalid stored account"))
 }
 
 fn now_ms() -> u64 {
@@ -573,10 +691,15 @@ mod tests {
     }
 
     fn contract(signing_key: &SigningKey) -> RivalGhost {
-        RivalGhost::new(
+        let predecessor = env::predecessor_account_id();
+        let timestamp = now_ms();
+        context("rivalghost.testnet", timestamp);
+        let game = RivalGhost::new(
             account("operator.testnet"),
             signing_key.verifying_key().to_bytes().to_vec(),
-        )
+        );
+        context(predecessor.as_str(), timestamp);
+        game
     }
 
     #[test]
@@ -611,8 +734,16 @@ mod tests {
         score: u64,
     ) -> SettlementCertificate {
         let mut certificate = SettlementCertificate {
-            certificate_version: if challenge.rules_version == 2 { 2 } else { CERTIFICATE_VERSION },
-            contract_id: if challenge.rules_version == 2 { Some(env::current_account_id()) } else { None },
+            certificate_version: if challenge.rules_version == 2 {
+                2
+            } else {
+                CERTIFICATE_VERSION
+            },
+            contract_id: if challenge.rules_version == 2 {
+                Some(env::current_account_id())
+            } else {
+                None
+            },
             challenge_id: challenge.id,
             crown_id: challenge.crown_id,
             player_id: challenge.challenger.clone(),
@@ -721,10 +852,20 @@ mod tests {
         contract.create_guest(account("hound.testnet"));
         contract.create_guest(account("player.testnet"));
         contract.create_guest(account("other.testnet"));
-        let crown = contract.seed_expedition_crown(CrownSeed {
-            holder: account("hound.testnet"), score_to_beat: 14000, bounty_credits: 40,
-            seed: 313, ghost_hash: "a".repeat(64),
-        }, CompetitionMission { revision: 1, chapter: 0, rig: Rig::Fan });
+        let crown = contract.seed_expedition_crown(
+            CrownSeed {
+                holder: account("hound.testnet"),
+                score_to_beat: 14000,
+                bounty_credits: 40,
+                seed: 313,
+                ghost_hash: "a".repeat(64),
+            },
+            CompetitionMission {
+                revision: 1,
+                chapter: 0,
+                rig: Rig::Fan,
+            },
+        );
         context("player.testnet", 1001);
         contract.start_challenge(crown.id)
     }
@@ -732,12 +873,18 @@ mod tests {
     #[test]
     fn expedition_hash_matches_typescript_and_settles_with_bound_mission() {
         context("operator.testnet", 1000);
-        let key = verifier_key(); let mut game = contract(&key);
+        let key = verifier_key();
+        let mut game = contract(&key);
         let challenge = open_expedition(&mut game);
         assert_eq!(challenge.rules_version, 2);
-        assert_eq!(challenge.loadout_hash, "24dbd92929fea14445b2481899ddd7ceddd711aef9224024f25093a8ccdfeaad");
+        assert_eq!(
+            challenge.loadout_hash,
+            "24dbd92929fea14445b2481899ddd7ceddd711aef9224024f25093a8ccdfeaad"
+        );
         let cert = certificate(&key, &challenge, 14001);
-        assert!(cert.message().starts_with("RIVALGHOST-CERT-v2|near:testnet|rivalghost.testnet|"));
+        assert!(cert
+            .message()
+            .starts_with("RIVALGHOST-CERT-v2|near:testnet|rivalghost.testnet|"));
         context("relayer.testnet", 1002);
         let settled = game.settle_challenge(cert);
         assert!(settled.challenger_won);
@@ -750,7 +897,8 @@ mod tests {
     #[test]
     fn rejects_signed_mismatches_and_modified_certificates_before_mutating_balances() {
         context("operator.testnet", 1000);
-        let key = verifier_key(); let mut game = contract(&key);
+        let key = verifier_key();
+        let mut game = contract(&key);
         let challenge = open_expedition(&mut game);
         context("relayer.testnet", 1002);
         for case in 0..7 {
@@ -765,88 +913,137 @@ mod tests {
                 _ => cert.issued_at_ms = 999,
             }
             cert.signature = key.sign(cert.message().as_bytes()).to_bytes().to_vec();
-            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(cert))).is_err());
+            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+                || game.settle_challenge(cert)
+            ))
+            .is_err());
             assert_eq!(game.get_balance(account("player.testnet")), 90);
             assert!(!game.get_challenge(challenge.id).unwrap().settled);
         }
         let mut forged = certificate(&key, &challenge, 14001);
         forged.score += 1;
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(forged))).is_err());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            || game.settle_challenge(forged)
+        ))
+        .is_err());
         let mut legacy = certificate(&key, &challenge, 14001);
         legacy.certificate_version = 1;
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(legacy))).is_err());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            || game.settle_challenge(legacy)
+        ))
+        .is_err());
     }
 
     #[test]
     fn crown_target_and_bounty_remain_locked_during_a_flight() {
         context("operator.testnet", 1000);
-        let key = verifier_key(); let mut game = contract(&key);
+        let key = verifier_key();
+        let mut game = contract(&key);
         let challenge = open_expedition(&mut game);
         context("other.testnet", 1002);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.start_challenge(challenge.crown_id))).is_err());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            || game.start_challenge(challenge.crown_id)
+        ))
+        .is_err());
         assert_eq!(game.get_balance(account("other.testnet")), 100);
         context("hound.testnet", 1002);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(challenge.crown_id))).is_err());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            || game.defend_crown(challenge.crown_id)
+        ))
+        .is_err());
         context("relayer.testnet", 1002);
         game.settle_challenge(certificate(&key, &challenge, 0));
         context("other.testnet", 1003);
-        assert_eq!(game.start_challenge(challenge.crown_id).challenger, account("other.testnet"));
+        assert_eq!(
+            game.start_challenge(challenge.crown_id).challenger,
+            account("other.testnet")
+        );
     }
 
     #[test]
     fn expiry_releases_both_locks_and_late_certificates_cannot_pay() {
         context("operator.testnet", 1000);
-        let key = verifier_key(); let mut game = contract(&key);
+        let key = verifier_key();
+        let mut game = contract(&key);
         let challenge = open_expedition(&mut game);
         let cert = certificate(&key, &challenge, 14001);
         context("relayer.testnet", challenge.expires_at_ms);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(cert))).is_err());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            || game.settle_challenge(cert)
+        ))
+        .is_err());
         game.expire_challenge(challenge.id);
-        assert!(game.get_crown(challenge.crown_id).unwrap().active_challenge_id.is_none());
-        assert!(game.get_active_challenge(account("player.testnet")).is_none());
+        assert!(game
+            .get_crown(challenge.crown_id)
+            .unwrap()
+            .active_challenge_id
+            .is_none());
+        assert!(game
+            .get_active_challenge(account("player.testnet"))
+            .is_none());
         assert_eq!(game.get_balance(account("player.testnet")), 100);
     }
 
     #[test]
     fn empty_won_crown_requires_explicit_defense_and_conserves_credits() {
         context("operator.testnet", 1000);
-        let key = verifier_key(); let mut game = contract(&key);
+        let key = verifier_key();
+        let mut game = contract(&key);
         let challenge = open_expedition(&mut game);
         context("relayer.testnet", 1002);
         game.settle_challenge(certificate(&key, &challenge, 14001));
         context("other.testnet", 1003);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.start_challenge(0))).is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.start_challenge(0)))
+                .is_err()
+        );
         assert_eq!(game.get_balance(account("other.testnet")), 100);
         context("player.testnet", 1004);
         let defended = game.defend_crown(0);
         assert_eq!(defended.bounty_credits, 20);
         assert_eq!(game.get_balance(account("player.testnet")), 120);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(0))).is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(0)))
+                .is_err()
+        );
         context("other.testnet", 1005);
         game.start_challenge(0);
-        let total = game.get_balance(account("player.testnet")) + game.get_balance(account("hound.testnet")) + game.get_balance(account("other.testnet")) + game.get_crown(0).unwrap().bounty_credits + 10;
+        let total = game.get_balance(account("player.testnet"))
+            + game.get_balance(account("hound.testnet"))
+            + game.get_balance(account("other.testnet"))
+            + game.get_crown(0).unwrap().bounty_credits
+            + 10;
         assert_eq!(total, 300);
     }
 
     #[test]
     fn opening_holder_cannot_charge_a_defense_before_a_win() {
         context("operator.testnet", 1000);
-        let key = verifier_key(); let mut game = contract(&key);
+        let key = verifier_key();
+        let mut game = contract(&key);
         let challenge = open_challenge(&mut game);
         context("relayer.testnet", challenge.expires_at_ms);
         game.expire_challenge(challenge.id);
         context("hound.testnet", challenge.expires_at_ms + 1);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(0))).is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(0)))
+                .is_err()
+        );
         assert_eq!(game.get_balance(account("hound.testnet")), 60);
     }
 
     #[test]
     fn settles_the_actual_typescript_verifier_fixture() {
         context("operator.testnet", 1000);
-        let key = verifier_key(); let mut game = contract(&key);
+        let key = verifier_key();
+        let mut game = contract(&key);
         let challenge = open_expedition(&mut game);
-        let fixture: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(include_str!("../../../fixtures/expedition-v2-settlement.json")).unwrap();
-        let cert: SettlementCertificate = near_sdk::serde_json::from_value(fixture["contractCertificate"].clone()).unwrap();
+        let fixture: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(include_str!(
+            "../../../fixtures/expedition-v2-settlement.json"
+        ))
+        .unwrap();
+        let cert: SettlementCertificate =
+            near_sdk::serde_json::from_value(fixture["contractCertificate"].clone()).unwrap();
         let score = fixture["verified"]["score"].as_u64().unwrap();
         assert_eq!(cert.challenge_id, challenge.id);
         context("relayer.testnet", 1002);
@@ -854,7 +1051,76 @@ mod tests {
         assert!(settlement.challenger_won);
         assert_eq!(game.get_crown(0).unwrap().score_to_beat, score);
         assert_eq!(settlement.challenger_credits, 140);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.settle_challenge(cert))).is_err());
+        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+            || game.settle_challenge(cert)
+        ))
+        .is_err());
     }
 
+    #[test]
+    fn initialization_requires_contract_account() {
+        context("attacker.testnet", 1000);
+        assert!(std::panic::catch_unwind(|| RivalGhost::new(
+            account("attacker.testnet"),
+            vec![7; 32]
+        ))
+        .is_err());
+    }
+
+    #[test]
+    fn completed_history_is_pruned_when_player_starts_again() {
+        context("operator.testnet", 1000);
+        let key = verifier_key();
+        let mut game = contract(&key);
+        let first = open_expedition(&mut game);
+        context("relayer.testnet", 1002);
+        game.settle_challenge(certificate(&key, &first, 0));
+        assert!(game.get_challenge(first.id).unwrap().settled);
+        assert!(game
+            .get_active_challenge(account("player.testnet"))
+            .is_none());
+        context("player.testnet", 1003);
+        let second = game.start_challenge(first.crown_id);
+        assert!(game.get_challenge(first.id).is_none());
+        assert_eq!(
+            game.get_active_challenge(account("player.testnet"))
+                .unwrap()
+                .id,
+            second.id
+        );
+        context("relayer.testnet", second.expires_at_ms);
+        game.expire_challenge(second.id);
+        context("player.testnet", second.expires_at_ms + 1);
+        let third = game.start_challenge(first.crown_id);
+        assert!(game.get_challenge(second.id).is_none());
+        assert!(!game.get_challenge(third.id).unwrap().settled);
+    }
+
+    #[test]
+    fn defense_requires_time_for_a_complete_flight() {
+        context("operator.testnet", 1000);
+        let key = verifier_key();
+        let mut game = contract(&key);
+        let challenge = open_expedition(&mut game);
+        context("relayer.testnet", 1002);
+        game.settle_challenge(certificate(&key, &challenge, 14001));
+        let expires = game.get_crown(0).unwrap().expires_at_ms;
+        context("player.testnet", expires - CHALLENGE_EXPIRY_MS + 1);
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(0)))
+                .is_err()
+        );
+        assert_eq!(game.get_balance(account("player.testnet")), 140);
+        context("player.testnet", expires - CHALLENGE_EXPIRY_MS);
+        assert_eq!(game.defend_crown(0).bounty_credits, 20);
+    }
+
+    #[test]
+    fn decimal_encoding_is_exact_at_unsigned_boundaries() {
+        for n in [0, 1, 9, 10, 99, 100, 999, 1000, u32::MAX as u64, u64::MAX] {
+            let mut encoded = String::new();
+            decimal(&mut encoded, n);
+            assert_eq!(encoded, n.to_string());
+        }
+    }
 }
