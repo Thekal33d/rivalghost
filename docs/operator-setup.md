@@ -59,7 +59,7 @@ NEAR_AI_TOTAL_BUDGET_USD=1
 NEAR_AI_DAILY_REQUESTS=4
 ```
 
-The creator has now confirmed at least $1 of available credits and saved the key privately. Model pricing was checked without inference. Leave the flag false until the first live test is authorized. Four calls per day alone is not a dollar cap; the new durable $1 reservation allowance now adds $0.003 per attempted decision and survives restarts/day changes. Provider prepaid/no-top-up controls remain separate. See [the AI pilot checkpoint](ai-pilot.md) for the selected model, live price checks and the limits of application accounting.
+The creator has now confirmed at least $1 of available credits and saved the key privately. Model pricing was checked without inference. The creator authorized one live test, which succeeded; keep the flag false because recurring inference is not enabled. Four calls per day alone is not a dollar cap; the new durable $1 reservation allowance now adds $0.003 per attempted decision and survives restarts/day changes. Provider prepaid/no-top-up controls remain separate. See [the AI pilot checkpoint](ai-pilot.md) for the selected model, live price checks and the limits of application accounting.
 
 Planning formula, with prices per million tokens:
 
@@ -100,7 +100,7 @@ Namecheap is the registrar only. No domain has been chosen. Pick a domain or an 
 ## Next inputs and implementation order
 
 1. **Completed:** funded operator `rivalghost-ops-thekal33d.testnet`. Signing credentials and a dedicated testnet authentication allowance remain unconfigured.
-2. **Prepared:** Cloud credits confirmed, API key saved privately, reviewed model configured, $1 durable reservation ceiling implemented; first paid inference remains pending.
+2. **Prepared:** Cloud credits confirmed, API key saved privately, reviewed model configured, $1 durable reservation ceiling implemented; one authorized paid inference succeeded; recurring inference remains disabled.
 3. Trialoom's deployment method or an existing SSH alias for read-only server inspection. The server model is now known; no need to repeat it.
 4. Chosen game hostname when ready.
 

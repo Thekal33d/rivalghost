@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-13 — first live NEAR AI decision
+
+- Completed the creator-approved single paid MOTH test: HTTP 200, validated recovery focus, 82 input and 7 output tokens; one completion POST with no retry.
+- Estimated token charge is $0.00001615 at the checked rates; the durable ledger retains the full $0.003 reservation. The provider invoice/balance was not independently reconciled.
+- Recorded sanitized live evidence. Recurring inference remains disabled; no keys were committed or NEAR transactions sent.
+
 ## 2026-11-13 — bounded AI pilot configuration
 
 - Configured the reviewed NEAR-hosted Qwen instruction model privately, with paid inference still disabled.

@@ -1,0 +1,36 @@
+{
+  "at": "2026-11-13T14:10:52.622Z",
+  "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+  "recurringInferenceEnabled": false,
+  "snapshot": {
+    "salvageInStock": 0,
+    "fullyRestoredDistricts": 0
+  },
+  "paidPostAttempts": 1,
+  "provider": {
+    "httpStatus": 200,
+    "latencyMs": 419,
+    "usage": {
+      "prompt_tokens": 82,
+      "completion_tokens": 7,
+      "total_tokens": 89
+    },
+    "modelMatches": true,
+    "estimatedTokenCostUsd": 1.615e-05
+  },
+  "decision": {
+    "focus": "recovery",
+    "source": "near-ai",
+    "at": 1794579052622,
+    "reason": "MOTH chose a salvage recovery focus.",
+    "responseId": "chatcmpl-5112e90e-a108-4326-8f03-373c26ae38d6"
+  },
+  "budget": {
+    "limitUsd": 1,
+    "reservedUsd": 0.003,
+    "perRequestUsd": 0.003,
+    "kind": "conservative-reservation-not-provider-balance",
+    "reservedThisTestUsd": 0.003
+  },
+  "attestationVerified": false
+}

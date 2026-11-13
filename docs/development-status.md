@@ -18,7 +18,7 @@ November 13, 2026
 | Guest/relay | Browser pilot keys and signed login; HttpOnly sessions; authenticated verification gateway; opt-in testnet account bootstrap with scoped keys and durable budgets | Real provisioning validation, NEP-366 delegation, relay quotas/accounting and circuit breaker |
 | Economy / HOUND | Playable local Crown Pit; finite persistent CR ledger; NPC wallet, three input-only styles, autonomous policy-limited counterflights; replay receipts, defense, ranked expiry forfeiture and isolated seven-day workbench | Funded NEAR NPC wallet and sponsored execution, v3 protocol decision, stronger identity/anti-abuse, NEP-245 item custody and v3 settlement (local markets now implemented) |
 | Living world | MOTH recovery jobs/exchange; craftable and tradeable cosmetic trails; HOUND commissions and raceable archive; ten shared restoration tracks | Public market/abuse validation and NEAR asset settlement |
-| Compute | Server-only NEAR AI focus adapter, bounded/cached fallback; read-only farm reporting and Reactor UI | First paid inference test, attestation verification and later individual staking; funded account/key, live catalog preflight and $1 durable reservation cap are ready |
+| Compute | Server-only NEAR AI focus adapter, bounded/cached fallback; read-only farm reporting and Reactor UI | Recurring inference activation, broader behavior/latency checks, attestation verification and later individual staking; one paid decision has succeeded with a $0.003 reservation |
 | Release | Local commits, build instructions and public GitHub repository `Thekal33d/rivalghost` | Hosted demo, fresh-clone checks, judge walkthrough, real captures and submission |
 
 See [the living economy checkpoint](living-economy.md) for gameplay, parameters, compute setup and evidence. No NEAR funds have been spent.
@@ -74,4 +74,4 @@ Browser QA confirms local pilot reconnection, the honest disabled NEAR Auth stat
 
 ## AI pilot preparation
 
-The creator confirms at least $1 of Cloud credits and has privately configured the API key. The model catalog preflight passes for `Qwen/Qwen3-VL-30B-A3B-Instruct`. A durable $1 application allowance reserves $0.003 per attempt, with four attempts/day and fresh price checks before inference. Paid inference remains disabled. See [the AI pilot checkpoint](ai-pilot.md).
+The creator confirms at least $1 of Cloud credits and has privately configured the API key. The model catalog preflight passes for `Qwen/Qwen3-VL-30B-A3B-Instruct`. A durable $1 application allowance reserves $0.003 per attempt, with four attempts/day and fresh price checks before inference. One explicitly authorized paid test succeeded: MOTH chose recovery, using 82 input/7 output tokens, estimated $0.00001615 at checked rates. The $0.003 reservation persists and recurring inference remains disabled. See [the AI pilot checkpoint](ai-pilot.md).
