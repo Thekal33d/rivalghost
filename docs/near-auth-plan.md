@@ -2,43 +2,43 @@
 
 November 13, 2026
 
-The sponsor is configured and funded. The actual game now opens the provider login form at the supported local address **http://localhost:3000**. Personal login, approval and MPC signature return remain to be completed; reaching the form alone is not proof of account ownership.
+The funded testnet integration now separates **OIDC identity login** from **signed game-session authorization**. Use **http://localhost:3000** exactly. The revised login reaches the real provider form; a human login return and subsequent MPC approval still require end-to-end validation.
 
 ## Player steps
 
-1. Open `http://localhost:3000` exactly. Choose Save Pilot → Sign in to a NEAR pilot (or link an already saved pilot at this origin).
-2. Use the provider's email, Google or passkey login. Its shared testnet application is named **Example**. Approve only the displayed RivalGhost identity message; this first message grants no spending.
-3. After returning, choose **Authorize game session**. Review the exact game contract and the two delegated calls, `join` and `set_session`, with zero attached NEAR. This permits the current device to use internal CR/items for at most 12 hours. It cannot transfer native NEAR.
-4. The sponsor submits the authorization, creating/funding the implicit account if needed. The contract grants 100 test CR once from its finite reserve. Open Workshop, reserve a free job, fly and confirm the reward receipt.
+1. Open `http://localhost:3000`. Choose Save Pilot → Sign in to a NEAR pilot, or link a saved local pilot.
+2. Complete NEAR Auth login on its page. The shared testnet application is named **Example**. This identity step grants no spending and requests no signing audience.
+3. After returning, choose **Authorize game session**. Review the game contract and the `join` and `set_session` delegated calls with zero attached NEAR. This permits the current device to use internal CR/items for at most 12 hours; it cannot transfer native NEAR.
+4. The sponsor submits authorization, creating/funding the implicit account if needed. The contract grants 100 test CR once from its finite reserve. Open Workshop, reserve a free job, fly and confirm the reward receipt.
 
-No operator wallet, seed phrase or AI key belongs in the player UI. Hosting will use an explicitly allowlisted HTTPS origin/callback. Mainnet is a separate approval/configuration milestone.
+No operator wallet, seed phrase or AI key belongs in the player UI. Hosting requires an allowlisted HTTPS origin/callback. Mainnet is a separate milestone.
 
-## Callback correction
+## Why the login protocol changed
 
-The shared testnet client rejected `http://localhost:5173/auth/callback` and `http://localhost:5173`. Its official sample uses `http://localhost:3000`; the actual browser now reaches login with this exact root callback. The frontend recognizes both root OAuth returns and hosted `/auth/callback` returns; state/PKCE, origin cookies and signed challenge binding remain enforced. Default Vite port and APP_ORIGIN now match 3000.
+The user received `access_denied` with `Signing audience requested without transaction payload`. Our previous request used `nep413`, matching upstream commit `bef019afd049c6637dd21be6629050762b943c18`. That revision recognizes message, transaction and delegate-action payloads, and uses the different error wording “without signing payload”. The observed live response is consistent with an older transaction-only deployment. We cannot establish its exact deployed revision or repair the shared provider tenant.
 
-Old local campaign saves at port 5173 are retained but do not automatically move between browser origins. Server social records remain in the same SQLite database. No demo economy migration is performed.
+The runtime login now uses standard authorization-code OIDC with PKCE and `openid` scope, without a signing audience or `nep413` parameter. The initial password-signup error alone did not identify this mismatch; the later callback supplied the actionable evidence. Reusing the old provider URL or callback cannot test the correction: start a fresh login from the game.
 
-## Authorization and recovery
+[Official upstream provider](https://github.com/Peersyst/fast-auth/blob/bef019afd049c6637dd21be6629050762b943c18/packages/providers/javascript/src/provider.ts) · [Official authorization action](https://github.com/Peersyst/fast-auth/blob/bef019afd049c6637dd21be6629050762b943c18/packages/auth0/src/actions/authorize-app.action.js)
 
-NEP-413 proof checks JWT issuer/audience/age, exact payload, browser flow cookie, account derivation, ownership and MPC Ed25519 signature before issuing an HTTP session. Delegated game sessions bind actor, current login session, device key, configured game contract and expiry. Browser economic actions carry their own device signature and on-chain nonce/epoch. A web session alone cannot spend assets.
+## Identity security boundary
 
-Game relays persist signed bytes/hash before broadcast and reconcile that same transaction on retries. Finalized receipts are required. A failed or unavailable chain never falls back to local economic writes. The identity signing service conservatively retains failed/unknown sponsorship reservations and does not automatically repeat an unknown MPC call; a new login may be required.
+The server creates a random state, nonce and S256 PKCE challenge. The verifier stays server-side in the bounded, expiring login flow; the browser receives only the authorization URL and flow ID. HTTP completion requires the exact origin, HttpOnly flow-binding cookie, state, unconsumed flow and original local session for account linking. A code is exchanged at the fixed provider endpoint only once. Raw identity tokens are never sent to the browser or persisted by RivalGhost.
 
-## Package compatibility decision
+The backend verifies RS256 signature, exact issuer/client audience, expiry, token age, authorized party and nonce. It derives the mapped MPC public key from the verified subject and confirms account-key ownership, failing closed on RPC errors. This is a provider-authenticated identity session, **not a completed MPC ownership signature**. Login makes no sponsorship transaction. The legacy NEP-413 verifier remains tested internally but is not exposed through the active HTTP login path.
 
-The docs describe Browser SDK `requestMessageSignature`, but published `@fast-auth-near/browser-sdk` 1.4.2 and JavaScript provider 1.4.1 did not expose it when inspected. Instead, the small lazy-loaded adapter uses pinned Auth0 SPA 2.11.3 and the upstream NEP-413/provider protocol at commit `bef019afd049c6637dd21be6629050762b943c18`. The backend uses JOSE 6.1.3 and near-api-js 7.5.3. This is a compatibility bridge, not a claim that the missing published SDK API was exercised. [Official upstream provider](https://github.com/Peersyst/fast-auth/blob/bef019afd049c6637dd21be6629050762b943c18/packages/providers/javascript/src/provider.ts), [message-signing docs](https://docs.auth.near.org/home/guides/sign-messages).
+Only separate delegate-action approval supplies the MPC signature for `join`/`set_session`. Its signing token is retrieved from the exact approved audience/scope cache, with no silent replacement-token request. Account, session, device key, game contract, expiry, payload and signature are checked before broadcast. Browser economic actions then carry their own device signature and on-chain nonce/epoch; identity login alone cannot spend.
 
-Testnet uses the published shared client, `fast-auth.testnet` and `v1.signer-prod.testnet`. No new Auth0 tenant is needed for this testnet setup; callback/origin acceptance still requires a real test. Mainnet is a separate configuration and approval milestone. [Official testnet resources](https://docs.auth.near.org/resources/testnet)
+## Callback and recovery
+
+The shared testnet client accepted the exact localhost root callback; it rejected port 5173 and `/auth/callback` at localhost. Hosted origins use `/auth/callback` after allowlisting. Campaign saves at 5173 remain in that origin's storage and do not automatically move.
+
+Authorization controls stay disabled until login succeeds. Callback errors remain visible after reload, and fresh attempts reset the previous failed callback promise. Optional profile refresh cannot turn verified login into reported authentication failure.
+
+Game relays persist signed bytes/hash before broadcast and reconcile the same transaction on retries. Finalized receipts are required. An unavailable chain never falls back to local economic writes. Failed/unknown signing sponsorship reservations remain conservatively charged against the configured limit.
 
 ## Validation status
 
-119 application tests pass, including JWT cryptography, ownership/payload/cookie binding, delegated-session rejection/recovery and relay idempotency. Actual testnet delegated sessions were signed by isolated test keys; this validates the contract/relay path, not Auth0/MPC end to end. The real browser login form is reachable; the personal login step is currently blocked by a provider signup error. Cross-device recovery and hosted callback validation are still open.
+`pnpm check`: **130 tests**, typechecks and production builds pass. Coverage includes real RS256 identity-token verification, PKCE generation/exchange binding, nonce/state/cookie mismatch, expiry/cancellation, duplicate callbacks, identity linking conflicts, delegated-session checks and relay recovery. Browser inspection confirms that a fresh request reaches the real provider login form and that authorization is disabled before login.
 
-## Login troubleshooting checkpoint
-
-The shared NEAR Auth provider's password-signup page displayed “Something went wrong, please try again later” before returning to RivalGhost. At this checkpoint the local database contained no completed NEAR identities or authentication signing attempts. This observation does not establish a provider-wide outage or a contract failure. A fresh Google login in Chrome remains to be tested; start from the game at `http://localhost:3000`, rather than reusing an old provider signup URL.
-
-The game now disables session authorization until NEAR identity login completes and checks the same prerequisite before creating an authorization flow. Callback errors persist across reloads with the pilot panel open. A new login clears the previous failed callback promise. The callback uses only the cached token for the approved signing audience/scope; it never silently obtains a replacement token. Optional profile refresh cannot turn successful authentication into a reported login failure.
-
-Five new browser-client regression tests cover these boundaries, and the HTTP test checks that anonymous session authorization is rejected with an explicit sign-in instruction. All 119 application tests, typechecks and production builds pass. Browser inspection confirms the pre-login authorization controls are disabled. Real Google login, MPC return and the human browser game-session approval remain unverified.
+The deployed contract/relay path was exercised with isolated test keys. This does not prove the personal OIDC return or provider MPC delegate approval end to end. Those checks, second-device recovery and hosted callback validation remain open. Contract Wasm is unchanged at **98,677 bytes**.

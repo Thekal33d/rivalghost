@@ -1,6 +1,5 @@
 import {Auth0Client} from '@auth0/auth0-spa-js';
-import {encodeNearLogin,type NearLoginChallenge} from '@rivalghost/game-data';
-// Compatibility bridge for NEAR Auth upstream bef019a: published SDK 1.4.x lacks NEP-413.
+// Standard server-held OIDC login; Auth0 SPA is used only for explicit delegate approval.
 // https://github.com/Peersyst/fast-auth/blob/bef019afd049c6637dd21be6629050762b943c18/packages/providers/javascript/src/provider.ts
 const PENDING='rivalghost.near-login.v1';
 interface Config {enabled:boolean;domain:string;clientId:string;signingAudience:string;callbackUrl:string}
@@ -14,19 +13,27 @@ async function setup(){const c:Config=await authRequest('config');if(!c.enabled)
  client??=new Auth0Client({domain:c.domain,clientId:c.clientId,cacheLocation:'memory',authorizationParams:{redirect_uri:c.callbackUrl}});return {client,c};}
 export async function beginNearLogin(mode:'link'|'signin'){
  sessionStorage.removeItem('rivalghost.auth.error');finishing=undefined;
- const {client,c}=await setup(),challenge:NearLoginChallenge=await authRequest('begin',{mode});
- sessionStorage.setItem(PENDING,JSON.stringify({challenge,returnTo:location.pathname+location.search}));
- await client.loginWithRedirect({authorizationParams:{audience:c.signingAudience,scope:'transaction:sign',nep413:Array.from(encodeNearLogin(challenge)),redirect_uri:c.callbackUrl}});
+ const challenge=await authRequest('begin',{mode});
+ const url=new URL(challenge.authorizationUrl);
+ if(challenge.proofMode!=='oidc'||url.origin!=='https://login.testnet.fast-auth.com'||url.pathname!=='/authorize'||url.searchParams.has('audience'))throw new Error('Invalid NEAR login configuration.');
+ sessionStorage.setItem(PENDING,JSON.stringify({challenge,returnTo:location.pathname}));
+ location.assign(url.href);
 }
 async function finish(){
  const pending=JSON.parse(sessionStorage.getItem(PENDING)??'null');if(!pending?.challenge?.id)throw new Error('No pending login in this browser. Start again from the hangar.');
- const {client,c}=await setup();
- try{await client.handleRedirectCallback();}catch(error){throw new Error('NEAR sign-in callback: '+(error instanceof Error?error.message:'The provider could not finish login.'));}
- // Use the exact token returned for this approved payload. A silent login must not
- // replace a transaction-bound token with an unrelated identity-only token.
- const jwt=await client.getTokenSilently({cacheMode:'cache-only',authorizationParams:{audience:c.signingAudience,scope:'transaction:sign'}});
- if(!jwt)throw new Error('NEAR Auth returned without the approved signing token. Start a fresh sign-in in this same browser tab.');
- const result=pending.economy?await(await import('./chain-client')).chainHttp('chain/session/complete',{id:pending.challenge.id,jwt}):await authRequest('complete',{id:pending.challenge.id,jwt});
+ let result;
+ if(!pending.economy){
+  if(pending.challenge.proofMode!=='oidc')throw new Error('Login has been updated. Start a fresh sign-in from the game.');
+  const query=new URLSearchParams(location.search);
+  if(query.has('error'))throw new Error('NEAR sign-in: '+(query.get('error_description')??query.get('error')));
+  result=await authRequest('complete',{id:pending.challenge.id,code:query.get('code'),state:query.get('state')});
+ }else{
+  const {client,c}=await setup();
+  try{await client.handleRedirectCallback();}catch(error){throw new Error('NEAR sign-in callback: '+(error instanceof Error?error.message:'The provider could not finish login.'));}
+  const jwt=await client.getTokenSilently({cacheMode:'cache-only',authorizationParams:{audience:c.signingAudience,scope:'transaction:sign'}});
+  if(!jwt)throw new Error('NEAR Auth returned without the approved signing token. Start a fresh authorization in this same browser tab.');
+  result=await(await import('./chain-client')).chainHttp('chain/session/complete',{id:pending.challenge.id,jwt});
+ }
  sessionStorage.removeItem('rivalghost.auth.error');sessionStorage.removeItem(PENDING);history.replaceState({},'',typeof pending.returnTo==='string'&&pending.returnTo.startsWith('/')&&!pending.returnTo.startsWith('//')&&!pending.returnTo.startsWith('/auth/')?pending.returnTo:'/');
  return {...result,economyAuthorized:!!pending.economy};
 }

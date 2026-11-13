@@ -50,10 +50,10 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
       }
       if(req.url?.startsWith('/api/guest/near-auth/')){
         if(!nearAuth){send(res,503,{error:'NEAR Auth sponsorship is not configured.'});return;}
-        if(req.url.endsWith('/begin')){const flow=nearAuth.begin(input.mode,session,req.socket.remoteAddress??'unknown');send(res,200,flow.challenge,authCookie(flow.binding));return;}
+        if(req.url.endsWith('/begin')){const flow=nearAuth.beginIdentity(input.mode,session,req.socket.remoteAddress??'unknown');send(res,200,flow.challenge,authCookie(flow.binding));return;}
         if(typeof input.id!=='string')throw new NearAuthError('Invalid login request.');
         if(req.url.endsWith('/cancel')){nearAuth.cancel(input.id,authBinding,session);send(res,200,{ok:true},authCookie(''));return;}
-        if(req.url.endsWith('/complete')){req.setTimeout(90000);const signed=await nearAuth.complete(input.id,authBinding,session,input.jwt);send(res,200,{guest:signed.guest,authMethod:'near',onlineAvailable:service.configured},cookie(signed.token));return;}
+        if(req.url.endsWith('/complete')){req.setTimeout(90000);const signed=await nearAuth.completeIdentity(input.id,authBinding,session,input.code,input.state);send(res,200,{guest:signed.guest,authMethod:'near',onlineAvailable:service.configured},cookie(signed.token));return;}
         send(res,404,{error:'Auth route not found'});return;
       }
       if(!guest){send(res,401,{error:req.url?.startsWith('/api/guest/chain/')?"Sign in with NEAR before authorizing a game session or using the on-chain economy.":"Reconnect your saved pilot"});return;}
