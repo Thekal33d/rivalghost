@@ -1,3 +1,4 @@
+import {isNearAuthReturn} from './near-auth-return';
 import {NearAuthPanel} from './NearAuthPanel';
 import {useEffect,useRef,useState,useCallback} from "react";
 import {getOrCreatePilotKey,readPilotKey,signGuestChallenge} from "./guest-key";
@@ -9,7 +10,7 @@ async function request(path:string,body?:unknown){
 }
 export function GuestPilot({username,disabled=false}:{username?:string;disabled?:boolean}){
   const toggle=useRef<HTMLButtonElement>(null);
-  const [open,setOpen]=useState(location.pathname==="/auth/callback"),[busy,setBusy]=useState(false),[error,setError]=useState("");
+  const [open,setOpen]=useState(isNearAuthReturn()),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const [session,setSession]=useState<Session>({guest:null,onlineAvailable:false}),[hasKey,setHasKey]=useState(false);
   useEffect(()=>{let active=true;void Promise.all([readPilotKey(),request("me")]).then(([key,data])=>{if(active){setHasKey(Boolean(key));if(data.authMethod==="near"||(key&&data.guest?.publicKey===key.publicKey))setSession(data);else setSession({guest:null,onlineAvailable:data.onlineAvailable});}}).catch(()=>{});return()=>{active=false;};},[username]);
   useEffect(()=>{if(!open)return;const escape=(event:KeyboardEvent)=>{if(event.key==="Escape"){setOpen(false);toggle.current?.focus();}};window.addEventListener("keydown",escape);return()=>window.removeEventListener("keydown",escape);},[open]);
@@ -34,11 +35,11 @@ export function GuestPilot({username,disabled=false}:{username?:string;disabled?
       <p className="eyebrow">{near?"YOUR PILOT. YOUR ACCOUNT.":"YOUR PILOT. YOUR DEVICE."}</p><h2>{guest?(username??`GHOST-${guest.id.slice(0,4).toUpperCase()}`):"MAKE IT YOURS."}</h2>
       <p>{near?"Your server pilot is linked to your NEAR account. Medals and best flights remain on this device.":guest?"Your pilot is saved in this browser. Your medals and best flights stay here too.":"Save a guest pilot without a wallet popup. Free play is always available."}</p>
       <p className="pilot-disclosure">{near?"Use NEAR Auth to recover your server pilot on another device. Local campaign saves do not sync yet.":"Local-only pilots depend on this browser. Link your pilot when NEAR Auth is available to recover its server identity later."}</p>
-      {guest&&!near&&<p className="pilot-status">{guest.state==="ready"?"NEAR testnet account ready":guest.state==="pending"?"Online account setup pending":"Saved here · online rivalry coming soon"}{guest.state==="ready"&&<small>{guest.accountId}</small>}</p>}
+      {guest&&!near&&<p className="pilot-status">{guest.state==="ready"?"NEAR testnet account ready":guest.state==="pending"?"Online account setup pending":"Saved here · link NEAR for on-chain rivalry"}{guest.state==="ready"&&<small>{guest.accountId}</small>}</p>}
       {error&&<p role="status" className="pilot-error">{error}</p>}
       {!guest&&<button className="pilot-save" disabled={busy} onClick={()=>void connect()}>{busy?"SAVING YOUR PILOT…":hasKey?"RECONNECT THIS PILOT ↗":"SAVE IN THIS BROWSER ↗"}</button>}
       {guest&&!near&&guest.state!=="ready"&&session.onlineAvailable&&<button className="pilot-save" disabled={busy} onClick={()=>void connect()}>{busy?"CHECKING ACCOUNT…":"RETRY ONLINE SETUP ↗"}</button>}
-      {near?<><p className="pilot-status">NEAR identity verified · account funding and ranked chain settlement are separate<small>{guest?.accountId}</small></p><button className="text-button" disabled={busy} onClick={()=>void logout()}>SIGN OUT →</button></>:<NearAuthPanel hasPilot={!!guest} onChanged={refresh}/>}
+      {near?<><p className="pilot-status">NEAR identity verified · authorize a game session below to use on-chain CR and items<small>{guest?.accountId}</small></p><button className="text-button" disabled={busy} onClick={()=>void logout()}>SIGN OUT →</button></>:null}<NearAuthPanel hasPilot={!near&&!!guest} connected={near} onChanged={refresh}/>
       <button className="text-button" onClick={()=>setOpen(false)}>{guest?"BACK TO THE HANGAR":"KEEP PLAYING FOR NOW"} →</button>
     </section>}
   </div>;

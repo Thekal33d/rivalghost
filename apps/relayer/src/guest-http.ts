@@ -1,3 +1,6 @@
+import {ChainError} from './chain-relay.js';
+import type {ChainEconomy} from './chain-economy.js';
+import type {ChainSessionAuth} from './chain-auth.js';
 import {NearAuthService,NearAuthError} from './near-auth.js';
 import type {NearCompute} from './near-compute.js';
 import {WorkshopError} from './workshop.js';
@@ -10,7 +13,7 @@ export interface VerificationGateway {verify(guest:Guest,submission:{challengeId
 const token=(req:IncomingMessage)=>req.headers.cookie?.split(";").map(s=>s.trim()).find(s=>s.startsWith("rg_guest="))?.slice(9)??"";
 function send(res:ServerResponse,status:number,body:unknown,cookie?:string){res.writeHead(status,{"Content-Type":"application/json","Cache-Control":"no-store","X-Content-Type-Options":"nosniff",...(cookie?{"Set-Cookie":cookie}:{})});res.end(JSON.stringify(body));}
 async function json(req:IncomingMessage){const chunks:Buffer[]=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>128*1024)throw new Error("Request too large");chunks.push(chunk);}return JSON.parse(Buffer.concat(chunks).toString("utf8"));}
-export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService){
+export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService,chain?:{economy:ChainEconomy;auth:ChainSessionAuth}){
   const store=service.store,social=new SocialService(store),secure=store.origin.startsWith("https:");
   const cookie=(value:string,age=43200)=>`rg_guest=${value}; HttpOnly; SameSite=Strict; Path=/api/guest; Max-Age=${age}${secure?"; Secure":""}`;
   let economy:EconomyService|undefined;
@@ -20,11 +23,12 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
     const session=token(req),guest=store.session(session);
     const authBinding=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith('rg_near_flow='))?.slice(13)??'';
     const authCookie=(value:string)=>`rg_near_flow=${value}; HttpOnly; SameSite=Strict; Path=/api/guest/near-auth; Max-Age=600${secure?'; Secure':''}`;
+    if(req.method==='GET'&&req.url==='/api/guest/chain/config'){send(res,200,chain?await chain.economy.status(guest):{enabled:false,mode:'local-demo'});return;}
     if(req.method==='GET'&&req.url==='/api/guest/near-auth/config'){send(res,200,nearAuth?.status()??{enabled:false});return;}
     if(req.method==="GET"&&req.url==="/api/guest/me"){send(res,200,{guest,onlineAvailable:service.configured,authMethod:store.authMethod(session)});return;}
     if(req.method==="GET"&&req.url==="/api/guest/compute"){store.rate("compute-read",60);send(res,200,{...(compute?.status()??{enabled:false,dailyLimit:0,callsToday:0,source:"local"}),stake:await compute?.stake()??{state:"not-configured"}});return;}
-    if(req.method==="GET"&&req.url==="/api/guest/workshop"){store.rate("workshop-read",180);send(res,200,pit().workshop(guest));return;}
-    if(req.method==="GET"&&req.url==="/api/guest/economy"){store.rate("pit-read-global",180);store.rate("pit-read-ip:"+req.socket.remoteAddress,60);send(res,200,pit().view(guest));return;}
+    if(req.method==="GET"&&req.url==="/api/guest/workshop"){store.rate("workshop-read",180);send(res,200,await (chain?.economy??pit()).workshop(guest));return;}
+    if(req.method==="GET"&&req.url==="/api/guest/economy"){store.rate("pit-read-global",180);store.rate("pit-read-ip:"+req.socket.remoteAddress,60);send(res,200,await (chain?.economy??pit()).view(guest));return;}
     if(req.method==="GET"&&req.url?.startsWith("/api/guest/social/")){
       store.rate("social-read-global",300);store.rate("social-read-ip:"+req.socket.remoteAddress,90);
       const url=new URL(req.url,store.origin);
@@ -53,6 +57,17 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
         send(res,404,{error:'Auth route not found'});return;
       }
       if(!guest){send(res,401,{error:"Reconnect your saved pilot"});return;}
+      if(req.url?.startsWith('/api/guest/chain/')){
+        if(!chain){send(res,503,{error:'On-chain economy is not enabled'});return;}
+        if(store.authMethod(session)!=='near')throw new NearAuthError('Sign in with NEAR before using the on-chain economy.');
+        req.setTimeout(90000);
+        if(req.url.endsWith('/session/begin')){send(res,200,await chain.auth.begin(guest,session,input.publicKey));return;}
+        if(req.url.endsWith('/session/complete')){send(res,200,await chain.auth.complete(guest,session,input.id,input.jwt));return;}
+        if(req.url.endsWith('/execute')){send(res,200,await chain.economy.execute(guest,input.intent,input.requestId));return;}
+        if(req.url.endsWith('/settle')){send(res,200,await chain.economy.settle(guest,input.id,input.replay));return;}
+        send(res,404,{error:'Unknown chain route'});return;
+      }
+      if(chain&&['/api/guest/workshop/action','/api/guest/economy/join','/api/guest/economy/start','/api/guest/economy/settle','/api/guest/economy/defend'].includes(req.url??''))throw new ChainError('A signed on-chain action is required. Refresh the game client.');
       if(req.url==="/api/guest/workshop/action"){send(res,200,pit().work(guest,input));return;}
       if(req.url==="/api/guest/economy/join"){send(res,200,pit().join(guest));return;}
       if(req.url==="/api/guest/economy/start"){send(res,200,pit().start(guest,input.crown));return;}
@@ -74,8 +89,8 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
         try{send(res,200,await gateway.verify(guest,{challengeId:input.challengeId,replay:input.replay}));}catch{send(res,503,{error:"Replay verification is unavailable or rejected. No settlement was claimed."});}return;
       }
       send(res,404,{error:"Route not found"});
-    }catch(error){send(res,error instanceof Error&&/Too many attempts/.test(error.message)?429:400,{error:error instanceof NearAuthError||error instanceof WorkshopError||error instanceof SocialError||error instanceof EconomyError?error.message:error instanceof Error&&/attempts|capacity|proof|public key/.test(error.message)?error.message:"Invalid guest request"});}
+    }catch(error){send(res,error instanceof Error&&/Too many attempts/.test(error.message)?429:400,{error:error instanceof ChainError||error instanceof NearAuthError||error instanceof WorkshopError||error instanceof SocialError||error instanceof EconomyError?error.message:error instanceof Error&&/attempts|capacity|proof|public key/.test(error.message)?error.message:"Invalid guest request",...(error instanceof ChainError&&error.transactionHash?{transactionHash:error.transactionHash}:{})});}
   });server.requestTimeout=10000;server.headersTimeout=5000;server.timeout=20000;server.maxHeadersCount=30;
   let stopped=false,thinking=false;
-  const heartbeat=setInterval(()=>{try{economy?.tick();if(economy&&compute&&!thinking){thinking=true;const world=economy.workshop(null);void compute.decide(world.moth.stock,world.districts.filter(n=>n>=60).length).then(d=>{if(!stopped)economy?.setFocus(d.focus);}).catch(()=>{}).finally(()=>{thinking=false;});}}catch{console.error('HOUND tick failed; no partial economy write committed.');}},15000);heartbeat.unref();server.on('close',()=>{stopped=true;clearInterval(heartbeat);});return server;
+  const heartbeat=setInterval(()=>{if(chain){if(!thinking){thinking=true;void chain.economy.tick().catch(()=>console.error('On-chain NPC tick pending or rejected; no local economic fallback.')).finally(()=>{thinking=false;});}return;}try{economy?.tick();if(economy&&compute&&!thinking){thinking=true;const world=economy.workshop(null);void compute.decide(world.moth.stock,world.districts.filter(n=>n>=60).length).then(d=>{if(!stopped)economy?.setFocus(d.focus);}).catch(()=>{}).finally(()=>{thinking=false;});}}catch{console.error('HOUND tick failed; no partial economy write committed.');}},15000);heartbeat.unref();server.on('close',()=>{stopped=true;clearInterval(heartbeat);});return server;
 }

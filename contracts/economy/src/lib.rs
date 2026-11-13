@@ -427,6 +427,10 @@ impl Economy {
         }
         self.daily();
         let actor = &intent.actor;
+        require!(
+            actor != &self.moth && (actor != &self.hound || intent.op == 10 || intent.op == 11),
+            "NPC action restricted"
+        );
         let mut p = self.pilot(actor);
         require!(
             intent.deadline >= now() && intent.deadline <= now() + 300_000,

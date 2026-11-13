@@ -5,6 +5,8 @@ import {encodeNearLogin,type NearLoginChallenge} from '@rivalghost/game-data';
 import {GuestStore,type Guest} from './guest-store.js';
 export const AUTH_DOMAIN='login.testnet.fast-auth.com',AUTH_AUDIENCE='auth0.jwt.fast-auth.testnet',AUTH_CLIENT='np8paqIpMWmNbzT4xAvOOapZBjsOpptl';
 const issuer=`https://${AUTH_DOMAIN}/`,guard=`jwt#${issuer}`;
+// The official shared testnet client allows the sample's exact localhost:3000 origin.
+export const authCallbackUrl=(origin:string)=>origin==='http://localhost:3000'?origin:origin+'/auth/callback';
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 export class NearAuthError extends Error{}
 export interface NearAuthNetwork {
@@ -20,7 +22,7 @@ export class NearAuthService {
     store.db.exec(`CREATE TABLE IF NOT EXISTS near_identities(account_id TEXT PRIMARY KEY, guest_id TEXT UNIQUE NOT NULL REFERENCES guests(id));
       CREATE TABLE IF NOT EXISTS near_login_flows(id TEXT PRIMARY KEY,binding TEXT NOT NULL,guest_id TEXT,session_hash TEXT,mode TEXT NOT NULL,challenge TEXT NOT NULL,expires INTEGER NOT NULL,state TEXT NOT NULL);`);
   }
-  status(){return {enabled:!!this.relay,network:'testnet',clientId:AUTH_CLIENT,domain:AUTH_DOMAIN,signingAudience:AUTH_AUDIENCE,callbackUrl:this.store.origin+'/auth/callback'};}
+  status(){return {enabled:!!this.relay,network:'testnet',clientId:AUTH_CLIENT,domain:AUTH_DOMAIN,signingAudience:AUTH_AUDIENCE,callbackUrl:authCallbackUrl(this.store.origin)};}
   begin(mode:unknown,session:string,ip:string){
     if(!this.relay)throw new NearAuthError('NEAR sign-in is waiting for its testnet sponsor. Your local pilot is safe.');
     if(mode!=='link'&&mode!=='signin')throw new NearAuthError('Choose whether to link this pilot or sign in.');
@@ -31,7 +33,7 @@ export class NearAuthService {
     this.store.db.prepare('DELETE FROM near_login_flows WHERE expires<=?').run(this.now());
     if(Number(this.store.db.prepare('SELECT count(*) n FROM near_login_flows').get()!.n)>=200)throw new NearAuthError('Sign-in capacity is full. Try later.');
     const id=randomBytes(16).toString('hex'),binding=randomBytes(32).toString('hex');
-    const challenge:NearLoginChallenge={id,nonce:randomBytes(32).toString('hex'),recipient:this.store.origin,callbackUrl:this.store.origin+'/auth/callback',expiresAt:this.now()+600000,message:`${mode==='link'?'Link this local pilot to':'Sign in to'} RivalGhost on NEAR testnet. No token transfer or game entry is authorized. Request ${id}.`};
+    const challenge:NearLoginChallenge={id,nonce:randomBytes(32).toString('hex'),recipient:this.store.origin,callbackUrl:authCallbackUrl(this.store.origin),expiresAt:this.now()+600000,message:`${mode==='link'?'Link this local pilot to':'Sign in to'} RivalGhost on NEAR testnet. No token transfer or game entry is authorized. Request ${id}.`};
     this.store.db.prepare('INSERT INTO near_login_flows VALUES(?,?,?,?,?,?,?,?)').run(id,hash(binding),mode==='link'?guest!.id:null,mode==='link'?hash(session):null,mode,JSON.stringify(challenge),challenge.expiresAt,'open');
     return {challenge,binding};
   }

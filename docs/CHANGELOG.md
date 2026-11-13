@@ -1,3 +1,7 @@
+# November 13 — live v3 economy integration
+
+Deployed the full finite testnet economy in 98,677-byte Wasm; verified real two-player trading, rewards, repairs and Crown payouts; enabled bounded HOUND transactions. Added durable sponsored relay/recovery, signed browser actions and explicit NEP-366 game sessions. Corrected the shared NEAR Auth callback to localhost:3000; personal login still awaits creator input. 114 application tests pass. Detailed evidence: contract-review.md and evidence/economy-v3-testnet.json.
+
 # Changelog
 
 ## 2026-11-13 — first live NEAR AI decision

@@ -7,6 +7,7 @@ export interface Board {rivals:SocialProfile[];rows:BoardRow[];yourRank:number|n
 export const IDENTITY_KEY='rivalghost.pilot-profile.v1';
 export function cachedIdentity():SocialProfile|null{try{const p=JSON.parse(localStorage.getItem(IDENTITY_KEY)??'null');return p&&/^[a-f0-9]{64}$/.test(p.id)?{id:p.id,username:validateUsername(p.username),avatar:validateAvatar(p.avatar)}:null;}catch{return null;}}
 export async function socialRequest(path:string,body?:unknown){
+  if(body!==undefined&&['economy/join','economy/start','economy/defend','economy/settle','workshop/action'].includes(path)){const result=await(await import('./chain-client')).chainRequest(path,body);if(result.handled)return result.value;}
   let response:Response;
   try{response=await fetch('/api/guest/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',headers:body===undefined?{}:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(15000)});}catch{throw new Error('The game service is unavailable. Your local progress is safe.');}
   let data;try{data=await response.json();}catch{throw new Error('The game service is unavailable. Keep flying and try again later.');}

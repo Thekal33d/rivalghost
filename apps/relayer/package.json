@@ -13,6 +13,7 @@
     "@rivalghost/game-data": "workspace:*",
     "@rivalghost/sim": "workspace:*",
     "jose": "6.1.3",
-    "near-api-js": "7.5.3"
+    "near-api-js": "7.5.3",
+    "@rivalghost/verifier": "workspace:*"
   }
 }

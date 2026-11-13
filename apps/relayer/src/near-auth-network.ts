@@ -4,7 +4,7 @@ import type {GuestStore} from './guest-store.js';
 import {NearAuthError,type NearAuthNetwork,type NearAuthRelay,AUTH_DOMAIN} from './near-auth.js';
 export class AuthNetwork implements NearAuthNetwork {
   readonly rpc:JsonRpcProvider;
-  constructor(url='https://rpc.testnet.near.org'){if(!url.startsWith('https://'))throw new Error('Auth RPC must use HTTPS');this.rpc=new JsonRpcProvider({url},{retries:1});}
+  constructor(url='https://test.rpc.fastnear.com'){if(!url.startsWith('https://'))throw new Error('Auth RPC must use HTTPS');this.rpc=new JsonRpcProvider({url},{retries:1});}
   async assertNetwork(){if(await this.rpc.getNetworkId()!=='testnet')throw new NearAuthError('Testnet authentication required.');}
   async deriveKey(path:string){await this.assertNetwork();const key=await this.rpc.callFunction<string>({contractId:'v1.signer-prod.testnet',method:'derived_public_key',args:{path,predecessor:'fast-auth.testnet',domain_id:1},blockQuery:{finality:'final'}});if(typeof key!=='string')throw new NearAuthError('Cannot derive an account key.');return key;}
   async ownsImplicitAccount(accountId:string,publicKey:string){

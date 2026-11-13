@@ -3,7 +3,7 @@
 ## Overview
 Replace the local economic authority with one bounded NEAR testnet contract. CR, salvage, owned cosmetics, escrow, market trades, repairs, Crown payouts and NPC budgets must settle there; deterministic gameplay and replay files remain off-chain.
 
-The existing playable alpha and historical plan are preserved. This plan supersedes the old Crown-only deployment scope. No live economy deployment has occurred; the old optimized artifact is 99,448 bytes.
+The existing playable alpha and historical plan are preserved. This plan supersedes the old Crown-only deployment scope. The v3 economy is deployed and tested on NEAR testnet at 98,677 bytes; the old artifact is retained only as a reference.
 
 ## Goals
 - One authoritative economy, visible finalized receipts and no duplicate rewards.
@@ -21,7 +21,7 @@ The existing playable alpha and historical plan are preserved. This plan superse
 - Operator: rivalghost-ops-thekal33d.testnet; reported balance 10 test NEAR.
 - AI pilot allowance $5 overall, current local reservation cap $1; recurring paid calls remain disabled after the one approved successful live test.
 - One bounded pilot record per account, maximum 1,000 players; three reusable Crown slots; at most 200 listings; bounded per-player receipts and active runs.
-- Proposed fresh on-chain balances; story progress retained. User migration choice pending.
+- Fresh on-chain balances; old story progress retained at the old browser origin. No unverified migration.
 
 ## Requirements
 ### Functional
@@ -73,12 +73,13 @@ Keep local demo usable until on-chain mode is validated. Deploy to a new testnet
 
 ## Verification Checklist
 - [x] Inspect existing implementation, budget and deployment state.
-- [x] Compact v3 contract builds below 100,000 bytes (98,620 bytes).
-- [x] Core conservation, ownership, signed result/action and bounded-history Wasm checks pass; live integration checks remain.
+- [x] Compact v3 contract builds below 100,000 bytes (98,677 bytes).
+- [x] Core conservation, ownership, signed result/action and bounded-history Wasm checks pass; live two-player integration also passes.
 - [ ] Auth sponsor and real callback validated.
-- [ ] Browser economic actions and NPC actions settle on-chain.
-- [ ] Real runtime gas/storage and bounded growth measured.
-- [ ] Public testnet end-to-end receipts recorded; hosting configured.
+- [x] Browser economic actions route to the signed relay; NPC actions settle on-chain. Human browser spending awaits personal login.
+- [x] Real runtime gas/storage and bounded growth measured.
+- [x] Public testnet economic end-to-end receipts recorded with isolated test identities.
+- [ ] Public hosting configured.
 - [ ] Commit and push each milestone.
 
 ## Risk Assessment
@@ -92,9 +93,9 @@ Keep local demo usable until on-chain mode is validated. Deploy to a new testnet
 | Deadline pressure | High | High | Evidence-based milestones; never label a local demo as deployed |
 
 ## Open Questions
-- [ ] Fresh on-chain economy or explicitly reviewed demo migration?
+- [x] Fresh economy used; no demo assets imported.
 - [ ] Final domain and VPS deployment access/method; existing CX23 server capacity alone is not a deployment configuration.
-- [ ] Dedicated auth/game sponsor accounts, protected key files and measured testnet allowance.
+- [x] Dedicated auth/game/NPC accounts, protected key files and measured testnet allowance.
 
 ## Decision Log
 | Decision | Rationale | Alternatives Considered |
@@ -104,3 +105,6 @@ Keep local demo usable until on-chain mode is validated. Deploy to a new testnet
 | Finite genesis supply | Preserve local policy and avoid unlimited admin minting | Uncapped starter grants |
 | Developer-funded inference | User preference; no required player stake | Player stake-to-compute at launch |
 | Preserve legacy contract as reference | Existing fixtures remain reproducible | Destructive overwrite before replacement validation |
+
+## November 13 live checkpoint
+User approved up to 4 test NEAR; 3.3 allocated across game/auth/relay/HOUND/MOTH accounts, plus account-creation fees. Final 98,677-byte upgrade preserves state. Callback corrected to the official localhost:3000 root; real login form reached, personal login pending. 114 application tests pass. No paid AI calls or mainnet spending in this milestone.

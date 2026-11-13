@@ -7,7 +7,7 @@ import {GuestStore} from './guest-store.js';
 import {GuestService} from './guest-service.js';
 import {SocialService} from './social.js';
 import {EconomyService} from './economy.js';
-import {NearAuthService,AUTH_DOMAIN,AUTH_AUDIENCE,checkJwt} from './near-auth.js';
+import {NearAuthService,authCallbackUrl,AUTH_DOMAIN,AUTH_AUDIENCE,checkJwt} from './near-auth.js';
 import {AuthNetwork,AuthRelay} from './near-auth-network.js';
 import {createGuestServer} from './guest-http.js';
 const origin='http://localhost:5173';
@@ -23,6 +23,7 @@ function setup(){
  return {store,service,network,relay,proof,guest,key,account:raw.toString('hex'),calls:()=>calls,advance:(n:number)=>now+=n,denyOwnership:()=>ownership=false,corrupt:()=>corrupt=true};
 }
 describe('NEAR Auth identity boundary',()=>{
+ it('uses the exact shared testnet sample callback and a same-origin hosted callback',()=>{expect(authCallbackUrl('http://localhost:3000')).toBe('http://localhost:3000');expect(authCallbackUrl('https://game.example')).toBe('https://game.example/auth/callback');});
  it('binds encoding to the NEP-413 domain and validates nonce length',()=>{const c={id:'x',nonce:'00'.repeat(32),message:'m',recipient:'r',callbackUrl:'c',expiresAt:0};expect(Buffer.from(encodeNearLogin(c)).toString('hex')).toBe('9d010080010000006d'+'00'.repeat(32)+'0100000072010100000063');expect(()=>encodeNearLogin({...c,nonce:'00'})).toThrow();});
  it('uses real RS256 issuer/audience verification, rejecting altered and wrong-audience tokens',async()=>{
   const pair=await generateKeyPair('RS256'),jwk=await exportJWK(pair.publicKey),keys=createLocalJWKSet({keys:[{...jwk,kid:'test'}]});

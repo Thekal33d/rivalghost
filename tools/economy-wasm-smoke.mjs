@@ -59,6 +59,7 @@ async function exercise(file) {
  for(const actor of actors.slice(2))await call('join',{},actor);
  assert.equal((await call('join',{},actors[2])).cr,100);
  assert.equal((await conservation()).reserve,99200);
+ for(const actor of actors.slice(0,2))await reject('execute',{intent:{actor,nonce:1,epoch:0,deadline:timestamp+300000,op:5,a:3,b:0,signature:[]}},actor);
  for(const rawInput of ['', '{}false','[]','null','{"actor":"INVALID!"}','{"actor":"alice.testnet","extra":1}','['.repeat(9)+']'.repeat(9),' '.repeat(8193)])await reject('get_pilot',{},caller,timestamp,{rawInput});
  await reject('join',{},actors[2],timestamp,{deposit:1});
  // Attested jobs, mission binding, single claim and rollover.

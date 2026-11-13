@@ -1,3 +1,7 @@
+import {ChainRelay} from './chain-relay.js';
+import {ChainSessionAuth} from './chain-auth.js';
+import {ChainEconomy} from './chain-economy.js';
+import {JsonRpcProvider} from 'near-api-js';
 import {NearAuthService} from './near-auth.js';
 import {AuthNetwork,AuthRelay} from './near-auth-network.js';
 import {NearCompute,computeConfig} from './near-compute.js';
@@ -9,7 +13,7 @@ import {GuestService} from "./guest-service.js";
 import {NearGuestProvisioner} from "./near-bootstrap.js";
 import {createGuestServer,type VerificationGateway} from "./guest-http.js";
 async function main(){
-  const origin=process.env.APP_ORIGIN??"http://localhost:5173",file=resolve(process.env.GUEST_DATABASE??".local/guests.sqlite");
+  const origin=process.env.APP_ORIGIN??"http://localhost:3000",file=resolve(process.env.GUEST_DATABASE??".local/guests.sqlite");
   await mkdir(dirname(file),{recursive:true,mode:0o700});
   const store=new GuestStore(file,origin);await chmod(file,0o600);
   let provider:NearGuestProvisioner|undefined,gateway:VerificationGateway|undefined;
@@ -19,7 +23,7 @@ async function main(){
     const required=(name:string)=>{const value=process.env[name];if(!value)throw new Error(`Missing ${name}`);return value;};
     let privateKey:KeyPairString;
     try {privateKey=(await readFile(required("OPERATOR_KEY_FILE"),"utf8")).trim() as KeyPairString;}catch{throw new Error("Cannot read operator key file");}
-    provider=new NearGuestProvisioner({parentId:required("GUEST_PARENT_ID"),contractId:required("CONTRACT_ID"),rpcUrl:process.env.NEAR_RPC_URL??"https://rpc.testnet.near.org",privateKey,fundingYocto:BigInt(required("GUEST_FUNDING_YOCTO")),gasPriceCap:BigInt(required("GAS_PRICE_CAP_YOCTO"))});
+    provider=new NearGuestProvisioner({parentId:required("GUEST_PARENT_ID"),contractId:required("CONTRACT_ID"),rpcUrl:process.env.NEAR_RPC_URL??"https://test.rpc.fastnear.com",privateKey,fundingYocto:BigInt(required("GUEST_FUNDING_YOCTO")),gasPriceCap:BigInt(required("GAS_PRICE_CAP_YOCTO"))});
     budget=BigInt(required("BOOTSTRAP_DAILY_BUDGET_YOCTO"));maxAttempts=Number(required("BOOTSTRAP_DAILY_ATTEMPTS"));
     if(budget<provider.reserveYocto||!Number.isInteger(maxAttempts)||maxAttempts<1||maxAttempts>100)throw new Error("Invalid guest sponsorship budget");
     await provider.checkConfiguration();
@@ -42,7 +46,21 @@ async function main(){
     const privateKey=(await readFile(required('NEAR_AUTH_KEY_FILE'),'utf8')).trim() as KeyPairString;
     authRelay=new AuthRelay(store,authNetwork,{accountId:required('NEAR_AUTH_SPONSOR_ID'),privateKey,dailyBudget:BigInt(required('NEAR_AUTH_DAILY_BUDGET_YOCTO')),maxDailyRequests:Number(required('NEAR_AUTH_MAX_DAILY_REQUESTS')),gasPriceCap:BigInt(required('NEAR_AUTH_GAS_PRICE_CAP_YOCTO'))});
   }
-  const server=createGuestServer(service,gateway,new NearCompute(store,computeConfig(process.env)),new NearAuthService(store,authNetwork,authRelay));
+  let chain:{economy:ChainEconomy;auth:ChainSessionAuth}|undefined;
+  if(process.env.ECONOMY_MODE==='onchain'){
+    if(!authRelay||process.env.NEAR_NETWORK!=='testnet')throw new Error('On-chain mode requires testnet NEAR Auth');
+    const required=(name:string)=>{const v=process.env[name];if(!v)throw new Error('Missing '+name);return v;};
+    const rpc=new JsonRpcProvider({url:process.env.NEAR_RPC_URL??'https://test.rpc.fastnear.com'},{retries:1});
+    const make=async(prefix:string)=>new ChainRelay(store,rpc,{contractId:required('ECONOMY_CONTRACT_ID'),accountId:required(prefix+'_ACCOUNT_ID'),privateKey:(await readFile(required(prefix+'_KEY_FILE'),'utf8')).trim() as KeyPairString,dailyBudget:BigInt(required(prefix+'_DAILY_BUDGET_YOCTO')),maxDailyRequests:Number(required(prefix+'_DAILY_REQUESTS')),gasPriceCap:1000000000n,gas:30000000000000n});
+    const relay=await make('GAME_RELAY');await relay.check();
+    const jwk=JSON.parse(await readFile(required('ECONOMY_VERIFIER_KEY_FILE'),'utf8'));
+    const key=await crypto.subtle.importKey('jwk',jwk,{name:'Ed25519'},false,['sign']);
+    const npc=process.env.HOUND_ENABLED==='true'?await make('HOUND'):undefined;
+    const economy=new ChainEconomy(relay,key,npc),world=await economy.world();
+    if(world.version!==3||Buffer.from(world.verifier).toString('base64url')!==jwk.x||npc&&world.hound!==npc.config.accountId)throw new Error('Economy deployment does not match server keys');
+    chain={economy,auth:new ChainSessionAuth(relay,authNetwork,authRelay)};
+  }
+  const server=createGuestServer(service,gateway,new NearCompute(store,computeConfig(process.env)),new NearAuthService(store,authNetwork,authRelay),chain);
   server.listen(port,"127.0.0.1",()=>console.log(`RivalGhost guest gateway: 127.0.0.1:${port}; ${service.configured?"testnet provisioning enabled":"provisioning disabled"}; NEAR Auth ${authRelay?"enabled":"disabled"}; NPC Cloud ${process.env.NEAR_AI_ENABLED==="true"?"enabled":"disabled"}`));
   for(const signal of ["SIGINT","SIGTERM"] as const)process.once(signal,()=>server.close(()=>store.close()));
 }

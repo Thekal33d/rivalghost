@@ -1,16 +1,29 @@
 # RivalGhost — NEAR Auth integration checkpoint
 
-November 13, 2026 · implementation `7dda7c5`
+November 13, 2026
 
-The testnet sign-in/linking milestone is implemented locally. It is **disabled pending operator setup and a live end-to-end test**. The game remains playable without a wallet. The current game contract is 99,448 bytes; adding authentication did not add JWT parsing to it.
+The sponsor is configured and funded. The actual game now opens the provider login form at the supported local address **http://localhost:3000**. Personal login, approval and MPC signature return remain to be completed; reaching the form alone is not proof of account ownership.
 
-## What was implemented
+## Player steps
 
-- Optional pilot linking and returning-player sign-in; a callback at `/auth/callback`; disabled/error states; sign-in kept outside active flight.
-- A server-issued, one-use NEP-413 message bound to the exact origin, callback, browser cookie and current pilot session when linking. The message grants no game entry or token transfer permission.
-- Local RS256 JWT issuer/audience/freshness verification before sponsoring a signature; exact approved payload comparison; independent Ed25519 proof verification; derived-account/full-access-key checks before session issuance.
-- A stable server identity across logins. Linking preserves the existing guest ID and its server records. Accounts are never merged, and signing in itself grants no CR. Linking invalidates old device sessions and recovery through the old browser key. Campaign medals and best flights remain device-local.
-- A testnet-only signing relay with a fixed contract/action, explicit gas/deposit limits, durable daily request/budget reservations and no automatic transaction retry. Uncertain sends retain their reservation. Tokens, keys and proofs are not logged.
+1. Open `http://localhost:3000` exactly. Choose Save Pilot → Sign in to a NEAR pilot (or link an already saved pilot at this origin).
+2. Use the provider's email, Google or passkey login. Its shared testnet application is named **Example**. Approve only the displayed RivalGhost identity message; this first message grants no spending.
+3. After returning, choose **Authorize game session**. Review the exact game contract and the two delegated calls, `join` and `set_session`, with zero attached NEAR. This permits the current device to use internal CR/items for at most 12 hours. It cannot transfer native NEAR.
+4. The sponsor submits the authorization, creating/funding the implicit account if needed. The contract grants 100 test CR once from its finite reserve. Open Workshop, reserve a free job, fly and confirm the reward receipt.
+
+No operator wallet, seed phrase or AI key belongs in the player UI. Hosting will use an explicitly allowlisted HTTPS origin/callback. Mainnet is a separate approval/configuration milestone.
+
+## Callback correction
+
+The shared testnet client rejected `http://localhost:5173/auth/callback` and `http://localhost:5173`. Its official sample uses `http://localhost:3000`; the actual browser now reaches login with this exact root callback. The frontend recognizes both root OAuth returns and hosted `/auth/callback` returns; state/PKCE, origin cookies and signed challenge binding remain enforced. Default Vite port and APP_ORIGIN now match 3000.
+
+Old local campaign saves at port 5173 are retained but do not automatically move between browser origins. Server social records remain in the same SQLite database. No demo economy migration is performed.
+
+## Authorization and recovery
+
+NEP-413 proof checks JWT issuer/audience/age, exact payload, browser flow cookie, account derivation, ownership and MPC Ed25519 signature before issuing an HTTP session. Delegated game sessions bind actor, current login session, device key, configured game contract and expiry. Browser economic actions carry their own device signature and on-chain nonce/epoch. A web session alone cannot spend assets.
+
+Game relays persist signed bytes/hash before broadcast and reconcile that same transaction on retries. Finalized receipts are required. A failed or unavailable chain never falls back to local economic writes. The identity signing service conservatively retains failed/unknown sponsorship reservations and does not automatically repeat an unknown MPC call; a new login may be required.
 
 ## Package compatibility decision
 
@@ -18,14 +31,6 @@ The docs describe Browser SDK `requestMessageSignature`, but published `@fast-au
 
 Testnet uses the published shared client, `fast-auth.testnet` and `v1.signer-prod.testnet`. No new Auth0 tenant is needed for this testnet setup; callback/origin acceptance still requires a real test. Mainnet is a separate configuration and approval milestone. [Official testnet resources](https://docs.auth.near.org/resources/testnet)
 
-## Evidence and limits
+## Validation status
 
-`pnpm check` passes 99 application tests, typechecking and production builds. Eleven new tests cover message encoding, real JWT cryptography, origin/cookie/session binding, replay rejection, linking conflicts, stable profile/balance, stale-session recovery rejection, invalid proof/ownership, concurrency, HTTP sessions, RPC failure and durable sponsor reservation. NEAR calls use test doubles. Browser QA covers local pilot reconnection, disabled sign-in, mobile panel scrolling and the expiry warning. No live NEAR Auth transaction or cross-device sign-in has occurred.
-
-## Next integration steps
-
-1. Operator funding is complete: `rivalghost-ops-thekal33d.testnet` has 10 testnet NEAR (finalized RPC block 277514809). Configure a dedicated protected sponsor key and a concrete testnet request/budget cap.
-2. Confirm the local callback and deployed HTTPS callback are accepted by the shared provider. Exercise actual sign-in, cancellation, return, logout, wrong-account linking, expired proof and second-device recovery.
-3. Measure real signing receipts and provider latency, then tune the reserved budget. A login proves identity; it does not mean the account is funded or that v3 ranked settlement exists.
-4. Retire or bind legacy v1 certificates, align finite supply/storage limits, and promote v3 into the contract/verifier before on-chain competition. Ranked expiry forfeiture is now implemented; an outage remedy is still separate work.
-5. Complete hosting and the public demo. Read [operator setup](operator-setup.md) for the creator's next actions and the approved $5 AI pilot.
+114 application tests pass, including JWT cryptography, ownership/payload/cookie binding, delegated-session rejection/recovery and relay idempotency. Actual testnet delegated sessions were signed by isolated test keys; this validates the contract/relay path, not Auth0/MPC end to end. The real browser login form is reachable; the personal login step is currently pending. Cross-device recovery and hosted callback validation are still open.

@@ -1,0 +1,124 @@
+{
+  "contract": "game.rivalghost-ops-thekal33d.testnet",
+  "network": "testnet",
+  "receipts": [
+    {
+      "label": "pilot-a funding",
+      "transactionHash": "EgkPQZmmqHj4awD27CCJLuvAjTRhcqskTNUocistiMNK"
+    },
+    {
+      "label": "pilot-a delegated session",
+      "transactionHash": "GWmcmhJN9UAfjtPCq56k4KFSxTd5ihgusLxkNzQpGJSd"
+    },
+    {
+      "label": "pilot-b funding",
+      "transactionHash": "EVBTwRyaBBYWGUp13cbwuj2kp13Jy5Rdx5u3YghD3BRW"
+    },
+    {
+      "label": "pilot-b delegated session",
+      "transactionHash": "5K1eKs6jHSWgTdpNDbKko56tViFgfB7jMSN6HnFfVBaT"
+    },
+    {
+      "label": "job 1 reserve",
+      "transactionHash": "4pcGW56oSo7N9nANNeVfYULdrZYkkN8bBtphUiHNS6EN"
+    },
+    {
+      "label": "job 1 result",
+      "transactionHash": "D39zHBgkkHTRq5ToCZzpVVUXodktSepaAZenEFn66RRD"
+    },
+    {
+      "label": "job 2 reserve",
+      "transactionHash": "HLgfbDfatUjXBd87gikrt7MEkPoqxsWhMceWG19tBKrm"
+    },
+    {
+      "label": "job 2 result",
+      "transactionHash": "AXS52Q3WeXERcg1iJxqbUNEvQaupJYrQ8DrJgzn7Ynyx"
+    },
+    {
+      "label": "craft afterglow",
+      "transactionHash": "DkkSvjWow679o2jkzxNDXNn5UNsCoqA8vUKgAHt7HeHh"
+    },
+    {
+      "label": "equip afterglow",
+      "transactionHash": "7KcD1Nh2fsShJhBF1in7aRtH3jc8QQXg7utTAmyRz19v"
+    },
+    {
+      "label": "list afterglow",
+      "transactionHash": "8vPDUxfwi1t7UXwo6LwQcKburU2o1U4kGQf2CygGGqcH"
+    },
+    {
+      "label": "purchase afterglow",
+      "transactionHash": "9KtAdmq57iUEHsf5LVSdAc9v3VngE27sWdT9D3Kjp62V"
+    },
+    {
+      "label": "repair chapter one",
+      "transactionHash": "5JP5VU9cMx9s9Ub54MawbrzFxa3W3RxxroNfg8z1UHXS"
+    },
+    {
+      "label": "Crown entry",
+      "transactionHash": "8bjh7zFkshbJzCcTSYSpYkrLZfSDRxgvDwVwJuse1ZMs"
+    },
+    {
+      "label": "Crown result",
+      "transactionHash": "H14yHJ8oaFZsLnawzRL1AaZx8BSiP1YGVKsyM23N4NTa"
+    }
+  ],
+  "checks": [
+    "Actual replay met job 1 objective",
+    "Duplicate settlement returns the same transaction",
+    "Actual replay met job 2 objective",
+    "Purchased cosmetic belongs to second NEAR account",
+    "District repair settled on chain",
+    "HOUND funded an attested on-chain ghost",
+    "Full live CR supply including escrow is conserved"
+  ],
+  "storageUsageBytes": 100087,
+  "realNearRuntime": true,
+  "auth0BrowserTested": false,
+  "pilotAccounts": [
+    "8fa868ed0eb590ea1e6d6abcd220a03323d98d9019f9e98d921be09677fabad8",
+    "c2d5add7a6f6d94c6fd9e62b4144973ee6a9382b4fa60105c2fa2c6ddb60dd73"
+  ],
+  "costSamples": [
+    {
+      "label": "pilot-a delegated session",
+      "transactionHash": "GWmcmhJN9UAfjtPCq56k4KFSxTd5ihgusLxkNzQpGJSd",
+      "gasBurnt": "4691448062450",
+      "tokensBurntYocto": "424508293745000000000"
+    },
+    {
+      "label": "job 1 result",
+      "transactionHash": "D39zHBgkkHTRq5ToCZzpVVUXodktSepaAZenEFn66RRD",
+      "gasBurnt": "2550111255970",
+      "tokensBurntYocto": "232692869347000000000"
+    },
+    {
+      "label": "purchase afterglow",
+      "transactionHash": "9KtAdmq57iUEHsf5LVSdAc9v3VngE27sWdT9D3Kjp62V",
+      "gasBurnt": "2630102893932",
+      "tokensBurntYocto": "240692033143200000000"
+    },
+    {
+      "label": "Crown result",
+      "transactionHash": "H14yHJ8oaFZsLnawzRL1AaZx8BSiP1YGVKsyM23N4NTa",
+      "gasBurnt": "2574114145487",
+      "tokensBurntYocto": "235093158298700000000"
+    },
+    {
+      "label": "initial deploy and initialize",
+      "transactionHash": "DfQJUx2tnzbHvGjZRXza1RgHXpPaAA1zSaHbvUYQDFtW",
+      "gasBurnt": "9448785132261",
+      "tokensBurntYocto": "922560256976100000000"
+    },
+    {
+      "label": "v3 authorization upgrade",
+      "transactionHash": "AUVVnrnz3CHgPThrBkCbw7nL6J949v2pPEppWUxHQrpj",
+      "gasBurnt": "7852983759911",
+      "tokensBurntYocto": "762980119741100000000"
+    }
+  ],
+  "currentStorageUsageBytes": 100144,
+  "auth0CallbackStatus": "Browser reaches shared testnet login at http://localhost:3000; personal login and MPC signing pending",
+  "browserOnchainViewsTested": true,
+  "npcWorkerEnabled": true
+}

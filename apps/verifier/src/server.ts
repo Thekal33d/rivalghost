@@ -9,7 +9,7 @@ import {createVerifierServer} from "./http.js";
 async function main() {
   const contractId=process.env.CONTRACT_ID, keyFile=process.env.CERTIFICATE_KEY_FILE, token=process.env.VERIFIER_SERVICE_TOKEN;
   if(process.env.NEAR_NETWORK!=="testnet"||!contractId||!keyFile||!token)throw new Error("Set NEAR_NETWORK=testnet, CONTRACT_ID, CERTIFICATE_KEY_FILE and VERIFIER_SERVICE_TOKEN before starting the verifier");
-  const rpc=new NearRpcViews(process.env.NEAR_RPC_URL??"https://rpc.testnet.near.org");
+  const rpc=new NearRpcViews(process.env.NEAR_RPC_URL??"https://test.rpc.fastnear.com");
   const source=new NearChallengeSource(rpc,contractId);
   let jwk:JsonWebKey,key:CryptoKey;
   try {

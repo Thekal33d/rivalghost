@@ -5,7 +5,7 @@ import {GUEST_METHODS} from "@rivalghost/game-data";
 import {NearGuestProvisioner} from "./near-bootstrap.js";
 const publicKey="ab".repeat(32);
 function setup(){
-  const provider=new NearGuestProvisioner({parentId:"operator.testnet",contractId:"game.testnet",rpcUrl:"https://rpc.testnet.near.org",privateKey:KeyPair.fromRandom("ed25519").toString(),fundingYocto:100n,gasPriceCap:2n});
+  const provider=new NearGuestProvisioner({parentId:"operator.testnet",contractId:"game.testnet",rpcUrl:"https://test.rpc.fastnear.com",privateKey:KeyPair.fromRandom("ed25519").toString(),fundingYocto:100n,gasPriceCap:2n});
   const key=new PublicKey({keyType:KeyType.ED25519,data:Buffer.from(publicKey,"hex")}).toString();
   const keys={keys:[{public_key:key,access_key:{nonce:0,permission:{FunctionCall:{receiver_id:"game.testnet",allowance:"0",method_names:[...GUEST_METHODS]}}}}]};
   return {provider,keys,id:provider.accountId(publicKey)};

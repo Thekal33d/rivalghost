@@ -2,39 +2,25 @@
 
 November 13, 2026
 
-## Current checkpoint
+## Current live testnet checkpoint
 
-The project is in [Thekal33d/rivalghost](https://github.com/Thekal33d/rivalghost). Commits use **Thekal33d <jimohkhalid16@gmail.com>**. Local free play, server social features, the Workshop and Crown Pit work. NEAR Auth linking/sign-in code is built, but external signing is disabled. Current v3 gameplay and Workshop assets do not yet settle on NEAR.
+The project is in [Thekal33d/rivalghost](https://github.com/Thekal33d/rivalghost), committed as **Thekal33d <jimohkhalid16@gmail.com>**. The compact v3 economy is deployed, tested and connected to the local game. The exact sign-in walkthrough is in [NEAR Auth setup](near-auth-plan.md).
 
-The creator approved **$5 total for the AI pilot**, no automatic top-ups, and at most **four shared NPC decisions per UTC day**. This records a budget, not a purchase or activation. Testnet funds, AI credits and hosting bills are separate budgets.
+## 1. Accounts and deployment — complete
 
-## 1. Testnet operator account — complete
+Operator: `rivalghost-ops-thekal33d.testnet`. Within the approved 4-test-NEAR limit, dedicated accounts received 3.3 test NEAR: game 2, auth 0.6, relay 0.6, HOUND 0.05, MOTH 0.05; account-creation fees were approximately 0.035575 additional. Runtime costs come from those accounts. Keys are protected server files and remain ignored by Git. Never export them into chat or frontend variables.
 
-The creator created `rivalghost-ops-thekal33d.testnet` using the official CLI after MyNearWallet's testnet flow failed. A read-only finalized RPC check at block **277514809** confirmed **10 testnet NEAR**, **182 bytes** of account storage, zero validator stake and no deployed contract. The creator's CLI output reports one full-access key. No private key was read and no transaction was sent by this verification.
+Deployed contract: `game.rivalghost-ops-thekal33d.testnet`, **98,677 bytes**. Actual rewards, a two-player trade, shared repair, HOUND seed and Crown payout passed. See [contract review and measured costs](contract-review.md). No new operator wallet is required.
 
-The operator account creation/funding step is complete. Keep its CLI keychain credentials private. NEAR Social profile setup is unnecessary for the game. The steps below are reference instructions only; do not create another operator account.
+## 2. Finish personal NEAR Auth login
 
-### Reference wallet instructions
+Use **http://localhost:3000**, choose Save Pilot → Sign in to a NEAR pilot, and complete the provider login. The shared testnet application is named **Example**. Port 5173 and its /auth/callback path were rejected; the supported root callback now reaches the real login form. [Official sample](https://github.com/Peersyst/fast-auth/blob/main/examples/spa/.env.example)
 
-1. Open [MyNearWallet Testnet](https://testnet.mynearwallet.com/), check that you are on testnet, and follow its create-account flow.
-2. Choose an available account name if offered. `rivalghost-ops.testnet` is an example, not a reserved name. Save the recovery phrase privately using the wallet's instructions.
-3. Copy the **public account ID** shown by the wallet. This is the value to share here. It is not a seed phrase, private key, password or API key.
-4. Open the [NEAR faucet](https://near-faucet.io/), enter the public testnet account ID and request the permitted test funds. Availability and limits can change; verify the resulting wallet balance rather than assuming a fixed grant.
-5. Check the account in [Testnet NearBlocks](https://testnet.nearblocks.io/) and send the public ID once funding appears. No real NEAR purchase is needed for this testnet step.
+After returning, choose **Authorize game session**. The delegated transaction calls only `join` and `set_session` on the game contract with zero attached NEAR; internal CR/item rights last at most 12 hours. The game relay funds a missing implicit account with 0.005 test NEAR. A first grant transfers 100 CR from the finite reserve, once. Old demo balances are not imported. Local story saves at port 5173 remain there and do not move automatically.
 
-If wallet account creation needs initial funding, the official CLI also supports faucet-sponsored account creation with locally stored keys. We can use that route if the wallet flow is unavailable; the key must remain on your computer. [Official NEAR CLI guide](https://docs.near.org/tools/cli)
+Sponsor configuration is now present privately. Auth allows four attempts per UTC day with conservative 300-Tgas reservations; game relay allows 40 transactions/day; HOUND allows eight. These are pilot caps, not public capacity. Unknown results retain reservations. Public hosting needs an allowlisted HTTPS callback/origin, a single process per sponsor key, protected credentials and persistent database/replay backups. Mainnet credentials are a separate step.
 
-The operator is infrastructure for testnet sponsorship/deployment. Players use NEAR Auth; they should not receive or use the operator key. For unattended signing, configure a separate service key/account with restricted access and its own small allowance, rather than exporting the wallet recovery phrase. The public ID is now known. A dedicated service key/account, explicit testnet signing allowance and callback test are the next authentication setup steps; live signing stays disabled.
-
-## 2. Configure NEAR Auth sponsorship
-
-The code uses the official shared testnet provider and a server-funded signing transaction. [Testnet resources](https://docs.auth.near.org/resources/testnet)
-
-Keep `NEAR_AUTH_ENABLED=false` until the testnet sponsor, callback and budget are configured. The server needs `NEAR_AUTH_SPONSOR_ID`, a protected `NEAR_AUTH_KEY_FILE`, `NEAR_AUTH_GAS_PRICE_CAP_YOCTO`, `NEAR_AUTH_DAILY_BUDGET_YOCTO` and `NEAR_AUTH_MAX_DAILY_REQUESTS`. The example environment file deliberately leaves spending values blank.
-
-Each attempt reserves `300 Tgas × configured gas-price cap + 1 yoctoNEAR` before submission. This is a conservative reservation, not measured gas consumption. Unknown transaction outcomes still consume the reserved daily allowance. The $5 AI decision does not set this testnet signing budget.
-
-The callback is `APP_ORIGIN/auth/callback`. The current local origin is `http://localhost:5173`; public use needs the final HTTPS origin. We must confirm provider callback acceptance and a real sign-in before advertising recovery as live. The compatibility adapter and local test evidence are documented in `near-auth-plan.md`.
+Personal login/MPC signature return and cross-device recovery have not yet been verified. The browser is open at the provider login for the creator to finish privately.
 
 ## 3. Create NEAR AI Cloud access
 
@@ -97,11 +83,10 @@ The backend uses Node's SQLite/filesystem facilities and a continuing NPC loop; 
 
 Namecheap is the registrar only. No domain has been chosen. Pick a domain or an approved subdomain of one you already own. We can then prepare the exact Cloudflare DNS and reverse-proxy configuration, preserve existing email/Trialoom records, set HTTPS and use the same origin for browser/API requests. Changing nameservers is unnecessary if that domain already uses Cloudflare. Keep authentication/API responses out of public caches.
 
-## Next inputs and implementation order
+## Next inputs
 
-1. **Completed:** funded operator `rivalghost-ops-thekal33d.testnet`. Signing credentials and a dedicated testnet authentication allowance remain unconfigured.
-2. **Prepared:** Cloud credits confirmed, API key saved privately, reviewed model configured, $1 durable reservation ceiling implemented; one authorized paid inference succeeded; recurring inference remains disabled.
-3. Trialoom's deployment method or an existing SSH alias for read-only server inspection. The server model is now known; no need to repeat it.
-4. Chosen game hostname when ready.
+1. Complete the open NEAR Auth login, return to RivalGhost and authorize the game session. Then validate a human browser job and its receipt.
+2. Share Trialoom's deployment method or an existing SSH alias for read-only host inspection; the server model is already known.
+3. Choose the final game hostname so its HTTPS callback/origin can be registered.
 
-Then validate live NEAR Auth with a concrete testnet allowance, complete the v3/finite-economy contract work within the byte limit, measure the exact artifact in NEAR's runtime, prepare the isolated host deployment and run a fresh-player end-to-end rehearsal. The current optimized artifact is **99,448 bytes**, with **552 bytes** left below the unchanged 100,000-byte ceiling. It has not been deployed.
+No further AI purchase, staking, mainnet transfer or VPS purchase is required for these local testnet checks. Recurring inference stays disabled.

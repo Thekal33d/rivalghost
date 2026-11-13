@@ -1,0 +1,53 @@
+{
+  "network": "testnet",
+  "operator": "rivalghost-ops-thekal33d.testnet",
+  "approvedMaxNear": "4",
+  "allocations": [
+    {
+      "role": "game",
+      "accountId": "game.rivalghost-ops-thekal33d.testnet",
+      "initialNear": "2",
+      "publicKey": "ed25519:E7KLqpHjSBVXKoUpPLPDU8MywQXVpX5uakF5fZsxEezk"
+    },
+    {
+      "role": "auth",
+      "accountId": "auth.rivalghost-ops-thekal33d.testnet",
+      "initialNear": "0.6",
+      "publicKey": "ed25519:HwEuKuvzzx15zQEcdhCcgTvt34KY58U2ZFaNGJ8JtXHA"
+    },
+    {
+      "role": "relay",
+      "accountId": "relay.rivalghost-ops-thekal33d.testnet",
+      "initialNear": "0.6",
+      "publicKey": "ed25519:D6qe6nkuPWfj2soxNrfhenD4PLhATzhYqpAmVEFwtPod"
+    },
+    {
+      "role": "hound",
+      "accountId": "hound.rivalghost-ops-thekal33d.testnet",
+      "initialNear": "0.05",
+      "publicKey": "ed25519:ECCBLt5wGJCiDsd5cp3wcza2u6v8S9iVwWkRoneRSo7H"
+    },
+    {
+      "role": "moth",
+      "accountId": "moth.rivalghost-ops-thekal33d.testnet",
+      "initialNear": "0.05",
+      "publicKey": "ed25519:3NYHi4rWNyHWZEKf3c3ojSEJjfeAXcgoUnsiLSgGMqe3"
+    }
+  ],
+  "deployment": {
+    "contractId": "game.rivalghost-ops-thekal33d.testnet",
+    "sha256": "f80add454965b8c1edef65ce9ce45f1ba6c1d1ffa4654be0be43e940d986a090",
+    "bytes": 98677,
+    "transactionHash": "AUVVnrnz3CHgPThrBkCbw7nL6J949v2pPEppWUxHQrpj",
+    "finality": "FINAL",
+    "statePreserved": true,
+    "storageUsageBytes": 100144
+  },
+  "initialDeployment": {
+    "contractId": "game.rivalghost-ops-thekal33d.testnet",
+    "sha256": "297a0018a08b41156b8e2e7e682f594e4f688f9c07e86020b9d542a57c9386bf",
+    "bytes": 98620,
+    "transactionHash": "DfQJUx2tnzbHvGjZRXza1RgHXpPaAA1zSaHbvUYQDFtW",
+    "finality": "FINAL"
+  }
+}
