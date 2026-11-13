@@ -12,5 +12,8 @@
   },
   "dependencies": {
     "@rivalghost/game-data": "workspace:*"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

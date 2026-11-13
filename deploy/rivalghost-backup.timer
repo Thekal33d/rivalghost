@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily RivalGhost database backup
+
+[Timer]
+OnCalendar=*-*-* 03:40:00 UTC
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

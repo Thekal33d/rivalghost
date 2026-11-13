@@ -1,3 +1,4 @@
+import {isIP} from 'node:net';
 import {ChainError} from './chain-relay.js';
 import type {ChainEconomy} from './chain-economy.js';
 import type {ChainSessionAuth} from './chain-auth.js';
@@ -13,14 +14,19 @@ export interface VerificationGateway {verify(guest:Guest,submission:{challengeId
 const token=(req:IncomingMessage)=>req.headers.cookie?.split(";").map(s=>s.trim()).find(s=>s.startsWith("rg_guest="))?.slice(9)??"";
 function send(res:ServerResponse,status:number,body:unknown,cookie?:string){res.writeHead(status,{"Content-Type":"application/json","Cache-Control":"no-store","X-Content-Type-Options":"nosniff",...(cookie?{"Set-Cookie":cookie}:{})});res.end(JSON.stringify(body));}
 async function json(req:IncomingMessage){const chunks:Buffer[]=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>128*1024)throw new Error("Request too large");chunks.push(chunk);}return JSON.parse(Buffer.concat(chunks).toString("utf8"));}
-export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService,chain?:{economy:ChainEconomy;auth:ChainSessionAuth}){
+// Only the local reverse proxy may supply this header; Caddy overwrites it.
+export function proxyClientIp(remote:string|undefined,header:string|string[]|undefined,trust:boolean){
+  return trust&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(remote??'')&&typeof header==='string'&&isIP(header)?header:remote??'unknown';
+}
+export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService,chain?:{economy:ChainEconomy;auth:ChainSessionAuth},options:{trustLoopbackProxy?:boolean}={}){
   const store=service.store,social=new SocialService(store),secure=store.origin.startsWith("https:");
   const cookie=(value:string,age=43200)=>`rg_guest=${value}; HttpOnly; SameSite=Strict; Path=/api/guest; Max-Age=${age}${secure?"; Secure":""}`;
   let economy:EconomyService|undefined;
   const pit=()=>economy??(economy=new EconomyService(store));
   const server=createServer(async(req,res)=>{
     try {
-    const session=token(req),guest=store.session(session);
+    const session=token(req),guest=store.session(session),clientIp=proxyClientIp(req.socket.remoteAddress,req.headers['x-rivalghost-client-ip'],options.trustLoopbackProxy===true);
+    if(req.method==='GET'&&req.url==='/api/guest/health'){store.db.prepare('SELECT 1').get();send(res,200,{ok:true});return;}
     const authBinding=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith('rg_near_flow='))?.slice(13)??'';
     const authCookie=(value:string)=>`rg_near_flow=${value}; HttpOnly; SameSite=Strict; Path=/api/guest/near-auth; Max-Age=600${secure?'; Secure':''}`;
     if(req.method==='GET'&&req.url==='/api/guest/chain/config'){send(res,200,chain?await chain.economy.status(guest):{enabled:false,mode:'local-demo'});return;}
@@ -28,9 +34,9 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
     if(req.method==="GET"&&req.url==="/api/guest/me"){send(res,200,{guest,onlineAvailable:service.configured,authMethod:store.authMethod(session)});return;}
     if(req.method==="GET"&&req.url==="/api/guest/compute"){store.rate("compute-read",60);send(res,200,{...(compute?.status()??{enabled:false,dailyLimit:0,callsToday:0,source:"local"}),stake:await compute?.stake()??{state:"not-configured"}});return;}
     if(req.method==="GET"&&req.url==="/api/guest/workshop"){store.rate("workshop-read",180);send(res,200,await (chain?.economy??pit()).workshop(guest));return;}
-    if(req.method==="GET"&&req.url==="/api/guest/economy"){store.rate("pit-read-global",180);store.rate("pit-read-ip:"+req.socket.remoteAddress,60);send(res,200,await (chain?.economy??pit()).view(guest));return;}
+    if(req.method==="GET"&&req.url==="/api/guest/economy"){store.rate("pit-read-global",180);store.rate("pit-read-ip:"+clientIp,60);send(res,200,await (chain?.economy??pit()).view(guest));return;}
     if(req.method==="GET"&&req.url?.startsWith("/api/guest/social/")){
-      store.rate("social-read-global",300);store.rate("social-read-ip:"+req.socket.remoteAddress,90);
+      store.rate("social-read-global",300);store.rate("social-read-ip:"+clientIp,90);
       const url=new URL(req.url,store.origin);
       if(url.pathname==="/api/guest/social/me"){send(res,200,{profile:guest?social.profile(guest.id):null});return;}
       if(url.pathname==="/api/guest/social/board"){send(res,200,social.board(url.searchParams,guest));return;}
@@ -40,17 +46,17 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
     if(req.method!=="POST"||req.headers.origin!==store.origin){send(res,403,{error:"Use RivalGhost from its configured origin"});return;}
     if(req.headers["content-type"]?.split(";")[0]!=="application/json"){send(res,415,{error:"JSON required"});return;}
     if(Number(req.headers["content-length"]??0)>128*1024){send(res,413,{error:"Request too large"});return;}
-      store.rate("requests-global",120);store.rate("requests-ip:"+req.socket.remoteAddress,30);
+      store.rate("requests-global",120);store.rate("requests-ip:"+clientIp,30);
       const input=await json(req);
       if(!input||typeof input!=="object")throw new Error("Invalid guest request");
-      if(req.url==="/api/guest/challenge") {send(res,200,store.challenge(input.publicKey,req.socket.remoteAddress??"unknown"));return;}
+      if(req.url==="/api/guest/challenge") {send(res,200,store.challenge(input.publicKey,clientIp));return;}
       if(req.url==="/api/guest/session") {
         if(typeof input.nonce!=="string"||typeof input.publicKey!=="string"||typeof input.signature!=="string")throw new Error("Invalid guest proof");
         const signed=store.authenticate(input.nonce,input.publicKey,input.signature);send(res,200,{guest:signed.guest,onlineAvailable:service.configured},cookie(signed.token));return;
       }
       if(req.url?.startsWith('/api/guest/near-auth/')){
         if(!nearAuth){send(res,503,{error:'NEAR Auth sponsorship is not configured.'});return;}
-        if(req.url.endsWith('/begin')){const flow=nearAuth.beginIdentity(input.mode,session,req.socket.remoteAddress??'unknown');send(res,200,flow.challenge,authCookie(flow.binding));return;}
+        if(req.url.endsWith('/begin')){const flow=nearAuth.beginIdentity(input.mode,session,clientIp);send(res,200,flow.challenge,authCookie(flow.binding));return;}
         if(typeof input.id!=='string')throw new NearAuthError('Invalid login request.');
         if(req.url.endsWith('/cancel')){nearAuth.cancel(input.id,authBinding,session);send(res,200,{ok:true},authCookie(''));return;}
         if(req.url.endsWith('/complete')){req.setTimeout(90000);const signed=await nearAuth.completeIdentity(input.id,authBinding,session,input.code,input.state);send(res,200,{guest:signed.guest,authMethod:'near',onlineAvailable:service.configured},cookie(signed.token));return;}

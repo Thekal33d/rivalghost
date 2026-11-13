@@ -60,7 +60,7 @@ async function main(){
     if(world.version!==3||Buffer.from(world.verifier).toString('base64url')!==jwk.x||npc&&world.hound!==npc.config.accountId)throw new Error('Economy deployment does not match server keys');
     chain={economy,auth:new ChainSessionAuth(relay,authNetwork,authRelay)};
   }
-  const server=createGuestServer(service,gateway,new NearCompute(store,computeConfig(process.env)),new NearAuthService(store,authNetwork,authRelay),chain);
+  const server=createGuestServer(service,gateway,new NearCompute(store,computeConfig(process.env)),new NearAuthService(store,authNetwork,authRelay),chain,{trustLoopbackProxy:process.env.TRUST_LOOPBACK_PROXY==='true'});
   server.listen(port,"127.0.0.1",()=>console.log(`RivalGhost guest gateway: 127.0.0.1:${port}; ${service.configured?"testnet provisioning enabled":"provisioning disabled"}; NEAR Auth ${authRelay?"enabled":"disabled"}; NPC Cloud ${process.env.NEAR_AI_ENABLED==="true"?"enabled":"disabled"}`));
   for(const signal of ["SIGINT","SIGTERM"] as const)process.once(signal,()=>server.close(()=>store.close()));
 }

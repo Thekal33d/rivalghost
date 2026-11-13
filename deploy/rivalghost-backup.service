@@ -1,0 +1,14 @@
+[Unit]
+Description=Consistent RivalGhost SQLite backup
+After=rivalghost.service
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/rivalghost/current/deploy/backup-sqlite.py /var/lib/rivalghost/staging.sqlite /var/backups/rivalghost
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/rivalghost /var/backups/rivalghost
