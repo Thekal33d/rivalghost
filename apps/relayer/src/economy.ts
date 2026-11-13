@@ -7,7 +7,7 @@ export class EconomyError extends Error{}
 const HOUND='npc:hound',TREASURY='reserve',ROUND=1800000,ENTRY_TIME=120000;
 export interface PitCrown {id:number;name:string;chapter:ChapterId;style:HoundStyle;holder:string;score:number;replay:ExpeditionReplay;bounty:number;expires:number;active:boolean;defended:boolean;lock:string|null;decision:string}
 export interface PitReceipt {id:string;won:boolean;score:number;target:number;entryReturned:number;bountyPaid:number;bountyAdded:number;holderPaid:number;balance:number;hash:string}
-interface Attempt {id:string;player:string;crown:number;expires:number;status:'live'|'settled'|'refunded';receipt?:PitReceipt}
+interface Attempt {id:string;player:string;crown:number;expires:number;status:'live'|'settled'|'refunded'|'forfeited';expiryPolicy?:'forfeit';receipt?:PitReceipt}
 interface PitEvent {id:string;at:number;kind:string;text:string}
 interface PitState {world?:WorldState;version:1;wallets:Record<string,number>;crowns:PitCrown[];attempts:Record<string,Attempt>;events:PitEvent[];day:string;spent:number;lastAttack:number;rounds:number}
 const fail=(message:string):never=>{throw new EconomyError(message);};
@@ -28,7 +28,12 @@ function initial(now:number):PitState{
 }
 function maintenance(s:PitState,now:number){
   const day=new Date(now).toISOString().slice(0,10);if(day!==s.day){s.day=day;s.spent=0;}
-  for(const a of Object.values(s.attempts))if(a.status==='live'&&now>=a.expires){s.wallets[a.player]+=10;a.status='refunded';s.crowns[a.crown].lock=null;event(s,now,'refund',`An unresolved ${s.crowns[a.crown].name} flight expired: 10 CR returned.`);}
+  for(const a of Object.values(s.attempts))if(a.status==='live'&&now>=a.expires){
+    const c=s.crowns[a.crown];
+    if(a.expiryPolicy==='forfeit'){c.bounty+=8;s.wallets[c.holder]+=2;a.status='forfeited';event(s,now,'forfeit',`${c.name}: flight expired; 8 CR to bounty, 2 CR to holder.`);}
+    else{s.wallets[a.player]+=10;a.status='refunded';event(s,now,'refund',`${c.name}: pre-policy reservation refunded under its original terms.`);}
+    c.lock=null;
+  }
   for(const c of s.crowns){if(c.active&&now>=c.expires&&!c.lock){s.wallets[c.holder]+=c.bounty;event(s,now,'close',`${c.name}: round closed; remaining ${c.bounty} CR returned to its holder.`);c.bounty=0;c.active=false;}
     if(!c.active)seed(s,c,now);
   }
@@ -39,12 +44,12 @@ function start(s:PitState,player:string,crownId:number,now:number):Attempt{
   if(c.bounty<20)fail('The winner must fund a defense before this Crown reopens.');
   if(c.holder===player)fail('You already hold this Crown.');if(c.lock)fail('Another pilot reserved this Crown. Try another target.');
   if((s.wallets[player]??0)<10)fail('You need 10 demo CR. Free flight is always available.');
-  s.wallets[player]-=10;const a:Attempt={id:randomUUID(),player,crown:c.id,expires:now+ENTRY_TIME,status:'live'};s.attempts[player]=a;c.lock=a.id;return a;
+  s.wallets[player]-=10;const a:Attempt={id:randomUUID(),player,crown:c.id,expires:now+ENTRY_TIME,status:'live',expiryPolicy:'forfeit'};s.attempts[player]=a;c.lock=a.id;return a;
 }
 function settle(s:PitState,player:string,id:string,replay:ExpeditionReplay,now:number){
   const a=s.attempts[player];if(!a||a.id!==id)fail('This flight does not belong to your pilot.');
   if(a.status==='settled')return a.receipt!;
-  if(a.status!=='live'||now>=a.expires)fail('Flight expired. Its entry is refunded automatically; check the Crown Pit.');
+  if(a.status!=='live'||now>=a.expires)fail(a.expiryPolicy==='forfeit'?'Flight expired. The 10 CR entry is forfeited: 8 to bounty, 2 to holder. Check the Crown Pit.':'Flight expired. Your pre-policy entry is refunded; check the Crown Pit.');
   const c=s.crowns[a.crown];if(c.lock!==a.id)fail('The Crown lock is no longer valid.');
   try{validateExpedition(replay);}catch{fail('Invalid flight recording.');}
   if(replay.rulesVersion!==3||replay.chapter!==c.chapter||replay.rig!=='fan'||replay.seed!==c.replay.seed)fail('The replay does not match the reserved mission.');

@@ -31,8 +31,8 @@ describe('HOUND economy',()=>{
   it('treats a tie as a loss, splits 8/2, and never trusts a supplied score',()=>{
     const {store,economy,pilot}=setup();try{const c=economy.view(pilot).crowns[0],a=economy.start(pilot,0);const receipt=economy.settle(pilot,a.id,{...c.replay,score:9999999} as any);expect(receipt).toMatchObject({won:false,bountyAdded:8,holderPaid:2,balance:90,score:c.score});const v=economy.view(pilot);expect(v.crowns[0].bounty).toBe(28);expect(v.houndBalance).toBe(42);expect(v.total).toBe(100100);}finally{store.close();}
   });
-  it('refunds unresolved flights, rejects late results and releases Crown locks',()=>{
-    const {store,economy,pilot,advance}=setup();try{const a=economy.start(pilot,0);advance(120001);expect(()=>economy.settle(pilot,a.id,winner)).toThrow('expired');economy.tick();const v=economy.view(pilot);expect(v.balance).toBe(100);expect(v.attempt?.status).toBe('refunded');expect(v.crowns[0].lock).toBeNull();expect(v.total).toBe(100100);advance(1800000);economy.tick();expect(economy.view(pilot).total).toBe(100100);}finally{store.close();}
+  it('forfeits unresolved flights, rejects late results and releases Crown locks',()=>{
+    const {store,economy,pilot,advance}=setup();try{const a=economy.start(pilot,0);advance(120001);expect(()=>economy.settle(pilot,a.id,winner)).toThrow('expired');economy.tick();const v=economy.view(pilot);expect(v.balance).toBe(90);expect(v.attempt?.status).toBe('forfeited');expect(v.crowns[0].bounty).toBe(28);expect(v.houndBalance).toBe(42);economy.tick();expect(economy.view(pilot).balance).toBe(90);expect(v.crowns[0].lock).toBeNull();expect(v.total).toBe(100100);advance(1800000);economy.tick();expect(economy.view(pilot).total).toBe(100100);}finally{store.close();}
   });
   it('uses a readable budget policy with reserve, daily ceiling, cooldown and honest passes',()=>{
     const base={balance:100,spentToday:0,now:1800000000000,lastAttack:0,target:10000,rehearsal:12000,bounty:20,locked:false,open:true};

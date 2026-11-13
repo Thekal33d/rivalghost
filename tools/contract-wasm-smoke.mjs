@@ -96,13 +96,13 @@ async function exercise(file) {
  assert.equal(new Set(retainedSizes).size,1,'repeated flights grew retained storage');
  await call('close_expired_crown',{crown_id:0},caller,crown.expires_at_ms);
  await reject('close_expired_crown',{crown_id:0},caller,crown.expires_at_ms);
- assert.equal(await call('get_balance',{account_id:'player.testnet'}),140);
+ assert.equal(await call('get_balance',{account_id:'player.testnet'}),240);
  assert.equal(await call('get_balance',{account_id:'hound.testnet'}),60);
- assert.equal(await call('get_balance',{account_id:'other.testnet'}),100);
+ assert.equal(await call('get_balance',{account_id:'other.testnet'}),0);
  // Preserve legacy API and demonstrate a signed tie as a loss, never a second grant.
  const legacy=await call('seed_crown',{seed:{...opening.seed,seed:3,bounty_credits:20}},caller,2000000);
- const flight=await call('start_challenge',{crown_id:legacy.id},'other.testnet',2000001);
- const cert={...fixture.contractCertificate,contract_id:null,certificate_version:1,challenge_id:flight.id,crown_id:legacy.id,player_id:'other.testnet',rules_version:1,seed:3,loadout_hash:'0'.repeat(64),score:14000,issued_at_ms:2000002,expires_at_ms:flight.expires_at_ms};
+ const flight=await call('start_challenge',{crown_id:legacy.id},'player.testnet',2000001);
+ const cert={...fixture.contractCertificate,contract_id:null,certificate_version:1,challenge_id:flight.id,crown_id:legacy.id,player_id:'player.testnet',rules_version:1,seed:3,loadout_hash:'0'.repeat(64),score:14000,issued_at_ms:2000002,expires_at_ms:flight.expires_at_ms};
  const message=['RIVALGHOST-CERT-v1',cert.challenge_id,cert.crown_id,cert.player_id,cert.rules_version,cert.seed,cert.loadout_hash,cert.replay_hash,cert.final_state_hash,cert.score,cert.issued_at_ms,cert.expires_at_ms,cert.verifier_key_version].join('|');
  const privateKey=createPrivateKey({key:Buffer.concat([Buffer.from('302e020100300506032b657004220420','hex'),Buffer.alloc(32,7)]),format:'der',type:'pkcs8'});
  cert.signature=Array.from(sign(null,Buffer.from(message),privateKey));

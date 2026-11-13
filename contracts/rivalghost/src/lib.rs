@@ -431,9 +431,10 @@ impl RivalGhost {
             "Challenge does not own the Crown lock"
         );
         crown.active_challenge_id = None;
+        crown.bounty_credits += FAILED_CHALLENGE_TO_BOUNTY_CREDITS;
+        self.credit(crown.holder.clone(), FAILED_CHALLENGE_TO_HOLDER_CREDITS);
         self.crowns.insert(crown.id, crown);
-        self.credit(challenge.challenger, challenge.entry_credits);
-        challenge.entry_credits
+        0 // Expiry forfeits the entry, exactly like a verified loss.
     }
 
     pub fn defend_crown(&mut self, crown_id: u64) -> Crown {
@@ -835,15 +836,17 @@ mod tests {
     }
 
     #[test]
-    fn returns_the_entry_when_an_unresolved_challenge_expires() {
+    fn forfeits_the_entry_when_an_unresolved_challenge_expires() {
         context("operator.testnet", 1_000);
         let signing_key = verifier_key();
         let mut contract = contract(&signing_key);
         let challenge = open_challenge(&mut contract);
 
         context("relayer.testnet", challenge.expires_at_ms);
-        assert_eq!(contract.expire_challenge(challenge.id), 10);
-        assert_eq!(contract.get_balance(account("player.testnet")), 100);
+        assert_eq!(contract.expire_challenge(challenge.id), 0);
+        assert_eq!(contract.get_crown(0).unwrap().bounty_credits, 48);
+        assert_eq!(contract.get_balance(account("hound.testnet")), 62);
+        assert_eq!(contract.get_balance(account("player.testnet")), 90);
         assert!(contract
             .get_active_challenge(account("player.testnet"))
             .is_none());
@@ -981,7 +984,7 @@ mod tests {
         assert!(game
             .get_active_challenge(account("player.testnet"))
             .is_none());
-        assert_eq!(game.get_balance(account("player.testnet")), 100);
+        assert_eq!(game.get_balance(account("player.testnet")), 90);
     }
 
     #[test]
@@ -1029,7 +1032,7 @@ mod tests {
             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| game.defend_crown(0)))
                 .is_err()
         );
-        assert_eq!(game.get_balance(account("hound.testnet")), 60);
+        assert_eq!(game.get_balance(account("hound.testnet")), 62);
     }
 
     #[test]

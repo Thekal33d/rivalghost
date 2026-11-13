@@ -115,7 +115,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
       {count===0&&!paused&&sectorAge<150&&<div className="sector-banner" key={sector}><small>{sector===2?"BOSS CONTACT":`SECTOR 0${sector+1}`}</small><h2>{sector===2?chapter.boss:district.route[sector]}</h2><p>{sector===2?"Stay on target. Watch the warning lanes.":district.cue}</p></div>}
       {count>0&&<div className="launch-countdown"><span>{chapter.name} / {district.name}</span><strong key={count}>{count}</strong><small>{wide?"FLY RIGHT / WASD TO STEER":"FLY UP / DRAG TO STEER"} · SPACE / TAP TO PULSE</small><p>{district.twist}</p></div>}
       {paused&&<div className="flight-paused"><span>FLIGHT PAUSED / {chapter.name}</span><h2>HOLD YOUR<br/>FLIGHT LINE.</h2><p>{district.twist}</p><button onClick={togglePause}>RESUME FLIGHT →</button><button className="pause-exit" onClick={onExit}>RETURN TO HANGAR</button><small>ESC TO RESUME</small></div>}
-      {reservationExpires&&<p className="pit-flight-timer">{reservedSeconds>0?`ENTRY HELD / ${Math.floor(reservedSeconds/60)}:${String(reservedSeconds%60).padStart(2,'0')} · pauses still count`:'ENTRY EXPIRED / check refund in Crown Pit'}</p>}
+      {reservationExpires&&<p className="pit-flight-timer">{reservedSeconds>0?`ENTRY HELD / ${Math.floor(reservedSeconds/60)}:${String(reservedSeconds%60).padStart(2,'0')} · pauses still count`:'ENTRY EXPIRED / check outcome in Crown Pit'}</p>}
       {fullError&&<button className="fullscreen-note" onClick={()=>setFullError("")}>{fullError} ×</button>}
     </div>
     <footer className="flight-dashboard">
