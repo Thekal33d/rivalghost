@@ -79,7 +79,7 @@ Keep local demo usable until on-chain mode is validated. Deploy to a new testnet
 - [x] Browser economic actions route to the signed relay; NPC actions settle on-chain. Browser job rewards and MOTH spending are verified.
 - [x] Real runtime gas/storage and bounded growth measured.
 - [x] Public testnet economic end-to-end receipts recorded with isolated test identities.
-- [ ] Public hosting configured.
+- [x] Public demo hosting configured at https://rivalghost.xyz/. Hosted NEAR Auth and on-chain cutover remain pending.
 - [ ] Commit and push each milestone.
 
 ## Risk Assessment

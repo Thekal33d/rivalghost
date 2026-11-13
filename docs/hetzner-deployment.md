@@ -35,3 +35,9 @@ Suggested provider request (send manually):
 > We are building RivalGhost for the NEAR hackathon on testnet. Please allow `https://rivalghost.xyz/auth/callback` as a callback and `https://rivalghost.xyz` as a web origin for testnet client `np8paqIpMWmNbzT4xAvOOapZBjsOpptl`, or provide an app-specific client on the same testnet provider. OIDC PKCE identity login and explicit delegate-action signing work at localhost:3000; the hosted callback currently returns Callback URL mismatch. We need to preserve existing testnet player identities. This is not a request to migrate to mainnet.
 
 Reference: [official testnet configuration](https://docs.auth.near.org/resources/testnet). The documented [production-access form](https://docs.auth.near.org/home/apply) concerns mainnet; testnet hosted-origin support needs confirmation from the provider.
+
+## Public preview activated
+
+On November 13, public DNS began resolving and the prepared Caddy site was activated at https://rivalghost.xyz/. External checks passed: HTTPS certificate validation, HTTP 200 for the frontend, API health, disabled NEAR Auth with the correct hosted callback, and explicit local-demo economy configuration. APP_ORIGIN now matches the HTTPS domain. Existing Caddy routes were preserved and protected configuration rollback copies were taken. The previous SSH preview URL is no longer the canonical application origin.
+
+This is a public demo preview, not the live on-chain service. It retains the staging database; no live player database, signer credentials or AI key was migrated. Paid inference and chain signing remain disabled. Public browser gameplay and two-player social testing remain to be completed. Hosted NEAR Auth allowlisting and a coordinated live-state migration remain prerequisites for enabling the testnet economy here.

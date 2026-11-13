@@ -2,7 +2,7 @@
 
 November 13, 2026
 
-**Stage: playable game with a deployed, integrated NEAR testnet economy.** Personal NEAR Auth login and game-session authorization are verified live. Browser job reward and MOTH sale receipts are verified. The creator reports craft/equip and account recovery tests passed. Private Hetzner staging is running; public DNS, hosted authentication and live-data cutover remain next.
+**Stage: playable game with a deployed, integrated NEAR testnet economy.** Personal NEAR Auth login and game-session authorization are verified live. Browser job reward and MOTH sale receipts are verified. The creator reports craft/equip and account recovery tests passed. The public demo preview is live at https://rivalghost.xyz/; hosted authentication and live-data cutover remain next.
 
 ## Implemented
 
@@ -24,8 +24,8 @@ The creator authorized up to 4 test NEAR; 3.3 allocated, plus approximately 0.03
 
 ## Next
 
-1. Point the purchased `rivalghost.xyz` domain to the existing Hetzner server. The isolated private preview, health checks, proxy handling and restored SQLite backup are verified. The previous app is retired with rollback data retained.
-2. Register the exact hosted NEAR Auth callback/origin: provider preflight currently rejects the callback. Then migrate the live database and protected keys with one active signer, enable HTTPS, and repeat login/recovery plus the deferred two-player browser test online.
+1. Test gameplay and two-player social features at `https://rivalghost.xyz/`. DNS, HTTPS, frontend delivery and API health are verified. This public preview uses demo balances; no live testnet keys or player database have moved.
+2. Register the exact hosted NEAR Auth callback/origin: provider preflight currently rejects the callback. Then migrate the live database and protected keys with one active signer and repeat login/recovery plus economic browser tests online.
 3. Add the separately bounded operator path for AI decisions to update contract focus before calling inference-driven economic behavior live. Stake-to-compute remains future work.
 4. Human difficulty/retention tests, real-phone performance and fresh-player public rehearsal; capture actual gameplay and receipts for judges.
 
