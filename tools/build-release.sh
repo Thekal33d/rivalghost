@@ -12,8 +12,13 @@ cp -R apps/web/dist "$1/web"
 cp -R deploy "$1/deploy"
 # Fail before upload if private data or native platform-specific addons leaked in.
 python3 - "$1" <<'CHECK'
-import pathlib,sys
+import os,pathlib,sys
 root=pathlib.Path(sys.argv[1]).resolve()
+# pnpm 10 legacy deploy leaves the package's self-link pointing at the workspace.
+self_link=root/'api/node_modules/.pnpm/node_modules/@rivalghost/relayer'
+if self_link.is_symlink():
+ self_link.unlink()
+ self_link.symlink_to(os.path.relpath(root/'api',self_link.parent))
 for p in root.rglob('*'):
  if p.is_symlink():
   if not p.resolve().is_relative_to(root): raise SystemExit('External symlink in release: '+str(p.relative_to(root)))
