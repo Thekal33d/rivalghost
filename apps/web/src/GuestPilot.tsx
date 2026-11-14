@@ -1,7 +1,7 @@
 import {EmbeddedWalletPanel} from './EmbeddedWalletPanel';
 import {lockWallet} from './device-vault';
 import {NearAuthPanel} from './NearAuthPanel';
-import {useEffect,useState,useCallback} from "react";
+import {useEffect,useState,useCallback,useRef} from "react";
 import {ArcadeButton,Icon} from './Brand';
 import {getOrCreatePilotKey,readPilotKey,signGuestChallenge} from "./guest-key";
 interface Guest {id:string;publicKey:string;accountId:string|null;state:"local"|"pending"|"ready"}
@@ -11,7 +11,9 @@ async function request(path:string,body?:unknown){
   const data=await response.json();if(!response.ok)throw new Error(data.error??"Pilot service unavailable");return data;
 }
 /** Device pilot save + NEAR sign-in, shown inline on the Pilot screen. */
-export function PilotAccount({username,onDone}:{username?:string;onDone:()=>void}){
+export function PilotAccount({username,onDone,focusWallet=false}:{focusWallet?:boolean;username?:string;onDone:()=>void}){
+  const accountRef=useRef<HTMLElement>(null);
+  useEffect(()=>{if(!focusWallet)return;const id=requestAnimationFrame(()=>{const panel=accountRef.current?.querySelector<HTMLElement>('.device-wallet-panel');panel?.focus({preventScroll:true});panel?.scrollIntoView({block:'start',behavior:'instant'});});return()=>cancelAnimationFrame(id);},[focusWallet]);
   const [busy,setBusy]=useState(false),[error,setError]=useState("");
   const [session,setSession]=useState<Session>({guest:null,onlineAvailable:false}),[hasKey,setHasKey]=useState(false);
   useEffect(()=>{let active=true;void Promise.all([readPilotKey(),request("me")]).then(([key,data])=>{if(active){setHasKey(Boolean(key));if(["near","embedded"].includes(data.authMethod)||(key&&data.guest?.publicKey===key.publicKey))setSession(data);else setSession({guest:null,onlineAvailable:data.onlineAvailable});}}).catch(()=>{});return()=>{active=false;};},[username]);
@@ -29,7 +31,7 @@ export function PilotAccount({username,onDone}:{username?:string;onDone:()=>void
   const refresh=useCallback(()=>{void request("me").then(setSession);},[]);
   const guest=session.guest,near=session.authMethod==='near',embedded=session.authMethod==='embedded',wallet=near||embedded;
   async function logout(){setBusy(true);try{await request('logout',{});lockWallet();await(await import('./near-auth-client')).clearNearLogin();setSession({guest:null,onlineAvailable:false});localStorage.removeItem('rivalghost.pilot-profile.v1');window.dispatchEvent(new Event('rivalghost:identity'));}catch{setError('Could not finish signing out. Try again.');}finally{setBusy(false);}}
-  return <section id="pilot-onboarding" className="pilot-account" aria-label="Save your pilot">
+  return <section ref={accountRef} id="pilot-onboarding" className="pilot-account" aria-label="Save your pilot">
     <div className="pilot-account-head"><h2>{guest?(username??`GHOST-${guest.id.slice(0,4).toUpperCase()}`):"MAKE IT YOURS."}</h2><span>{wallet?"YOUR PILOT. YOUR ACCOUNT.":"YOUR PILOT. YOUR DEVICE."}</span></div>
     <p>{wallet?"Your server pilot is linked to your NEAR account. Medals and best flights remain on this device.":guest?"Your pilot is saved in this browser. Your medals and best flights stay here too.":"Save a guest pilot without a wallet popup. Free play is always available."}</p>
     {guest&&!wallet&&<p className="pilot-status">{guest.state==="ready"?"NEAR testnet account ready":guest.state==="pending"?"Online account setup pending":"Saved here · link NEAR for on-chain rivalry"}{guest.state==="ready"&&<small>{guest.accountId}</small>}</p>}

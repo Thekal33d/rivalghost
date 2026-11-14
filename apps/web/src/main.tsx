@@ -6,4 +6,5 @@ import "./theme.css";
 import "./screens.css";
 import "./journey.css";
 import "./reference-design.css";
+import "./wallet-welcome.css";
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);

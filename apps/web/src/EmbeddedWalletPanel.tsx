@@ -15,7 +15,7 @@ export function EmbeddedWalletPanel({connected,accountId,onChanged}:{connected:b
  async function connect(){if(!vault)throw new Error('Create or restore a wallet first.');if(!saved)throw new Error('Save your encrypted recovery file first.');if(!walletUnlocked(vault.accountId))await unlockWallet(vault,password);await saveVault(vault);await loginWallet(vault.accountId);onChanged();localStorage.removeItem('rivalghost.pilot-profile.v1');window.dispatchEvent(new Event('rivalghost:identity'));setMessage('Device wallet connected. Authorize your game session below.');}
  if(loaded&&!enabled)return null;
  const unlocked=walletUnlocked(vault?.accountId),matches=!connected||accountId===vault?.accountId;
- return <div className="near-auth-panel device-wallet-panel">
+ return <div className="near-auth-panel device-wallet-panel" tabIndex={-1}>
   <p className="eyebrow">DEVICE WALLET / NEAR TESTNET</p>
   <p>Create a wallet here. Keep its encrypted recovery file and password to use it on another device. This creates a separate account from NEAR Auth; existing balances stay with their original account.</p>
   <p className="pilot-disclosure">Your recovery password cannot be reset. Keep the file and password somewhere safe. Testnet only.</p>

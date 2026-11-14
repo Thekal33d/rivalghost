@@ -35,3 +35,15 @@ Dialogs use native modal focus containment, Escape/close controls, focus restora
 - The full guided-flight browser test reached a real result, recorded tutorial completion, displayed the first-flight rival unlock and retained onboarding state after reload.
 - Browser checks passed against the exact release bundle and the public site. Public checks confirmed initial welcome, locked Workshop explanation, replayable guided flight, persisted onboarding, API health, embedded wallet enabled and on-chain spending enabled, with no browser errors.
 - Before deployment, the service had no pending chain transactions; its SQLite database and runtime configuration were backed up. AI and HOUND automation remain disabled. No wallet purchase, staking transaction or paid inference was performed for this release.
+
+## Wallet invitation on opening the game
+
+Signed-out players see a wallet invitation in the hangar on each fresh page load. It explains on-chain CR/items and encrypted wallet recovery, offers **Connect my wallet**, and keeps **Play first — connect later** equally reachable. Close and Escape also dismiss it for the current opening; navigation and focus changes do not nag again. Dismissal is intentionally not persisted across fresh openings, as requested.
+
+The invitation checks `/api/guest/me` and embedded-wallet availability. An actual NEAR/embedded account session suppresses it; a cached callsign, guest account or saved backup alone does not count as a wallet login. Failed or slow checks skip the invitation and release onboarding after a bounded wait. Flights and auth callbacks are never covered by this invitation.
+
+The connect action opens Pilot Identity, focuses and scrolls to the device-wallet section, and does not create a wallet, sign anything or authorize spending automatically. New-player flight school follows the invitation when they return to the hangar or choose to play first. Campaign medals and best flights are explicitly described as device-local. The existing encrypted backup and game-session authorization flows remain unchanged.
+
+Validation: frontend typecheck/build and all 163 tests passed. Production-browser checks cover signed-in suppression (embedded and NEAR), guest-only prompting, single-modal ordering, direct setup focus, no automatic mutations, dismissal/navigation/reload, Escape/free flight, failed/slow checks, disabled wallet service, and phone/landscape fit.
+
+The encrypted-wallet regression also passed through the new invitation, including backup acknowledgement/reload, signed login and delegated game-session authorization, password retry and recovery in a second browser.
