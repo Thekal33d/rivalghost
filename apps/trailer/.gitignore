@@ -4,3 +4,5 @@ public/audio/*.wav
 public/audio/*.mp3
 public/footage/*
 !public/footage/.gitkeep
+
+.capture/

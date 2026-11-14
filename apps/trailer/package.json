@@ -12,7 +12,9 @@
     "audio:voice": "node tools/elevenlabs.mjs voice",
     "audio:music": "node tools/elevenlabs.mjs music",
     "audio:score": "python3 tools/score.py",
-    "audio:plan": "node tools/elevenlabs.mjs plan"
+    "audio:plan": "node tools/elevenlabs.mjs plan",
+    "audio:recut": "node tools/prepare-recut-audio.mjs",
+    "capture": "node tools/capture.mjs"
   },
   "dependencies": {
     "remotion": "4.0.543",
