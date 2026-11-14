@@ -59,3 +59,23 @@
 @media(max-width:760px){.map-act-labels small{display:table;margin-bottom:6px}.map-act-labels h2{line-height:1.35}}
 
 @media(max-width:760px){.deck-loadout{grid-template-columns:minmax(0,1fr)}.deck-loadout>*{min-width:0}.deck-loadout-head{height:auto;min-height:28px}.deck-launch{width:calc(100% - 20px)}}
+
+/* A thumb-reachable launch dock stays visible before and after scrolling the hangar. */
+@media(max-width:760px), (max-height:500px) and (pointer:coarse){
+  .screen-lobby,.screen-map{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+  .deck-launch,.map-launch{position:fixed;z-index:65;left:0;right:0;bottom:0;width:100%;max-width:none;box-sizing:border-box;padding:10px 22px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line-bright);box-shadow:0 -8px 24px #07101466;animation:none}
+  .deck-launch .arcade-button{width:100%;height:72px;min-height:72px;margin:0}
+  .deck-launch .launch-text{font-size:36px;gap:3px}
+  .deck-launch .launch-text small{font-size:10px;letter-spacing:1px}
+  .deck-launch .icon{width:32px;height:32px}
+  .deck-enter{display:none}
+  .map-launch{gap:8px;margin:0;flex-wrap:nowrap}
+  .map-launch-meta{font-size:15px}
+  .map-launch-ship{width:28px}
+  .map-launch .arcade-button{flex:1;width:auto;min-width:0;height:72px;margin:0;padding:0 12px;font-size:26px}
+  .map-launch .keycap{display:none}
+  .immersive-flight .flight-sound{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+  .flight-identity{min-width:0}
+}
+.music-credit{font-size:12px;line-height:1.5;color:var(--muted)}
+.music-credit a{color:var(--mint);text-decoration:underline}
