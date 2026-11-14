@@ -11,8 +11,10 @@ class GameAudio {
   private master?: GainNode;
   private musicGain?: GainNode;
   private noise?: AudioBuffer;
-  private music?: AudioBuffer;
-  private loading?: Promise<void>;
+  private music = new Map<string, AudioBuffer>();
+  private loading = new Set<string>();
+  private scene: 'menu' | 'flight' = 'menu';
+  private backgrounded = false;
   private source?: AudioBufferSourceNode;
   private voices = new Set<AudioScheduledSourceNode>();
   private enabled = soundPreference();
@@ -33,23 +35,51 @@ class GameAudio {
         limiter.threshold.value = -14; limiter.knee.value = 12; limiter.ratio.value = 6;
         limiter.attack.value = .003; limiter.release.value = .18;
         this.master.connect(limiter); limiter.connect(c.destination);
-        this.musicGain = c.createGain(); this.musicGain.gain.value = .42;
+        this.musicGain = c.createGain(); this.musicGain.gain.value = this.scene === 'menu' ? .3 : .42;
         this.musicGain.connect(this.master);
         this.noise = c.createBuffer(1, c.sampleRate, c.sampleRate);
         const samples = this.noise.getChannelData(0);
         for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
       }
       void this.context.resume().then(() => this.startMusic()).catch(() => {});
-      if (!this.music && !this.loading) {
-        this.loading = fetch('/audio/flight-music.mp3').then(r => {
-          if (!r.ok) throw new Error('Music unavailable');
-          return r.arrayBuffer();
-        }).then(b => this.context!.decodeAudioData(b)).then(buffer => {
-          this.music = buffer; this.startMusic();
-        }).catch(() => { /* Effects remain playable if music cannot load. */ }).finally(() => { this.loading = undefined; });
-      }
+      this.loadMusic();
     } catch { /* Audio is optional; unsupported devices can still fly. */ }
   };
+
+  private loadMusic() {
+    if (!this.context) return;
+    const scene = this.scene;
+    if (this.music.has(scene) || this.loading.has(scene)) return;
+    this.loading.add(scene);
+    void fetch(`/audio/${scene}-music.mp3`).then(r => {
+      if (!r.ok) throw new Error('Music unavailable');
+      return r.arrayBuffer();
+    }).then(b => this.context!.decodeAudioData(b)).then(buffer => {
+      this.music.set(scene, buffer); this.startMusic();
+    }).catch(() => { /* Buttons and combat still work without music. */ }).finally(() => this.loading.delete(scene));
+  }
+
+  setScene(scene: 'menu' | 'flight') {
+    if (scene !== this.scene) {
+      this.setPlaying(false); this.offset = 0; this.scene = scene;
+    }
+    if (this.musicGain && this.context) this.musicGain.gain.setTargetAtTime(scene === 'menu' ? .3 : .42, this.context.currentTime, .12);
+    this.loadMusic();
+    if (scene === 'menu') this.setPlaying(!this.backgrounded);
+  }
+  setBackgrounded(hidden: boolean) {
+    this.backgrounded = hidden;
+    if (hidden) this.setPlaying(false);
+    else if (this.scene === 'menu') this.setPlaying(true);
+  }
+  ui(kind: 'tap' | 'select' | 'navigate' | 'back' | 'locked') {
+    if (!this.ready('ui', .045, false)) return;
+    if (kind === 'select') { this.tone(640, 880, .09, .09, 'triangle'); this.tone(1100, 1100, .08, .04, 'sine', .045); }
+    else if (kind === 'navigate') { this.tone(440, 660, .1, .09, 'triangle'); }
+    else if (kind === 'back') this.tone(600, 320, .085, .075, 'triangle');
+    else if (kind === 'locked') { this.tone(180, 150, .09, .08, 'triangle'); this.tone(180, 150, .09, .06, 'triangle', .1); }
+    else this.tone(820, 540, .045, .065, 'triangle');
+  }
 
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
@@ -64,6 +94,7 @@ class GameAudio {
   begin() { this.end(); this.offset = 0; this.last.clear(); }
   end() { this.setPlaying(false); this.clearEffects(); this.offset = 0; }
   setPlaying(playing: boolean) {
+    if (this.backgrounded) playing = false;
     if (playing === this.playing) return;
     this.playing = playing;
     if (playing) this.startMusic();
@@ -76,18 +107,19 @@ class GameAudio {
     }
   }
   private startMusic() {
-    if (!this.playing || this.source || !this.music || this.context?.state !== 'running') return;
-    const s = this.context.createBufferSource(); s.buffer = this.music; s.loop = true;
+    const buffer = this.music.get(this.scene);
+    if (!this.playing || this.source || !buffer || this.context?.state !== 'running') return;
+    const s = this.context.createBufferSource(); s.buffer = buffer; s.loop = true;
     s.connect(this.musicGain!); this.started = this.context.currentTime;
-    s.start(0, this.offset % this.music.duration); this.source = s;
+    s.start(0, this.offset % buffer.duration); this.source = s;
   }
   private clearEffects() {
     for (const voice of this.voices) { try { voice.stop(); } catch { /* Already ended. */ } }
     this.voices.clear();
   }
-  private ready(key: string, gap: number) {
+  private ready(key: string, gap: number, requirePlaying = true) {
     const c = this.context;
-    if (!this.enabled || !this.playing || c?.state !== 'running') return false;
+    if (!this.enabled || this.backgrounded || (requirePlaying && !this.playing) || c?.state !== 'running') return false;
     if (c.currentTime - (this.last.get(key) ?? -10) < gap || this.voices.size > 28) return false;
     this.last.set(key, c.currentTime); return true;
   }

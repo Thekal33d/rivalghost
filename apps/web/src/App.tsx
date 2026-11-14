@@ -44,11 +44,23 @@ export default function App() {
   const [mode,setMode]=useState<Mode>("story"),[chapterId,setChapterId]=useState<ChapterId>(0),[rig,setRig]=useState<Rig>("fan");
   const [sound,setSound]=useState(soundPreference),[help,setHelp]=useState(false),[saveError,setSaveError]=useState(false);
   const toggleSound=()=>{const next=!sound;gameAudio.setEnabled(next);setSound(next);};
+  useEffect(()=>gameAudio.setScene(screen==='run'?'flight':'menu'),[screen]);
   useEffect(()=>{
     const wake=()=>gameAudio.unlock();
+    const click=(event:MouseEvent)=>{
+      wake();
+      const target=event.target instanceof Element?event.target.closest<HTMLElement>('button,a,input[type=checkbox],input[type=radio],[role=button]'):null;
+      if(!target||target.matches(':disabled,[aria-disabled=true]')||target.getAttribute('aria-label')?.toLowerCase().includes('sound'))return;
+      const label=target.getAttribute('aria-label')??'';
+      gameAudio.ui(target.classList.contains('is-locked')||label.includes('locked')?'locked':target.matches('.rig-card,.mode-pill,.map-node button,input')?'select':target.matches('.dialog-close,.walkthrough-x,.flight-exit,.pause-exit')?'back':target.matches('a,.walkthrough-next,.walkthrough-back')?'navigate':'tap');
+    };
+    const blur=()=>gameAudio.setBackgrounded(true);
+    const focus=()=>gameAudio.setBackgrounded(document.hidden);
+    const visibility=()=>gameAudio.setBackgrounded(document.hidden);
     window.addEventListener('pointerdown',wake,{capture:true,passive:true});
-    window.addEventListener('click',wake,true);window.addEventListener('keydown',wake,true);
-    return()=>{window.removeEventListener('pointerdown',wake,true);window.removeEventListener('click',wake,true);window.removeEventListener('keydown',wake,true);};
+    window.addEventListener('click',click,true);window.addEventListener('keydown',wake,true);
+    window.addEventListener('blur',blur);window.addEventListener('focus',focus);document.addEventListener('visibilitychange',visibility);
+    return()=>{window.removeEventListener('pointerdown',wake,true);window.removeEventListener('click',click,true);window.removeEventListener('keydown',wake,true);window.removeEventListener('blur',blur);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',visibility);gameAudio.end();};
   },[]);
   const [profile,setProfile]=useState(()=>{try{return parseProfile(localStorage.getItem(PROFILE_KEY));}catch{return emptyProfile();}});
   const [journey,setJourney]=useState<Journey>(()=>{try{return parseJourney(localStorage.getItem(JOURNEY_KEY),profile,Object.keys(localStorage).some(k=>k.startsWith('rivalghost.backup.saved.')&&localStorage.getItem(k)==='yes'));}catch{return parseJourney(null,profile);}});

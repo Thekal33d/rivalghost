@@ -1,4 +1,4 @@
-RivalGhost flight music
+RivalGhost flight and menu music
 
 “Exit the Premises” — Kevin MacLeod (incompetech.com)
 Licensed under Creative Commons: By Attribution 4.0 License
@@ -10,3 +10,6 @@ short entry fade and two-second ending fade, compressed to stereo MP3.
 Source SHA-256: 441d1b594a15b0acdac531495e9c56906e3df5d4002fc651b5a0b763f679c70b
 No endorsement is implied. Attribution is also available in the Flight Manual.
 Combat effects are synthesized by RivalGhost's Web Audio mixer.
+
+Menu version: a 32-second source excerpt starting at 65 seconds, joined into a
+30-second loop with a two-second crossfade, low-pass filtering and normalization.
