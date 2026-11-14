@@ -27,3 +27,11 @@ Dialogs use native modal focus containment, Escape/close controls, focus restora
 - Unit coverage for all unlock thresholds, migration, skip/completion, actual recorded flights, operation state transitions, concurrency and duplicate-request handling.
 - Browser coverage for initial briefing, persisted skip, replay, movement/Pulse guidance, hiding guidance without a flight reset, feature gates, returning access, mobile fit, delayed requests, success, errors and prevention of duplicate submission.
 - Device-wallet regression coverage for encrypted backup acknowledgement, reload, signed login and delegated authorization, password rejection/retry, lock, fresh-browser restore and re-upload while unlocked.
+
+## Release evidence — 2026-11-14
+
+- Published application revision `a1e78f8` to `https://rivalghost.xyz/` from a clean archive of committed main. Separate unfinished Flight Deck edits remain in the local working tree and were excluded.
+- Typecheck, production build and all 163 tests in 33 files passed on the release source.
+- The full guided-flight browser test reached a real result, recorded tutorial completion, displayed the first-flight rival unlock and retained onboarding state after reload.
+- Browser checks passed against the exact release bundle and the public site. Public checks confirmed initial welcome, locked Workshop explanation, replayable guided flight, persisted onboarding, API health, embedded wallet enabled and on-chain spending enabled, with no browser errors.
+- Before deployment, the service had no pending chain transactions; its SQLite database and runtime configuration were backed up. AI and HOUND automation remain disabled. No wallet purchase, staking transaction or paid inference was performed for this release.
