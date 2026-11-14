@@ -1,42 +1,63 @@
-# RivalGhost — Steal Your Ghost Back
+# RivalGhost — revised arcade cut
 
-58 seconds, 1920 × 1080, 30fps. Editable Remotion composition using the actual game simulation, renderer and brand art. No private account information or credentials enter the video bundle.
+58 seconds · 1920 × 1080 · 30 fps · 1,740 frames.
 
-## Commands
+`RivalGhost` is the revised composition. `RivalGhost-OldCut` preserves the rejected version for comparison. The new edit uses warm ivory, coral, mint, the game's actual HOUND/MOTH/ship drawings, continuous replay footage and a licensed composed soundtrack. It does not call ElevenLabs or any paid API.
 
-From the repository root:
+## Reproduce
+
+From the repository root, with workspace dependencies installed and game-data/sim built:
 
 ```sh
-pnpm --filter @rivalghost/trailer audio:score # Python 3 + NumPy; creates original local score/effects
-pnpm --filter @rivalghost/trailer studio
+pnpm --filter @rivalghost/trailer audio:recut
+PLAYWRIGHT_MODULE=/absolute/path/to/playwright CHROME_PATH=/absolute/path/to/chrome pnpm --filter @rivalghost/trailer capture
 pnpm --filter @rivalghost/trailer typecheck
+pnpm --filter @rivalghost/trailer studio
 pnpm --filter @rivalghost/trailer render
 ```
 
-Audio credentials belong only in `apps/trailer/.env.local`. Save `ELEVENLABS_API_KEY=...` there. It is ignored by Git. Never put the key in `public/`, `src/`, a VITE_ variable or a browser form.
+FFmpeg must be on PATH. The render command separates frame rendering from encoding, following an interrupted parallel-encoding export during review. Capture uses the workspace's pinned esbuild 0.28.1 and a local Playwright installation. Supply `--browser-executable=/absolute/path/to/chrome` to the Remotion CLI if its browser is not installed.
 
-`src/script.json` holds the timed voice script. Audio generation is separate from rendering; renders never call paid APIs. Use preflight first, then generate only after an explicit credit budget is agreed. Each segment is cached and measured. An overlong take must be revised rather than extending the 58-second cut.
+The capture command renders four game clips, checks identical pixels after forward/backward seeks, and records their parameters in `public/footage/capture-manifest.json`. These generated media files are ignored by Git. It uses the unchanged simulation, the existing `ace` controller, fan rig and rules version 3. The capture framing adds gutters so native game labels remain visible. It does not alter health, hits, score or rewards.
+
+The audio command downloads the composer's source track, checks its recorded SHA-256 and prepares the excerpt with a fixed gain and fades. Read [MUSIC-CREDITS.md](MUSIC-CREDITS.md) before publishing. Credit is included in the full film's end card. The earlier procedural score/effects are not used in the new composition.
+
+## Edit structure
+
+| Time | Shot |
+|---|---|
+| 0–3.73 | Ship and ghost chase; flight recorded |
+| 3.73–7.50 | HOUND reveal; take his Crown |
+| 7.50–9.37 | Color wipe and wordmark |
+| 9.37–20.63 | Continuous graze/surge, rescue and boss replay excerpts |
+| 20.63–31.87 | Moving salvage → MOTH → craft → market → city illustration |
+| 31.87–43.13 | Crown entry, win and loss branches with moving CR token |
+| 43.13–48.77 | Another environment and cosmetic trail; ten-chapter invitation |
+| 48.77–52.50 | Finite supply, verification and cosmetic-only purchase proof |
+| 52.50–58.00 | Play link, legal line and music attribution |
+
+Major cuts follow the 128 BPM track's measured approximately 30 ms onset phase, with per-cut frame rounding. No narration is included. `src/script.json` belongs to the old timing and must be re-timed before future voice work; the new cut never auto-enables voice files.
 
 ## Claim boundaries
 
-- Gameplay comes from the unchanged game simulation and canvas renderer. The trailer camera/HUD and economy diagrams are editorial graphics, not invented transaction receipts.
-- CR are testnet game credits with no cash value. The 100,100 CR supply and 10/8/2 Crown rules come from `contracts/economy/src/lib.rs`.
-- Workshop recovery reward is 4 salvage, plus a possible focus bonus. MOTH prices change with stock; do not present 5 CR as a universal rate.
-- HOUND is rule based. Its attack cap is 60 CR per UTC day; that is not a cap on all NPC expenditure. Live automatic counterattacks are currently off, so do not depict them as live activity.
-- Replay rewards depend on a trusted server verifier. No “trustless” claim.
-- Cosmetic purchases do not increase combat stats. Campaign rig unlocks remain earned through play.
-- UI diagrams use example balances and are labelled illustrative. No staged receipt is presented as a real settlement.
-- The end card invites free play at rivalghost.xyz. Sign-in language stays plain.
+- CR are testnet game credits with no cash value. Current supply: 100,100 CR; no mint method.
+- Crown entry: 10 CR. A win returns entry plus existing bounty. A loss, tie or expiry allocates 8 CR to the bounty and 2 CR to the holder.
+- Recovery job pays 4 salvage before bonuses. MOTH's illustrative 5 CR price changes with stock. The 20 CR marketplace listing is an example, not a completed sale.
+- City illustration depicts the existing 30-salvage Streets Relit milestone.
+- HOUND is rule based. Automatic live counterattacks are not claimed. Reward verification uses a trusted server; no trustless claim.
+- Purchases shown are cosmetic. Campaign rig unlocks remain earned through play.
+- Economy and Crown scenes are illustrations, not captured settlement receipts.
 
-## Assets and provenance
+## Review
 
-The score and effects are synthesized by `tools/score.py` from oscillators and seeded noise, with no external samples. Audio outputs are ignored by Git and recreated before preview/render. Barlow Condensed and Chakra Petch are bundled with their SIL Open Font Licenses under `public/fonts`. Character paths, ships, scenery and gameplay are imported from the game. The trailer uses the built-in input-only NPC controller to generate valid, reproducible flight states; it never alters health, scores, collisions or rewards.
+Use the local `$motion-production` skill, also versioned at `tools/skills/motion-production`:
 
-The currently approved version has music and effects only. ElevenLabs paid generation remains disabled unless a separate explicit credit cap is supplied. A saved API key is not treated as permission to spend.
+```sh
+python3 tools/skills/motion-production/scripts/inspect_video.py trailer.mp4 --out /tmp/rivalghost-review --max-seconds 60 --cuts 3.733333,7.5,9.366667,20.633333,31.866667,43.133333,48.766667,52.5
+```
 
-## Preview validation — 2026-11-14
+Read the detected events; intentional text/end-card holds can trigger freeze flags. Review cut-adjacent frames and sequential gameplay frames, not only the contact sheet. Loudness measurements do not replace listening. See `REBUILD-REVIEW.md` for the current render's checks and limitations.
 
-- Remotion typecheck passed; six representative 1080p frames were visually inspected, including combat, economy, Crown, proof and end card.
-- Full render: 1,740 frames at 30fps, exactly 58 seconds. Original score and effects are included; no ElevenLabs calls were made.
-- All 163 game tests passed in an isolated copy of committed game source using the updated dependency installation. Concurrent unfinished onboarding edits in the shared workspace were left untouched and excluded from this milestone.
-- HOUND’s speech-bubble fix is separately deployed as `fc5c79a`; public browser checks passed from 320px to 1920px. The trailer adds no code to the public game bundle.
+## Keys and budget
+
+Credentials belong only in ignored `apps/trailer/.env.local`, never in `public/`, source or VITE variables. Paid narration/music remains disabled. A saved key is not permission to spend. Future voice generation needs an authorized budget and new timings for this edit.

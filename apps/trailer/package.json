@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "studio": "remotion studio src/index.ts",
-    "render": "remotion render src/index.ts RivalGhost trailer.mp4 --codec=h264 --crf=17 --concurrency=2",
+    "render": "remotion render src/index.ts RivalGhost trailer.mp4 --codec=h264 --crf=17 --pixel-format=yuv420p --color-space=bt709 --concurrency=2 --disallow-parallel-encoding",
     "still": "remotion still src/index.ts RivalGhost",
     "typecheck": "tsc --noEmit",
     "audio:preflight": "node tools/elevenlabs.mjs preflight",
