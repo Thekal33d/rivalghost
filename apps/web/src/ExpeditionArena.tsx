@@ -26,7 +26,7 @@ export function ExpeditionArena({guided=false,onTutorialComplete,onTutorialSkip,
   useEffect(()=>{if(paused)resumeRef.current?.querySelector<HTMLButtonElement>(".pause-resume")?.focus();},[paused]);
   const togglePause=()=>{pauseRef.current=!pauseRef.current;setPaused(pauseRef.current);};
   useEffect(()=>{
-    const canvas=canvasRef.current,c=canvas?.getContext("2d");if(!canvas||!c)return;
+    const canvas=canvasRef.current,stage=stageRef.current,c=canvas?.getContext("2d");if(!canvas||!c)return;
     let view=flightView(360,640),pixelRatio=1;
     const resize=()=>{const r=canvas.getBoundingClientRect();if(!r.width||!r.height)return;pixelRatio=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(r.width*pixelRatio);canvas.height=Math.round(r.height*pixelRatio);view=flightView(r.width,r.height);setWide(view.landscape);};
     const observer=new ResizeObserver(resize);observer.observe(canvas);resize();
@@ -90,7 +90,16 @@ export function ExpeditionArena({guided=false,onTutorialComplete,onTutorialSkip,
     canvas.addEventListener("pointerdown",down);canvas.addEventListener("pointermove",point);canvas.addEventListener("pointerup",up);canvas.addEventListener("pointercancel",up);canvas.addEventListener("lostpointercapture",up);
     window.addEventListener("keydown",keyDown);window.addEventListener("keyup",keyUp);window.addEventListener("blur",blur);window.addEventListener("focus",focus);document.addEventListener("visibilitychange",visibility);
     frame=requestAnimationFrame(loop);
-    return()=>{observer.disconnect();if(document.fullscreenElement===stageRef.current)void document.exitFullscreen().catch(()=>{});disposed=true;cancelAnimationFrame(frame);canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",point);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);canvas.removeEventListener("lostpointercapture",up);window.removeEventListener("keydown",keyDown);window.removeEventListener("keyup",keyUp);window.removeEventListener("blur",blur);window.removeEventListener("focus",focus);document.removeEventListener("visibilitychange",visibility);gameAudio.end();};
+    return()=>{
+      disposed=true;cancelAnimationFrame(frame);observer.disconnect();
+      canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",point);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);canvas.removeEventListener("lostpointercapture",up);
+      window.removeEventListener("keydown",keyDown);window.removeEventListener("keyup",keyUp);window.removeEventListener("blur",blur);window.removeEventListener("focus",focus);document.removeEventListener("visibilitychange",visibility);gameAudio.end();
+      // React clears refs before unmount cleanup. Comparing two nulls used to
+      // call an unavailable API on iPhone browsers and unmount the entire app.
+      if(stage&&document.fullscreenElement===stage&&typeof document.exitFullscreen==='function'){
+        try{void document.exitFullscreen().catch(()=>{});}catch{/* Fullscreen cleanup must never prevent results from rendering. */}
+      }
+    };
   },[config,ghost,onFinish,ghostLabel,trail,restorationStage]);
   const seconds=Math.ceil((EXPEDITION_TICKS-hud.tick)/60),chapter=CHAPTERS[config.chapter],district=DISTRICTS[config.chapter];
   const boss=hud.foes.find(f=>f.kind==="boss"),hp=boss?Math.ceil(100*boss.hp/boss.maxHp):0,sector=flightSector(hud.tick),target=grazeTarget(config.chapter,config.rulesVersion??2);

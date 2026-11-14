@@ -48,3 +48,11 @@ The live service is the sole HOUND worker. The local environment remains disable
 The separately tested NEAR AI Cloud adapter currently updates the local-demo economy only. In on-chain mode, the heartbeat runs `ChainEconomy.tick()` and returns before the Cloud decision path. A live model decision still needs validated, journaled operator-authorized contract configuration, budget/retry handling and evidence of the resulting state change. Merely enabling the API key would not implement that path.
 
 The public NPC Reactor now states this limitation. The prior successful Cloud inference test is retained as integration evidence, not presented as live autonomous contract reasoning.
+
+## Follow-up: iPhone post-flight blank page (November 14)
+
+The prior viewport repair did not address a second failure. The user reported a completely blank page on iPhone Chrome after a run, without entering fullscreen. The deployed `dc84d67` frontend reproduced this in an isolated mobile WebKit run: `TypeError: document.exitFullscreen is not a function`. React cleared the arena ref on unmount; comparing `document.fullscreenElement` with the cleared ref compared two nulls and incorrectly attempted fullscreen exit. The exception in effect cleanup removed the app root.
+
+The arena now captures its mounted element, disposes its frame/listeners first, and only requests fullscreen exit when that actual element owns fullscreen and the exit API exists. Both synchronous failure and promise rejection are contained. This is the cause repair, not a loading overlay or account reset.
+
+`tools/check-mobile-journey.cjs` now runs in Chromium **and WebKit**. It checks guest guided first-boss clears, normal first-boss clears with a signed-in API fixture, visible results/next actions at 320, 390 and 430 CSS pixels, story sheets, next-chapter navigation, and early arena exits. Both engines passed with no page errors. Web typecheck and production build passed. Fixtures never create accounts or send transactions; physical iPhone testing remains a user verification step.
