@@ -61,9 +61,6 @@ h1 em,h2 em{font-style:italic;color:var(--coral);text-shadow:0 0 28px rgba(255,1
 .pilot-chip-text small{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--mint)}
 .round-button{width:48px;height:48px;border-radius:50%;border:2px solid var(--line-bright);background:linear-gradient(180deg,#3A5A64,#12252C);display:grid;place-items:center;box-shadow:inset 0 2px 0 rgba(255,255,255,.2),0 4px 0 #050B0E;flex-shrink:0;color:var(--text)}
 .round-button[aria-pressed=true]{border-color:var(--mint);color:var(--mint)}
-/* Guest pilot save toggle lives in the bar until the Pilot screen absorbs it. */
-.top-bar .pilot-toggle{height:48px;min-height:48px;border-radius:12px;background:linear-gradient(180deg,rgba(125,245,192,.28),rgba(125,245,192,.08));border:2px solid var(--mint);color:var(--text);font-size:11px;letter-spacing:1.5px;padding:0 14px}
-.top-bar .pilot-onboarding{top:calc(100% + 18px)}
 
 /* ---------- Arcade buttons ---------- */
 .arcade-button{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;box-sizing:border-box;border:3px solid var(--bg);transform:skewX(-8deg);font:900 italic 20px/1 var(--display);letter-spacing:1.5px;white-space:nowrap;text-decoration:none;transition:transform .12s,filter .12s;margin-bottom:6px}
@@ -352,7 +349,6 @@ h1 em,h2 em{font-style:italic;color:var(--coral);text-shadow:0 0 28px rgba(255,1
   .deck-launch{max-width:560px;width:100%;justify-self:center}
 }
 @media(max-width:760px){
-  .top-bar .pilot-toggle{font-size:9px;padding:0 9px;height:40px;min-height:40px;letter-spacing:.5px}
   .medal-count{height:40px;padding:0 10px 0 4px}.medal-count-icon{width:30px;height:30px}
   .pilot-chip{height:48px;padding:0 6px}.pilot-chip-text{display:none}.pilot-chip-avatar{width:36px;height:36px}.pilot-chip-avatar .pilot-art{width:46px;translate:-5px -2px}
   .round-button{width:40px;height:40px}

@@ -5,6 +5,8 @@ import { CHAPTERS, dailySignal, type ChapterId, type Rig, type SocialProfile } f
 import type { ExpeditionConfig, ExpeditionReplay } from "@rivalghost/sim";
 import { ExpeditionArena, type FlightReport } from "./ExpeditionArena";
 import { TopBar, type Screen } from "./TopBar";
+import { PilotAccount } from "./GuestPilot";
+import { isNearAuthReturn } from "./near-auth-return";
 import { FlightDeck } from "./FlightDeck";
 import { SignalMap } from "./SignalMap";
 import {PilotStudio,Leaderboard,ShareFlight,GhostInvitation} from "./SocialHub";
@@ -21,7 +23,7 @@ const chapterNumber=(id:number)=>String(id+1).padStart(2,"0");
 const medalNames=["Break the signal","Rescue 2 couriers","Clear without hull damage"];
 
 export default function App() {
-  const [screen,setScreen]=useState<Screen>("lobby");
+  const [screen,setScreen]=useState<Screen>(()=>isNearAuthReturn()||Boolean(sessionStorage.getItem("rivalghost.auth.error"))?"profile":"lobby");
   const [trail,setTrail]=useState<TrailId|null>(null),[districts,setDistricts]=useState<number[]>(Array(10).fill(0));
   const updateWorld=useCallback((trail:TrailId|null,districts:number[])=>{setTrail(trail);setDistricts(districts);},[]);
   useEffect(()=>{void socialRequest("workshop").then(v=>updateWorld(v.pilot?.equipped??null,v.districts)).catch(()=>{});},[updateWorld]);
@@ -82,7 +84,7 @@ export default function App() {
     {screen!=="run"&&<TopBar screen={screen} onNav={nav} medals={medalCount(profile)} maxMedals={CHAPTERS.length*3} rank={callsign(profile)} username={identity?.username} avatar={identity?.avatar} sound={sound} onSound={()=>setSound(s=>!s)}/>}
 
     {socialNotice&&screen!=="run"&&<p className="social-error" role="status">{socialNotice}<button className="text-button" onClick={()=>setSocialNotice("")}>DISMISS</button></p>}
-    {screen==="profile"&&<><PilotStudio identity={identity} profile={profile} onSave={saveIdentity}/>{report&&flight&&!flight.job&&!flight.commission&&<ShareFlight key={report.hash} replay={report.replay} mode={flight.mode} day={flight.dailyKey} identity={identity} onProfile={()=>setScreen("profile")}/>}</>}
+    {screen==="profile"&&<><PilotStudio identity={identity} profile={profile} onSave={saveIdentity} account={<PilotAccount username={identity?.username} onDone={()=>setScreen("lobby")}/>}/>{report&&flight&&!flight.job&&!flight.commission&&<ShareFlight key={report.hash} replay={report.replay} mode={flight.mode} day={flight.dailyKey} identity={identity} onProfile={()=>setScreen("profile")}/>}</>}
     {screen==="workshop"&&<Workshop onFly={launchJob} onRace={raceCommission} onWorld={updateWorld}/>}
     {screen==="pit"&&<CrownPit onFly={launchPit} onProfile={()=>setScreen("profile")}/>}
     {screen==="board"&&<Leaderboard identity={identity} profile={profile} initialChapter={chapterId} day={day.key} onRace={raceGhost} onProfile={()=>setScreen("profile")} onPlay={()=>setScreen("lobby")}/>}

@@ -33,6 +33,16 @@ const STROKE: Record<string, string> = {
   arrowLeft: "M19 12H5M11 6l-6 6 6 6",
   expand: "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5",
   pause: "M8 5v14M16 5v14",
+  chevronLeft: "M15 6l-6 6 6 6",
+  chevronRight: "M9 6l6 6-6 6",
+  refresh: "M20 11a8 8 0 10-2.3 5.7M20 4v7h-7",
+  cart: "M3 4h3l2.5 11h10L21 7H7M10 20h.01M17 20h.01",
+  city: "M3 21V9l5-3v15M8 21V4l8 4v13M16 21v-9l5 2v7M2 21h20",
+  chip: "M7 7h10v10H7zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3",
+  gear: "M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1",
+  close: "M6 6l12 12M18 6L6 18",
+  flag: "M5 21V4h11l-2 4 2 4H5",
+  wallet: "M3 7h15a3 3 0 013 3v8a2 2 0 01-2 2H5a2 2 0 01-2-2zM3 7l13-4v4M16 14h.01",
 };
 const FILL: Record<string, string> = {
   crown: "M3 19h18l2-11-6 4-5-8-5 8-6-4z",
@@ -42,6 +52,8 @@ const FILL: Record<string, string> = {
   person: "M12 2a4 4 0 110 8 4 4 0 010-8zM5 22v-4a7 7 0 0114 0v4z",
   play: "M7 3l14 9-14 9z",
   wings: "M12 15L1 6l3 10 8 4 8-4 3-10z",
+  coin: "M12 2a10 10 0 110 20 10 10 0 010-20zm0 5l-5 5 5 5 5-5z",
+  sparkle: "M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z",
 };
 export type IconName = keyof typeof STROKE | keyof typeof FILL;
 

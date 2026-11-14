@@ -3,6 +3,7 @@ import { type TrailId,REPAIR_NAMES,CHAPTERS, DISTRICTS, flightSector, grazeTarge
 import { createExpedition, expeditionReplayHash, type ExpeditionConfig, type ExpeditionReplay, type ExpeditionResult, type ExpeditionSnapshot } from "@rivalghost/sim";
 import { drawExpedition } from "./expedition-art";
 import {flightView,worldPoint,screenDirection} from "./flight-view";
+import {Icon,Keycap} from "./Brand";
 
 export interface FlightReport { result:ExpeditionResult; replay:ExpeditionReplay; hash:string }
 interface Props { trail?:TrailId|null;restorationStage?:number;jobLabel?:string; reservationExpires?:number; pilotName?:string; ghostLabel?:string; config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
@@ -95,13 +96,17 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
   const fullscreen=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await stageRef.current?.requestFullscreen();setFullError("");}catch{setFullError("Fullscreen is unavailable here. The arena already fits this window.");}};
   return <section ref={stageRef} className={`arena-stage expedition-stage immersive-flight ${wide?"flight-wide":"flight-portrait"} ${hud.surge>0?"is-surge":""} ${reservationExpires?"has-reservation":""}`} aria-label="Ghost Signal arena">
     <header className="flight-topbar">
-      <button className="flight-exit" onClick={onExit} aria-label="Exit flight">← <span>HANGAR</span></button>
-      <div className="flight-identity"><small>{pilotName?`@${pilotName}`:"GHOST SIGNAL"} / {String(chapter.id+1).padStart(2,"0")}</small><b>{chapter.name}</b></div>
-      <div className="flight-score"><small>SCORE <em>×{Math.max(1,hud.combo)}</em></small><strong>{hud.score.toLocaleString()}</strong></div>
-      <div className="flight-clock"><strong>{seconds.toString().padStart(2,"0")}</strong><small>SEC</small></div>
-      <button className="flight-sound" aria-pressed={sound} onClick={onSound}>SOUND {sound?"ON":"OFF"}</button>
-      <button className="flight-expand" onClick={()=>void fullscreen()} aria-label="Toggle fullscreen">⛶</button>
-      <button className="flight-pause" onClick={togglePause} aria-label={paused?"Resume flight":"Pause flight"}>{paused?"▶":"Ⅱ"}</button>
+      <div className="hud-left">
+        <button className="hud-round flight-pause" onClick={togglePause} aria-label={paused?"Resume flight":"Pause flight"}><Icon name={paused?"play":"pause"} size={20}/></button>
+        <div className="flight-identity"><small>{pilotName?`@${pilotName}`:"GHOST SIGNAL"} · {String(chapter.id+1).padStart(2,"0")}</small><b>{chapter.name}</b><span className="hud-route" aria-label={`Sector ${sector+1} of 3`}>{[0,1,2].map(n=><i key={n} className={n<=sector?"on":""}/>)}<em>{district.route[sector]}</em></span></div>
+      </div>
+      <div className="flight-score"><small>SCORE</small><strong>{hud.score.toLocaleString()}</strong><em className={hud.combo>1?"is-live":""}>×{Math.max(1,hud.combo)}</em></div>
+      <div className="hud-right">
+        <div className="flight-clock"><Icon name="clock" size={20}/><strong>{seconds.toString().padStart(2,"0")}</strong><small>SEC</small></div>
+        <button className="hud-round flight-sound" aria-pressed={sound} onClick={onSound} aria-label={sound?"Sound is on, turn off":"Sound is off, turn on"}><Icon name={sound?"soundOn":"soundOff"} size={18}/></button>
+        <button className="hud-round flight-expand" onClick={()=>void fullscreen()} aria-label="Toggle fullscreen"><Icon name="expand" size={18}/></button>
+        <button className="hud-round flight-exit" onClick={onExit} aria-label="Exit flight to hangar"><Icon name="close" size={18}/></button>
+      </div>
     </header>
     <div className="arena-window">
       <canvas ref={canvasRef} className="arena-canvas" aria-label={wide?"Landscape flight. Move with WASD/arrows or drag. Guns fire right. Space activates Pulse.":"Portrait flight. Move with WASD/arrows or drag. Guns fire up. Space activates Pulse."}/>
@@ -114,17 +119,18 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
       </div>}
       {count===0&&!paused&&sectorAge<150&&<div className="sector-banner" key={sector}><small>{sector===2?"BOSS CONTACT":`SECTOR 0${sector+1}`}</small><h2>{sector===2?chapter.boss:district.route[sector]}</h2><p>{sector===2?"Stay on target. Watch the warning lanes.":district.cue}</p></div>}
       {count>0&&<div className="launch-countdown"><span>{chapter.name} / {district.name}</span><strong key={count}>{count}</strong><small>{wide?"FLY RIGHT / WASD TO STEER":"FLY UP / DRAG TO STEER"} · SPACE / TAP TO PULSE</small><p>{district.twist}</p></div>}
-      {paused&&<div className="flight-paused"><span>FLIGHT PAUSED / {chapter.name}</span><h2>HOLD YOUR<br/>FLIGHT LINE.</h2><p>{district.twist}</p><button onClick={togglePause}>RESUME FLIGHT →</button><button className="pause-exit" onClick={onExit}>RETURN TO HANGAR</button><small>ESC TO RESUME</small></div>}
+      {paused&&<div className="flight-paused"><span>FLIGHT PAUSED · {chapter.name}</span><h2>HOLD YOUR<br/>FLIGHT LINE.</h2><dl className="pause-stats"><div><dt>SCORE</dt><dd>{hud.score.toLocaleString()}</dd></div><div><dt>CHAIN</dt><dd>×{Math.max(1,hud.combo)}</dd></div><div><dt>SEC LEFT</dt><dd>{seconds}</dd></div><div><dt>COURIERS</dt><dd>{hud.rescues}/3</dd></div></dl><p className="pause-twist"><Icon name="bolt" size={16}/><span><b>{district.name}</b> · {district.twist}</span></p><button className="pause-resume" onClick={togglePause}><Icon name="play" size={22}/>RESUME FLIGHT<Keycap>ESC</Keycap></button><button className="pause-exit" onClick={onExit}><Icon name="home" size={18}/>RETURN TO HANGAR</button></div>}
       {reservationExpires&&<p className="pit-flight-timer">{reservedSeconds>0?`ENTRY HELD / ${Math.floor(reservedSeconds/60)}:${String(reservedSeconds%60).padStart(2,'0')} · pauses still count`:'ENTRY EXPIRED / check outcome in Crown Pit'}</p>}
       {fullError&&<button className="fullscreen-note" onClick={()=>setFullError("")}>{fullError} ×</button>}
     </div>
     <footer className="flight-dashboard">
-      <div className="flight-vitals"><span>HULL <b>{hud.player.health}%</b>{hud.player.shield>0&&<em>SHIELD</em>}</span><meter aria-label="Hull health" min="0" max="100" value={hud.player.health}/></div>
-      <div className="flight-loadout"><small>{config.rig.toUpperCase()}</small><strong>LV {hud.weapon}<i>{[0,1,2].map(n=><span key={n} className={n<hud.weapon?"lit":""}/>)}</i></strong></div>
-      <div className="flight-charge"><small>{hud.surge>0?`SURGE ×2 / ${(hud.surge/60).toFixed(1)}s`:`GRAZE ${hud.charge}/${target}`}</small><div>{Array.from({length:target},(_,i)=><i key={i} className={hud.surge>0||i<hud.charge?"charged":""}/>)}</div></div>
-      <div className="flight-rescues"><small>COURIERS</small><b>{hud.rescues} / 3</b>{ghostScore!==null&&<span>{ghostLabel} {hud.score-ghostScore>=0?"+":""}{(hud.score-ghostScore).toLocaleString()}</span>}</div>
-      <p className="flight-key-hint">{wide?"WASD / ARROWS / DRAG":"DRAG TO FLY"}<span>SPACE TO PULSE · ESC TO PAUSE</span></p>
-      <button className="pulse-button" disabled={hud.pulseCooldown>0||count>0||paused} onClick={()=>{pulseRef.current=true;}}>{hud.pulseCooldown>0?`PULSE / ${Math.ceil(hud.pulseCooldown/60)}s`:"PULSE READY ↯"}<small>{hud.pulseCooldown>0?"RECHARGING":"CLEAR FIRE / SPACE"}</small></button>
+      <div className="flight-vitals"><span><Icon name={hud.player.shield>0?"shield":"person"} size={16}/>HULL <b>{hud.player.health}%</b>{hud.player.shield>0&&<em>SHIELD</em>}</span><meter aria-label="Hull health" min="0" max="100" low={30} high={60} optimum={100} value={hud.player.health}/></div>
+      <div className="flight-loadout"><small><Icon name="spread" size={14}/>{config.rig.toUpperCase()} LV {hud.weapon}</small><i>{[0,1,2].map(n=><span key={n} className={n<hud.weapon?"lit":""}/>)}</i></div>
+      <div className="flight-charge"><small><Icon name="bolt" size={14}/>{hud.surge>0?`SURGE ×2 · ${(hud.surge/60).toFixed(1)}s`:`GRAZE → SURGE ${hud.charge}/${target}`}</small><div>{Array.from({length:target},(_,i)=><i key={i} className={hud.surge>0||i<hud.charge?"charged":""}/>)}</div></div>
+      <div className="flight-rescues"><small>COURIERS <b>{hud.rescues} / 3</b></small><span className="courier-icons" aria-hidden="true">{[0,1,2].map(n=><Icon key={n} name="person" size={16} className={n<hud.rescues?"on":""}/>)}</span>{ghostScore!==null&&<span className="ghost-gap">{ghostLabel} {hud.score-ghostScore>=0?"+":""}{(hud.score-ghostScore).toLocaleString()}</span>}</div>
+      <p className="flight-key-hint">{wide?<><Keycap>WASD</Keycap><Keycap>DRAG</Keycap></>:<Keycap>DRAG</Keycap>}<span>MOVE</span><Keycap>ESC</Keycap><span>PAUSE</span></p>
+      <div className="pulse-group"><span className="pulse-label"><b>{hud.pulseCooldown>0?`PULSE ${Math.ceil(hud.pulseCooldown/60)}s`:"PULSE READY"}</b><small><Keycap>SPACE</Keycap>{hud.pulseCooldown>0?"RECHARGING":"CLEAR FIRE"}</small></span>
+      <button className="pulse-button" disabled={hud.pulseCooldown>0||count>0||paused} onClick={()=>{pulseRef.current=true;}} aria-label={hud.pulseCooldown>0?`Pulse recharging, ${Math.ceil(hud.pulseCooldown/60)} seconds`:"Fire Pulse to clear nearby fire"}><Icon name="bolt" size={34}/></button></div>
     </footer>
   </section>;
 }

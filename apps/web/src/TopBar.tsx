@@ -1,6 +1,5 @@
 import type { PilotAvatar } from "@rivalghost/game-data";
 import { Icon, LogoMark, Wordmark, type IconName } from "./Brand";
-import { GuestPilot } from "./GuestPilot";
 import { Pilot } from "./Pilot";
 
 export type Screen = "lobby" | "map" | "run" | "result" | "profile" | "board" | "pit" | "workshop";
@@ -29,7 +28,6 @@ export function TopBar({ screen, onNav, medals, maxMedals, rank, username, avata
     </div>
     <div className="top-bar-right">
       <span className="medal-count" aria-label={`${medals} of ${maxMedals} medals`}><span className="medal-count-icon"><Icon name="medal" size={16}/></span><b>{medals}</b><small>/ {maxMedals}</small></span>
-      <GuestPilot username={username}/>
       <a href="#" className="pilot-chip" aria-current={screen === "profile" ? "page" : undefined} onClick={go("profile")}>
         <span className="pilot-chip-avatar"><Pilot avatar={avatar}/></span>
         <span className="pilot-chip-text"><b>{username ? `@${username}` : rank}</b><small>CUSTOMIZE</small></span>
