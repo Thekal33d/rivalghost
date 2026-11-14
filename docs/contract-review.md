@@ -1,5 +1,7 @@
 # RivalGhost v3 economy contract review
 
+> Contract findings and receipts below were recorded November 13, 2026. Later public deployment and device-account recovery are covered in [current status](development-status.md) and [device-wallet.md](device-wallet.md). Historical login gates and test counts below are not current release status.
+
 November 13, 2026. The deployed testnet bytecode is **98,677 bytes**, below the strict **100,000-byte** ceiling by **1,323 bytes**. This is an implementation review with automated and live-runtime evidence, not an independent security audit.
 
 ## Deployment

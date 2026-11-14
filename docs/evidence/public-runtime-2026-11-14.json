@@ -1,0 +1,156 @@
+{
+  "checkedAt": "2026-11-14T12:55:10.644Z",
+  "site": "https://rivalghost.xyz",
+  "public": {
+    "health": {
+      "status": 200,
+      "body": {
+        "ok": true
+      }
+    },
+    "chain/config": {
+      "status": 200,
+      "body": {
+        "enabled": true,
+        "mode": "onchain",
+        "contractId": "game.rivalghost-ops-thekal33d.testnet",
+        "actor": null,
+        "pilot": null
+      }
+    },
+    "embedded/config": {
+      "status": 200,
+      "body": {
+        "enabled": true,
+        "network": "testnet"
+      }
+    }
+  },
+  "contract": {
+    "account": "game.rivalghost-ops-thekal33d.testnet",
+    "blockHeight": 277659653,
+    "codeHash": "HhFicjvTypfdq1ujfuQRohjqwhURRC8yGS5ewKTpmscB",
+    "storageUsageBytes": 101038
+  },
+  "world": {
+    "blockHeight": 277659654,
+    "state": {
+      "version": 3,
+      "total_cr": 100100,
+      "reserve": 98809,
+      "player_count": 6,
+      "operator": "rivalghost-ops-thekal33d.testnet",
+      "hound": "hound.rivalghost-ops-thekal33d.testnet",
+      "moth": "moth.rivalghost-ops-thekal33d.testnet",
+      "verifier": [
+        252,
+        106,
+        91,
+        4,
+        18,
+        26,
+        210,
+        67,
+        62,
+        232,
+        118,
+        107,
+        111,
+        33,
+        148,
+        102,
+        207,
+        57,
+        107,
+        55,
+        181,
+        248,
+        96,
+        249,
+        9,
+        130,
+        24,
+        125,
+        121,
+        61,
+        141,
+        103
+      ],
+      "key_version": 1,
+      "paused": false,
+      "districts": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "focus": 1,
+      "stock": 1,
+      "moth_spent": 5,
+      "hound_spent": 0,
+      "commission_spent": 0,
+      "crowns": [
+        null,
+        {
+          "holder": "hound.rivalghost-ops-thekal33d.testnet",
+          "score": 28200,
+          "bounty": 20,
+          "chapter": 1,
+          "seed": 729,
+          "replay_hash": [
+            206,
+            198,
+            176,
+            106,
+            71,
+            172,
+            232,
+            136,
+            9,
+            192,
+            144,
+            197,
+            201,
+            104,
+            109,
+            71,
+            118,
+            135,
+            120,
+            192,
+            93,
+            53,
+            130,
+            30,
+            216,
+            215,
+            162,
+            12,
+            5,
+            154,
+            44,
+            190
+          ],
+          "expires": 1794637685986,
+          "lock": null,
+          "defended": false
+        },
+        null
+      ],
+      "listings": []
+    }
+  },
+  "bytecode": {
+    "checkedAt": "2026-11-14T13:00:19.666Z",
+    "blockHeight": 277660187,
+    "bytes": 98677,
+    "sha256": "f80add454965b8c1edef65ce9ce45f1ba6c1d1ffa4654be0be43e940d986a090",
+    "budgetBytes": 100000
+  }
+}

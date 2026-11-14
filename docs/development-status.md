@@ -1,32 +1,34 @@
-# RivalGhost development checkpoint
+# RivalGhost development status
 
-November 13, 2026
+**November 14, 2026 — playable public testnet pilot.** Application revision `9ea48ac` is live at [rivalghost.xyz](https://rivalghost.xyz/). This update reconciles earlier November 13 checkpoints; it does not claim production readiness.
 
-**Stage: playable game with a deployed, integrated NEAR testnet economy.** Personal NEAR Auth login and game-session authorization are verified live. Browser job reward and MOTH sale receipts are verified. The creator reports craft/equip and account recovery tests passed. The public demo preview is live at https://rivalghost.xyz/; hosted authentication and live-data cutover remain next.
+## Available now
 
-## Implemented
+- Ten authored story chapters, three free rigs, thirty medals, daily flights and deterministic ghosts.
+- Desktop landscape and mobile gameplay, music/SFX, first-flight tutorial, progressive feature unlocks and account invitations.
+- Profiles, avatars, replay-checked social scores, auto-posting after profile setup, rivals and challenge links.
+- Public device-account sign-in with encrypted recovery, explicit 12-hour purchase permission, sponsored delegation and finalized receipts.
+- Deployed v3 economy: finite CR, salvage, jobs/commissions, MOTH exchange, cosmetics, marketplace escrow, restoration and Crown settlement. Local Demo remains separate.
+- Durable relay journal and uncertain-transaction recovery; no silent demo-economy fallback in on-chain mode.
 
-- Ten authored chapters, three free rigs, thirty medals, daily flights, deterministic ghosts, reactive environments and responsive desktop/mobile Canvas gameplay.
-- Server profiles, avatars, replay-checked leaderboards, rivals and shareable ghosts. These social records and local campaign saves are not economic assets.
-- Compact v3 contract: finite CR, salvage, daily verified jobs/commissions, MOTH exchange, cosmetic ownership/crafting/equipment, market escrow/fees, shared repairs, Crown purses/entry/payouts, HOUND budgets and roles.
-- Actual testnet contract `game.rivalghost-ops-thekal33d.testnet`, **98,677-byte** Wasm. Two-player trade, verified rewards, repair and Crown settlement passed on real NEAR; balances preserved through final hardening upgrade.
-- Sponsored NEP-366 session authorization; signed browser actions; durable transaction journal; finalized receipts; uncertain-result recovery; no local economy fallback when on-chain mode is enabled.
-- Local HOUND worker now funds real on-chain Crown ghosts. Browser Workshop/Crown Pit display finalized contract state and explorer receipts.
-- NEAR Auth identity and explicit 12-hour game-session consent. Shared provider accepts **http://localhost:3000** exactly; port 5173 and /auth/callback were rejected. The corrected game reaches the login form. A later callback exposed the live provider rejecting the NEP-413 login payload. Identity login now uses server-verified OIDC with PKCE; explicit delegate signing remains the game-session step. Personal login and MPC delegate approval now completed on testnet; finalized contract state confirms 100 CR and session epoch 1.
+## Verified evidence
 
-- Login hardening: server-held PKCE, one-time nonce/state/cookie binding, RS256 identity-token verification, explicit identity-first authorization, persistent errors, exact approved signing-token retrieval and retry recovery. Browser verified pre-login authorization gating; personal identity and game-session approval are now verified end to end. Active-session UI shows device-specific readiness and expiry.
+The [public read-only snapshot](evidence/public-runtime-2026-11-14.json) confirms healthy API, enabled device sign-in/on-chain mode and finalized contract state. Downloading the public bytecode independently measured **98,677 bytes** with the same SHA-256 as the recorded build. Historical live receipts cover two-player trade, jobs, repairs and Crown settlement. Device-account recovery preserved the same 93 CR and one salvage in a second browser.
 
-## Evidence
+See the [evidence index](evidence/README.md) for reproducible commands and the independent fresh-clone rehearsal. Test counts in older milestone notes describe those commits, not the current test suite.
 
-`pnpm check`: 133 tests plus typechecks/builds pass. `pnpm economy:check`: 20 native Rust tests across crates, raw/optimized Wasm parity, 34 rejected calls per artifact and bounded repeated-job storage. Live testnet receipts and measured gas are in `docs/evidence/economy-v3-testnet.json`. Personal sign-in/session evidence is in `docs/evidence/near-auth-live-testnet.json`. See [contract review](contract-review.md).
+## Deliberately disabled or incomplete
 
-The creator authorized up to 4 test NEAR; 3.3 allocated, plus approximately 0.035575 account-creation fees. No mainnet transfers. One paid NEAR AI decision succeeded in the earlier milestone; recurring inference stays disabled and no additional AI credit was used here.
+- Recurring HOUND worker and recurring NEAR AI inference are disabled in the public release. One paid inference test and prior HOUND execution do not imply ongoing automation.
+- Hosted NEAR Auth callback approval remains unresolved. The working public default is the embedded device-account flow, not that provider redirect.
+- No stake-to-compute activation, automated Cloud-to-contract focus control, attestation verification, NEP-245, NEAR Intents or mainnet asset economy.
+- Account recovery does not sync local campaign saves. Server-authoritative replay results are not proof of human input.
 
-## Next
+## Next validation priorities
 
-1. Test gameplay and two-player social features at `https://rivalghost.xyz/`. DNS, HTTPS, frontend delivery and API health are verified. This public preview uses demo balances; no live testnet keys or player database have moved.
-2. Register the exact hosted NEAR Auth callback/origin: provider preflight currently rejects the callback. Then migrate the live database and protected keys with one active signer and repeat login/recovery plus economic browser tests online.
-3. Add the separately bounded operator path for AI decisions to update contract focus before calling inference-driven economic behavior live. Stake-to-compute remains future work.
-4. Human difficulty/retention tests, real-phone performance and fresh-player public rehearsal; capture actual gameplay and receipts for judges.
+1. Fresh-player and second-device public rehearsal, including actual onboarding budget exhaustion and understandable recovery.
+2. Difficulty, retention and performance tests on real phones; no fabricated user metrics.
+3. Load/abuse/moderation work before removing the small public sponsorship caps.
+4. A separately approved, monitored NPC automation pilot before describing the economy as continuously AI-operated.
 
-The on-chain economy starts fresh; unverified demo balances are never imported. Old campaign saves remain in the old browser origin's storage. Switching from localhost:5173 to localhost:3000 does not automatically move local medals/ghosts. The deployed contract includes operator/verifier trust and does not claim an external token standard.
+For the actual rules, use [economy.md](economy.md). For the shortest runnable path, use the [root README](../README.md).

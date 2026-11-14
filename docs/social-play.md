@@ -3,7 +3,7 @@
 ## The playable loop
 
 1. Open **Your Pilot**. Choose a unique 3–16 character username and customize armor color, helmet and insignia. Four palettes × three helmets × three badges give 36 free cosmetic combinations.
-2. Finish a v3 story/daily flight or select an existing personal best from **Leaderboard**. Choose **Post score + create challenge**. Posting is explicit; local flights are not uploaded automatically.
+2. Finish a v3 story/daily flight. Eligible results auto-post once a social profile is available; without one, the result asks you to choose a username. Existing best-flight publication and challenge sharing are also available. Jobs and commission practice do not auto-post.
 3. The service re-simulates the submitted replay, calculates the score and binds it to the authenticated browser pilot. It ignores client-supplied scores and player IDs.
 4. The board shows one best score per pilot for the selected chapter, rig and mode. Ties use earliest submission, then stable run ID. Daily runs share today's UTC seed; older rules and wrong seeds are rejected.
 5. Choose **Chase ghost** or open a challenge link. The invitation shows the pilot, avatar, target score and exact setup. The opponent's recorded flight appears in the arena with a live score difference. Results report win/tie/loss against that target and offer a rematch.
@@ -21,9 +21,9 @@ Only authenticated, same-origin JSON requests can write profiles, scores or riva
 
 This is a **server-shared, off-chain, replay-checked board**. It is not a NEAR settlement, a reward distribution, or proof that a human played the run. Deterministic replay checking alone cannot stop input bots or replay copying. There are no invented opponents, seeded fake scores, follower counts, chat messages or activity claims.
 
-No contract changes, additional transactions, or gas charges are needed. Server CPU/storage and public hosting remain operational costs. The current local gateway runs at `127.0.0.1:8788` with the Vite proxy at `localhost:5173`. The standard `pnpm dev` + `pnpm guest:serve` workflow now serves these screens and endpoints.
+No contract changes, additional transactions, or gas charges are needed. Server CPU/storage and public hosting remain operational costs. The current local gateway runs at `127.0.0.1:8788` with the Vite proxy at `localhost:3000`. The standard `pnpm dev` + `pnpm guest:serve` workflow now serves these screens and endpoints.
 
-**Localhost links only work against this local service.** Friends on other devices need the web app and persistent gateway hosted together under the configured HTTPS origin. No public hosting or account funding was performed. Local-preview notices make this limitation visible in the board and copied-link flow.
+**Localhost links only work against this local service.** Friends on other devices need the web app and persistent gateway hosted together under the configured HTTPS origin. The public game and gateway are hosted at https://rivalghost.xyz. Local links still refer only to your local database; they are not public challenge links.
 
 ## Bounds and failure behavior
 
@@ -40,10 +40,12 @@ GET `/api/guest/social/me`, `/board?mode=story&chapter=0&rig=fan&scope=all`, `/g
 
 Authenticated POST `/api/guest/social/profile`, `/publish`, `/rival`.
 
-No v3 settlement certificate is issued by these endpoints. The existing competitive verifier remains v2-only.
+No v3 settlement certificate is issued by these endpoints. The deployed v3 economy has its own certificate/settlement path in the relayer; social publication is not economic settlement.
 
-## Validation and remaining work
+## Historical validation and remaining work
+
+The counts below describe the original social milestone. See the [current evidence index](evidence/README.md) for the latest independent checks.
 
 Eight social tests cover name conflicts, cosmetic validation, replay-derived scores and identity, deduplication, one-best-per-pilot ranking, rival filtering, wrong seeds/old rules, daily expiry, persistence, and real local HTTP authentication/public reads. Together with existing regressions, 67 TypeScript tests pass. Production builds/type checking pass. Browser QA covers the avatar controls and responsive workshop/board empty state; it does not establish a real multi-device community test.
 
-Before a public launch: hosting and backups, multi-device challenge testing, trusted proxy configuration, abuse/moderation tooling, account recovery and a deliberate anti-bot policy. Notifications and live multiplayer are not implemented.
+Public hosting and device-account recovery now exist. Further work includes multi-device community testing, abuse/moderation tooling and a deliberate anti-bot policy. Notifications and live multiplayer are not implemented.

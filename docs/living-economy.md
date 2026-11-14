@@ -1,9 +1,11 @@
 # RivalGhost — living economy & NPC compute
 
+> **Historical local-only checkpoint, November 13, 2026.** Deployment, accounts and live inference evidence advanced after this document. Use [the current economy](economy.md), [development status](development-status.md) and [root README](../README.md) for present behavior. Pending items and test counts below describe this earlier milestone.
+
 November 13, 2026 · implementation checkpoint
 
 ## Play it
-Open http://localhost:5173/ and choose **Workshop**.
+Open http://localhost:3000/ and choose **Workshop**.
 
 1. Open your demo wallet if this is a new pilot. The 100 CR grant comes from the existing finite reserve.
 2. Fly MOTH’s free recovery job: destroy 12 enemies. A server replay check awards four salvage, plus one if this is MOTH’s featured focus. A missed objective can be retried for free.
