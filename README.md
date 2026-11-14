@@ -23,7 +23,7 @@ The longer loop is **fly → recover salvage → trade with MOTH → craft or se
 1. Open [rivalghost.xyz](https://rivalghost.xyz/) and choose **Play first**. No account, token purchase or browser extension is needed for free flights.
 2. Take the flight-school walkthrough, or skip it. Launch Chapter 01 with **Fan**. Move with WASD/arrows or drag; firing is automatic. Space activates Pulse. On mobile, drag to move and tap Pulse. Sound starts after interaction and has a mute control.
 3. Finish one story flight—even an unsuccessful attempt—to unlock **Rivals** and **Workshop**. Inspect the result, replay and next unlock. Clearing Chapter 01 also unlocks Needle.
-4. Open **Customize** to choose a username/avatar. Eligible completed flights auto-post once a social profile is available; the server recalculates scores from the replay. Use **Rivals** to chase a recorded flight, not a live multiplayer opponent.
+4. Open **Customize** to choose a username/avatar. Eligible completed flights auto-post once a social profile is available (the setting can be turned off in Customize); the server recalculates scores from the replay. Use **Rivals** to chase a recorded flight, not a live multiplayer opponent.
 5. For testnet purchases, choose **Sign in → Create account**, save the encrypted recovery file and password, then explicitly **Enable game purchases**. This grants a 12-hour game session. The public release uses a device wallet through `near-api-js`; it does not depend on the blocked hosted NEAR Auth callback.
 
 **Public pilot limits:** account sponsorship is capped at four new accounts per UTC day and the relay has a daily request budget. If exhausted, free play still works. Do not use valuable funds: CR and items are testnet game assets with no cash value. Local setup below uses demo balances, not the public ledger.
@@ -99,6 +99,7 @@ CR circulates; salvage has sources and consumption. Neither balance is a promise
 
 | Evidence | Result | Source |
 | --- | ---: | --- |
+| Source checks in independent fresh clone | **167 JavaScript tests** across 33 files; **20 native Rust tests**; types/builds pass | [Fresh-clone rehearsal](docs/evidence/revised-readme-audit.md) |
 | Deployed Wasm, read directly from finalized NEAR state | **98,677 bytes**; 1,323 bytes below the strict 100,000-byte limit | [Public bytecode snapshot](docs/evidence/public-runtime-2026-11-14.json) |
 | Deployed SHA-256 | `f80add454965b8c1edef65ce9ce45f1ba6c1d1ffa4654be0be43e940d986a090` | Same snapshot; matches [recorded artifact](docs/evidence/economy-v3-local.json) |
 | Total CR in contract state | **100,100** | Finalized `get_world`, block 277659654 |
@@ -115,7 +116,7 @@ Gas figures are measurements from individual testnet receipts, not future price 
 
 - **Node.js 24** recommended; tested with **24.11.1**. The repository minimum is 22.22.2, and the server uses `node:sqlite`.
 - **pnpm 10.33.0**, as pinned in `package.json`. If needed: `npm install --global pnpm@10.33.0`.
-- Git. Rust is needed only for the contract checks below.
+- Git. Rust is needed only for the contract checks below; the verified toolchain is **Rust/Cargo 1.98.1**.
 
 ### First playable flight—no secrets or chain accounts
 
@@ -171,6 +172,8 @@ node tools/read-public-status.mjs
 ```
 
 It prints API availability, finalized contract state and the downloaded bytecode’s size/hash. Network failures here do not prevent offline simulation tests. Full live sign-in/spending needs funded operator accounts and protected server configuration; a fresh clone deliberately cannot spend the project’s sponsorship budget.
+
+**Installation notes:** pnpm may report ignored dependency build scripts for `browser-tabs-lock`, `esbuild` and `secp256k1`. Both recorded rehearsals completed without approving those scripts.
 
 **Troubleshooting:** use the pinned pnpm and Node version; keep ports 3000 and 8788 free; retain the exact `localhost:3000` origin. A Node SQLite experimental warning is expected on the tested runtime. Sandboxed environments must permit localhost listeners for HTTP tests and network access for initial dependency downloads. Test timeouts during concurrent heavy Rust compilation should be investigated with a serial rerun, not reported as a passing test.
 

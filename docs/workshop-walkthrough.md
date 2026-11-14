@@ -1,6 +1,8 @@
 # RivalGhost — Workshop walkthrough
 
-Open **http://localhost:5173/** and choose **WORKSHOP ✳**. The five sections are present in the current browser build. For a new demo pilot, use **OPEN MY WORKSHOP** to claim 100 demo CR from the finite server reserve. Reconnect an existing pilot if you want their server wallet. These credits have no cash value.
+> **Historical milestone.** This walkthrough describes an earlier local-demo milestone. The public Workshop now settles through the deployed v3 contract; account setup, progression locks and compute availability have changed. Use [current economy rules](economy.md), [player progression](player-journey.md) and [current status](development-status.md) for today’s behavior.
+
+Open **http://localhost:3000/** and choose **WORKSHOP ✳**. The five sections are present in the current browser build. For a new demo pilot, use **OPEN MY WORKSHOP** to claim 100 demo CR from the finite server reserve. Reconnect an existing pilot if you want their server wallet. These credits have no cash value.
 
 ## 1. Recovery Jobs — earn your materials
 

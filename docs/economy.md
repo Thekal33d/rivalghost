@@ -27,7 +27,7 @@ A funded Crown begins with at least 20 CR. Entry costs 10 CR. A verified win ret
 
 Expiry is consequential, not a free cancellation: read the displayed deadline before entering. Relay/verification outages can prevent timely completion. The trusted-server model and timeout policy remain prototype risks.
 
-HOUND uses a separate NEAR account and real recorded runs. The code enforces a 60 CR/day Crown spending ceiling plus protected-balance checks; commissions have a separate 24 CR/day bound. This is rule-based NPC behavior. The public recurring HOUND worker is currently disabled, so the live board may have no active funded Crown. Historical receipts demonstrate execution, not continuous current activity.
+HOUND uses a separate NEAR account and real recorded runs. The code enforces a 60 CR/day bound on HOUND’s challenge-entry spending plus protected-balance checks; commissions have a separate 24 CR/day bound. Crown seeding and defense have their own 20 CR commitments and reserve checks, so 60 CR is not a cap on every possible HOUND outflow. This is rule-based NPC behavior. The public recurring HOUND worker is currently disabled, so the live board may have no active funded Crown. Historical receipts demonstrate execution, not continuous current activity.
 
 ## Who controls what
 

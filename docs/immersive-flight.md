@@ -1,5 +1,7 @@
 # RivalGhost — immersive flight update
 
+> **Historical milestone.** The chapter/art details below remain useful. The protocol and test-count statements describe the original immersive-flight milestone; a deployed v3 economy now handles v3 results. Use [current economy rules](economy.md), [player progression](player-journey.md) and [current status](development-status.md) for today’s behavior.
+
 The game now fills the browser during a flight. Desktop play flies left-to-right across a landscape arena; phones fit portrait play to their viewport. Ship proportions and combat geometry remain consistent, with screen-relative movement controls. The pause screen explains the active chapter's twist.
 
 Boss hits now show actual damage numbers, impact sparks and a short armor flash. The HUD shows exact remaining HP, percentage and phase. Damaged armor gains visible cracks; phase two announces faster attacks.

@@ -2,8 +2,8 @@
 
 ## The playable loop
 
-1. Open **Your Pilot**. Choose a unique 3–16 character username and customize armor color, helmet and insignia. Four palettes × three helmets × three badges give 36 free cosmetic combinations.
-2. Finish a v3 story/daily flight. Eligible results auto-post once a social profile is available; without one, the result asks you to choose a username. Existing best-flight publication and challenge sharing are also available. Jobs and commission practice do not auto-post.
+1. Open **Customize**. Choose a unique 3–16 character username and customize armor color, helmet and insignia. Four palettes × three helmets × three badges give 36 free cosmetic combinations.
+2. Finish a v3 story/daily flight. Eligible results auto-post once a social profile is available and Auto-post my scores is enabled (the default, switchable in Customize); without one, the result asks you to choose a username. Existing best-flight publication and challenge sharing are also available. Jobs and commission practice do not auto-post.
 3. The service re-simulates the submitted replay, calculates the score and binds it to the authenticated browser pilot. It ignores client-supplied scores and player IDs.
 4. The board shows one best score per pilot for the selected chapter, rig and mode. Ties use earliest submission, then stable run ID. Daily runs share today's UTC seed; older rules and wrong seeds are rejected.
 5. Choose **Chase ghost** or open a challenge link. The invitation shows the pilot, avatar, target score and exact setup. The opponent's recorded flight appears in the arena with a live score difference. Results report win/tie/loss against that target and offer a rematch.

@@ -65,7 +65,7 @@ pnpm economy:check
 
 The economy Wasm harness tests conservation, invalid signatures/nonces/domains, sessions, pause behavior, jobs, crafting, market transfers, repairs, Crown outcomes and repeated-job storage retention against both raw and optimized artifacts. These are targeted checks, not an independent security audit or a load test.
 
-[economy-v3-local.json](economy-v3-local.json) is the original recorded artifact measurement. Its test count is historical. The fresh-clone rehearsal report is added after the independent run finishes; until then, do not interpret that original count as a new verification result.
+[economy-v3-local.json](economy-v3-local.json) is the original recorded artifact measurement. Its test count is historical. The [independent fresh-clone rehearsal](fresh-clone-audit.md) records the actual command outcomes, environment limitations and documentation mismatches: 167 JavaScript tests in 33 files and 20 native Rust tests passed on the completed serial run. The initial timeout failures and their retry are retained in the report. The [second clean clone of the revised README](revised-readme-audit.md) also passed frozen installation, startup/health, all 167 tests, types/builds and economy checks, then independently reproduced the deployed hash via [public status output](revised-readme-public-status.json). Package caches and reused Rust dependencies are disclosed; the first run performed the full fresh Rust compile.
 
 ## Visual evidence
 
@@ -74,3 +74,11 @@ The economy Wasm harness tests conservation, invalid signatures/nonces/domains, 
 ## Historical documents
 
 `public-preview.json`, `testnet-setup.json`, `near-auth-live-testnet.json` and `near-auth-callback-diagnostic.json` preserve earlier checkpoints. They may describe a local provider callback, a disabled preview or a different release. Use [current status](../development-status.md) for the present public configuration.
+
+## Rehearsal findings resolved
+
+The initial report is preserved rather than rewritten after fixes. The revised README corrects the startup origin, prerequisites, free-play ordering, progression gates, public device-account path, current contract status and live-versus-disabled claims. Historical Workshop/immersive-flight notes now have explicit banners. Following the second review, social instructions use **Customize**, document the auto-post opt-out, and the root README explains the observed dependency-script warnings. These final edits change documentation only; the tested gameplay/contract source is unchanged.
+
+One runtime copy issue remains outside this documentation change: a result card can show **AUTO-POSTED TO RIVALS** before a username exists. A confirmed shared-flight link/server response is the evidence of publication, not that heading.
+
+The independent reports retain exact audited revisions and outcomes. Their named verbose logs were retained in the local audit workspace, not published here; the reports and public JSON are the checked-in evidence. Local filesystem prefixes in the published reports are normalized to `<audit-workspace>`.
