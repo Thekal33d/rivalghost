@@ -56,7 +56,7 @@ Do not call oscillator sketches finished music simply because they meet a loudne
 
 ## Inspect the delivery, not just the code
 
-Run `scripts/inspect_video.py FILE --out DIR --max-seconds 60 --cuts 3.75,7.5` as a technical starting point. The script reports streams, full decode failures, loudness, possible black/frozen stretches, a contact sheet and frames on both sides of each cut. Flags require interpretation; intentional holds are not automatically defects.
+Run `scripts/inspect_video.py FILE --out DIR --max-seconds 60 --cuts 3.75,7.5` as a technical starting point. The script reports streams, full decode failures, loudness, possible black/frozen stretches, a contact sheet and frames on both sides of each cut. Add `--require-audio` when the deliverable must contain sound. Flags require interpretation; intentional holds are not automatically defects.
 
 Review rendered stills at phone size and sequential frames at transitions. Check text overlap, cropping, object continuity, gameplay visibility and truthful claims. A regular contact sheet alone cannot detect single-frame glitches. Compare repeated renders of difficult frames when state or caching is involved.
 
