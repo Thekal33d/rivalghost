@@ -12,8 +12,9 @@ const TABS: { id: Screen; label: string; icon: IconName }[] = [
   { id: "workshop", label: "WORKSHOP", icon: "wrench" },
 ];
 
-export function TopBar({ screen, onNav, medals, maxMedals, rank, username, avatar, sound, onSound }: {
+export function TopBar({ screen, onNav, locked={}, medals, maxMedals, rank, username, avatar, sound, onSound }: {
   screen: Screen; onNav: (s: Screen) => void; medals: number; maxMedals: number; rank: string;
+  locked?:Partial<Record<Screen,string>>;
   username?: string; avatar?: PilotAvatar; sound: boolean; onSound: () => void;
 }) {
   const go = (s: Screen) => (e: React.MouseEvent) => { e.preventDefault(); onNav(s); };
@@ -21,8 +22,8 @@ export function TopBar({ screen, onNav, medals, maxMedals, rank, username, avata
     <div className="top-bar-left">
       <a className="top-brand" href="#" onClick={go("lobby")} aria-label="RivalGhost flight deck"><LogoMark size={46}/><Wordmark/></a>
       <nav className="top-tabs" aria-label="Game navigation">
-        {TABS.map(t => <a key={t.id} href="#" className="top-tab" aria-current={screen === t.id || (t.id === "lobby" && screen === "result") ? "page" : undefined} onClick={go(t.id)}>
-          <Icon name={t.icon} size={24}/><span>{t.label}</span>
+        {TABS.map(t => <a key={t.id} href="#" className={`top-tab ${locked[t.id]?"is-locked":""}`} title={locked[t.id]} aria-label={locked[t.id]?`${t.label} locked: ${locked[t.id]}`:undefined} aria-current={screen === t.id || (t.id === "lobby" && screen === "result") ? "page" : undefined} onClick={go(t.id)}>
+          <Icon name={locked[t.id]?"lock":t.icon} size={24}/><span>{t.label}</span>
         </a>)}
       </nav>
     </div>

@@ -1,7 +1,9 @@
+import {operationStage} from './operation-state';
 import {economyIntentMessage,type EconomyIntent,type ChainPilot} from '@rivalghost/game-data';
 import {getOrCreatePilotKey} from './guest-key';
 const PENDING='rivalghost.chain.pending.v1',ITEMS=['afterglow','ion','sunflare'],JOBS=['','recovery','courier','commission'];
 export async function chainHttp(path:string,body?:unknown){
+ if(body!==undefined){const stages:Record<string,string>={'embedded/begin':'Requesting a one-time wallet challenge…','embedded/complete':'Verifying wallet ownership…','chain/session/begin':'Preparing your sponsored NEAR game session…','chain/session/embedded':'Waiting for NEAR to confirm your game session…','chain/execute':'Waiting for NEAR to confirm your game action…','chain/settle':'Verifying your flight and waiting for NEAR settlement…'};if(stages[path])operationStage(stages[path]);}
  let response:Response;try{response=await fetch('/api/guest/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',headers:body===undefined?{}:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(90000)});}catch{throw new Error('NEAR confirmation is unavailable. Retry the same action to recover its transaction.');}
  const data=await response.json();if(!response.ok){const error=new Error(data.error??'The chain request failed') as Error&{transactionHash?:string};error.transactionHash=data.transactionHash;throw error;}return data;
 }

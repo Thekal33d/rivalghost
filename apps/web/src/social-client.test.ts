@@ -1,0 +1,4 @@
+import {it,expect,vi} from 'vitest';
+import {socialRequest} from './social-client';
+import {dismissOperation,operationSnapshot} from './operation-state';
+it('shares identical pending mutations across remounts so a duplicate settlement observer sees the same result',async()=>{let finish!:(r:Response)=>void;const fetcher=vi.spyOn(globalThis,'fetch').mockImplementation(()=>new Promise<Response>(r=>{finish=r;}));try{const first=socialRequest('social/profile',{username:'PilotOne'}),second=socialRequest('social/profile',{username:'PilotOne'});expect(fetcher).toHaveBeenCalledTimes(1);expect(operationSnapshot()?.state).toBe('pending');finish(new Response(JSON.stringify({profile:{username:'PilotOne'}}),{status:200,headers:{'Content-Type':'application/json'}}));expect(await second).toEqual(await first);expect(operationSnapshot()?.state).toBe('success');}finally{fetcher.mockRestore();dismissOperation();}});

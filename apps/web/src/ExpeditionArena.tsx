@@ -6,10 +6,14 @@ import {flightView,worldPoint,screenDirection} from "./flight-view";
 import {Icon,Keycap} from "./Brand";
 
 export interface FlightReport { result:ExpeditionResult; replay:ExpeditionReplay; hash:string }
-interface Props { trail?:TrailId|null;restorationStage?:number;jobLabel?:string; reservationExpires?:number; pilotName?:string; ghostLabel?:string; config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
+interface Props { guided?:boolean;onTutorialComplete?:()=>void;onTutorialSkip?:()=>void;trail?:TrailId|null;restorationStage?:number;jobLabel?:string; reservationExpires?:number; pilotName?:string; ghostLabel?:string; config:ExpeditionConfig; sound:boolean; ghost?:ExpeditionReplay; onFinish:(report:FlightReport)=>void; onExit:()=>void; onSound:()=>void }
 const keysOfMovement=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"]);
 
-export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,reservationExpires,pilotName,ghostLabel="BEST",trail,restorationStage=0,jobLabel}:Props) {
+export function ExpeditionArena({guided=false,onTutorialComplete,onTutorialSkip,config,sound,ghost,onFinish,onExit,onSound,reservationExpires,pilotName,ghostLabel="BEST",trail,restorationStage=0,jobLabel}:Props) {
+  const tutorialActive=useRef(guided),tutorialComplete=useRef(onTutorialComplete),tutorialSkip=useRef(onTutorialSkip);
+  tutorialComplete.current=onTutorialComplete;tutorialSkip.current=onTutorialSkip;
+  const [coach,setCoach]=useState<number|null>(guided?0:null);
+  const skipCoach=()=>{tutorialActive.current=false;setCoach(null);tutorialSkip.current?.();};
   const [wallClock,setWallClock]=useState(Date.now);
   useEffect(()=>{if(!reservationExpires)return;const timer=setInterval(()=>setWallClock(Date.now()),1000);return()=>clearInterval(timer);},[reservationExpires]);
   const reservedSeconds=reservationExpires?Math.max(0,Math.ceil((reservationExpires-wallClock)/1000)):0;
@@ -32,7 +36,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
     const keys=new Set<string>();const pointer={active:false,x:180,y:540};
     let audio:AudioContext|null=null,frame=0,disposed=false,done=false,seen=0;
     let last=performance.now(),accumulator=0,focused=!document.hidden,lastHud=-10;
-    let begins=last+1800;
+    let begins=last+1800,trainingStep=0,travel=0;
     pauseRef.current=false;setPaused(false);
     const wakeAudio=()=>{if(!soundRef.current)return;try{audio??=new AudioContext();void audio.resume().catch(()=>{});}catch{/* Optional sound. */}};
     const tone=(hz:number,length:number)=>{
@@ -43,7 +47,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
     const point=(e:PointerEvent)=>{const r=canvas.getBoundingClientRect(),p=worldPoint(view,e.clientX-r.left,e.clientY-r.top-(e.pointerType==="touch"?35:0));pointer.x=p.x;pointer.y=p.y;};
     const down=(e:PointerEvent)=>{wakeAudio();pointer.active=true;point(e);canvas.setPointerCapture(e.pointerId);};
     const up=()=>{pointer.active=false;};
-    const keyDown=(e:KeyboardEvent)=>{const k=e.key.toLowerCase();if(k==="escape"&&!e.repeat){e.preventDefault();pauseRef.current=!pauseRef.current;setPaused(pauseRef.current);keys.clear();up();}if(keysOfMovement.has(k)||k===" "){e.preventDefault();keys.add(k);wakeAudio();}};
+    const keyDown=(e:KeyboardEvent)=>{const k=e.key.toLowerCase();if(k==="escape"&&!e.repeat){e.preventDefault();pauseRef.current=!pauseRef.current;setPaused(pauseRef.current);keys.clear();up();}if(keysOfMovement.has(k)||k===" "){e.preventDefault();keys.add(k);if(k===" "&&!e.repeat&&!pauseRef.current)pulseRef.current=true;wakeAudio();}};
     const keyUp=(e:KeyboardEvent)=>keys.delete(e.key.toLowerCase());
     const direction=(s:ExpeditionSnapshot)=>{
       if(pointer.active){const dx=pointer.x-s.player.x,dy=pointer.y-s.player.y;if(Math.abs(dx)<4&&Math.abs(dy)<4)return 0;return [3,4,5,6,7,8,1,2][(Math.round(Math.atan2(dy,dx)/(Math.PI/4))+8)%8];}
@@ -61,6 +65,10 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
         accumulator-=1000/60;
         const pulse=!neutral&&(pulseRef.current||keys.has(" "));
         session.step(neutral?0:direction(s)|(pulse?16:0));pulseRef.current=false;
+        if(tutorialActive.current){const next=session.snapshot();travel+=Math.hypot(next.player.x-s.player.x,next.player.y-s.player.y);
+         if(trainingStep===0&&travel>=12){trainingStep=1;setCoach(1);}
+         if(trainingStep===1&&next.pulses>0){trainingStep=2;setCoach(2);}
+        }
         if(past&&!past.snapshot().finished)past.step(pastInputs[s.tick]??0);
         for(const e of session.events.slice(seen)) {
           if(e.type==="kill")tone(160,.06);
@@ -77,7 +85,7 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
     const blur=()=>{advance(performance.now(),!focused);focused=false;keys.clear();up();pulseRef.current=false;pauseRef.current=true;setPaused(true);};
     const focus=()=>{focused=true;};
     const visibility=()=>document.hidden?blur():focus();
-    const finish=async()=>{done=true;const replay=session.replay();let hash="";try{hash=await expeditionReplayHash(replay);}catch{/* Local play still works. */}if(!disposed)onFinish({result:session.result(),replay,hash});};
+    const finish=async()=>{done=true;if(tutorialActive.current&&trainingStep===2)tutorialComplete.current?.();const replay=session.replay();let hash="";try{hash=await expeditionReplayHash(replay);}catch{/* Local play still works. */}if(!disposed)onFinish({result:session.result(),replay,hash});};
     const loop=(now:number)=>{
       if(done||disposed)return;
       advance(now,!focused||document.hidden);setCount(Math.max(0,Math.ceil((begins-now)/600)));
@@ -111,13 +119,14 @@ export function ExpeditionArena({config,sound,ghost,onFinish,onExit,onSound,rese
     <div className="arena-window">
       <canvas ref={canvasRef} className="arena-canvas" aria-label={wide?"Landscape flight. Move with WASD/arrows or drag. Guns fire right. Space activates Pulse.":"Portrait flight. Move with WASD/arrows or drag. Guns fire up. Space activates Pulse."}/>
       <div className="flight-location"><span>{district.route[sector]}</span><small>{restorationStage>0?REPAIR_NAMES[restorationStage]+" / ":""}{district.name}{config.chapter===3?` / TIDE ${Math.floor(hud.tick/360)%2===0?(wide?"↓":"→"):(wide?"↑":"←")}`:""}</small></div>
+      {coach!==null&&<aside className="flight-coach" aria-label="Flight school guidance"><p className="eyebrow">MOTH / FLIGHT SCHOOL · {coach+1} OF 3</p><h2>{['MAKE YOUR FIRST MOVE.','CLEAR SOME SPACE.','BRING YOUR GHOST HOME.'][coach]}</h2><p role="status">{[wide?'Steer with WASD, arrows, or drag your ship. Your guns fire right automatically.':'Drag your ship or use arrows to steer. Your guns fire up automatically.','Press Space or tap the lightning button below to Pulse. It clears nearby bullets and recharges.','Movement and Pulse checked. Grab gold cells to upgrade; mint pods repair hull. Beat the boss and survive extraction to clear the chapter.'][coach]}</p><button onClick={skipCoach}>HIDE TIPS / KEEP FLYING</button></aside>}
       {jobLabel&&<div className="job-flight-objective">{jobLabel}</div>}
       {boss&&<div className={`boss-readout phase-${boss.phase}`}>
         <div><span>{chapter.boss}</span><b>{hp}% <small>PHASE {boss.phase}</small></b></div>
         <div className="boss-health" role="progressbar" aria-label={`${chapter.boss} health`} aria-valuemin={0} aria-valuemax={boss.maxHp} aria-valuenow={boss.hp}><i style={{transform:`scaleX(${boss.hp/boss.maxHp})`}}/></div>
         <small>{boss.phase===2?"ARMOR BROKEN / ATTACKS ACCELERATING":"BREAK THE SIGNAL"} · {boss.hp} / {boss.maxHp} HP</small>
       </div>}
-      {count===0&&!paused&&sectorAge<150&&<div className="sector-banner" key={sector}><small>{sector===2?"BOSS CONTACT":`SECTOR 0${sector+1}`}</small><h2>{sector===2?chapter.boss:district.route[sector]}</h2><p>{sector===2?"Stay on target. Watch the warning lanes.":district.cue}</p></div>}
+      {coach===null&&count===0&&!paused&&sectorAge<150&&<div className="sector-banner" key={sector}><small>{sector===2?"BOSS CONTACT":`SECTOR 0${sector+1}`}</small><h2>{sector===2?chapter.boss:district.route[sector]}</h2><p>{sector===2?"Stay on target. Watch the warning lanes.":district.cue}</p></div>}
       {count>0&&<div className="launch-countdown"><span>{chapter.name} / {district.name}</span><strong key={count}>{count}</strong><small>{wide?"FLY RIGHT / WASD TO STEER":"FLY UP / DRAG TO STEER"} · SPACE / TAP TO PULSE</small><p>{district.twist}</p></div>}
       {paused&&<div className="flight-paused"><span>FLIGHT PAUSED · {chapter.name}</span><h2>HOLD YOUR<br/>FLIGHT LINE.</h2><dl className="pause-stats"><div><dt>SCORE</dt><dd>{hud.score.toLocaleString()}</dd></div><div><dt>CHAIN</dt><dd>×{Math.max(1,hud.combo)}</dd></div><div><dt>SEC LEFT</dt><dd>{seconds}</dd></div><div><dt>COURIERS</dt><dd>{hud.rescues}/3</dd></div></dl><p className="pause-twist"><Icon name="bolt" size={16}/><span><b>{district.name}</b> · {district.twist}</span></p><button className="pause-resume" onClick={togglePause}><Icon name="play" size={22}/>RESUME FLIGHT<Keycap>ESC</Keycap></button><button className="pause-exit" onClick={onExit}><Icon name="home" size={18}/>RETURN TO HANGAR</button></div>}
       {reservationExpires&&<p className="pit-flight-timer">{reservedSeconds>0?`ENTRY HELD / ${Math.floor(reservedSeconds/60)}:${String(reservedSeconds%60).padStart(2,'0')} · pauses still count`:'ENTRY EXPIRED / check outcome in Crown Pit'}</p>}

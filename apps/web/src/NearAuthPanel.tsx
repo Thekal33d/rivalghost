@@ -1,3 +1,4 @@
+import {withOperation} from './operation-state';
 import {isNearAuthReturn} from './near-auth-return';
 import {useEffect,useState} from 'react';
 import {socialRequest,IDENTITY_KEY} from './social-client';
@@ -30,7 +31,7 @@ export function NearAuthPanel({hasPilot,connected=false,onChanged}:{hasPilot:boo
   }).catch(e=>{if(alive)setMessage(e.message);}).finally(()=>{if(alive)setBusy(false);});
   return()=>{alive=false;};
  },[onChanged]);
- async function connect(mode:'link'|'signin'){setBusy(true);setMessage('Opening NEAR Auth. After the popup, we’ll verify your pilot securely…');try{await(await import('./near-auth-client')).beginNearLogin(mode);}catch(e){setMessage((e as Error).message);setBusy(false);}}
+ async function connect(mode:'link'|'signin'){setBusy(true);setMessage('Opening NEAR Auth. After the popup, we’ll verify your pilot securely…');try{await withOperation('Connecting your NEAR identity',async()=>{await(await import('./near-auth-client')).beginNearLogin(mode);});}catch(e){setMessage((e as Error).message);setBusy(false);}}
  return <div className="near-auth-panel">
   <p className="eyebrow">NEAR AUTH / TESTNET</p><p role="status">{message}</p>
   {hasPilot&&<button className="pilot-save" disabled={!enabled||busy} onClick={()=>void connect('link')}>LINK THIS PILOT TO NEAR ↗</button>}
@@ -49,10 +50,10 @@ export function NearAuthPanel({hasPilot,connected=false,onChanged}:{hasPilot:boo
      <p>Authorize this browser for 12 hours to spend game CR, trade cosmetics and reserve flights. It cannot transfer NEAR. On-chain balances start separately from demo balances.</p>
     </>}
     {gameSession.state==='unavailable'?<button className="pilot-save" disabled={busy} onClick={()=>setRevision(v=>v+1)}>CHECK SESSION STATUS →</button>:<button className="pilot-save" disabled={!enabled||!connected||busy||gameSession.state==='checking'} onClick={()=>{
-     setBusy(true);void import('./guest-key').then(m=>m.getOrCreatePilotKey()).then(k=>import('./near-auth-client').then(m=>m.beginEconomySession(k.publicKey))).catch(e=>{setMessage(e.message);setBusy(false);});
+     setBusy(true);void withOperation('Authorizing your game session',()=>import('./guest-key').then(m=>m.getOrCreatePilotKey()).then(k=>import('./near-auth-client').then(m=>m.beginEconomySession(k.publicKey)))).catch(e=>{setMessage(e.message);setBusy(false);});
     }}>{gameSession.state==='checking'?'CHECKING SESSION…':'AUTHORIZE GAME SESSION →'}</button>}
    </>}
-   <button className="text-button" disabled={!connected||busy} onClick={()=>{setBusy(true);void import('./chain-client').then(m=>m.recoverChainAction()).then(r=>{setMessage('Confirmed on NEAR: '+r.transactionHash);setRevision(v=>v+1);}).catch(e=>setMessage(e.message)).finally(()=>setBusy(false));}}>RECOVER PENDING TRANSACTION</button>
+   <button className="text-button" disabled={!connected||busy} onClick={()=>{setBusy(true);void withOperation('Recovering your pending transaction',()=>import('./chain-client').then(m=>m.recoverChainAction())).then(r=>{setMessage('Confirmed on NEAR: '+r.transactionHash);setRevision(v=>v+1);}).catch(e=>setMessage(e.message)).finally(()=>setBusy(false));}}>RECOVER PENDING TRANSACTION</button>
   </>}
   <small>Linking keeps your pilot identity. Signing in never merges balances or grants extra credits.</small>
  </div>;

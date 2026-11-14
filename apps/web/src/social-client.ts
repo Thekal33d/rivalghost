@@ -1,3 +1,4 @@
+import {withOperation,requestTitle,operationStage} from './operation-state';
 import {DEFAULT_AVATAR,validateAvatar,validateUsername,type SocialProfile,type PilotAvatar} from '@rivalghost/game-data';
 import type {ExpeditionReplay} from '@rivalghost/sim';
 import {getOrCreatePilotKey,signGuestChallenge} from './guest-key';
@@ -6,7 +7,16 @@ export interface BoardRow {rank:number;id:string;pilot:SocialProfile;score:numbe
 export interface Board {rivals:SocialProfile[];rows:BoardRow[];yourRank:number|null;total:number;day:string;retentionDays:number}
 export const IDENTITY_KEY='rivalghost.pilot-profile.v1';
 export function cachedIdentity():SocialProfile|null{try{const p=JSON.parse(localStorage.getItem(IDENTITY_KEY)??'null');return p&&/^[a-f0-9]{64}$/.test(p.id)?{id:p.id,username:validateUsername(p.username),avatar:validateAvatar(p.avatar)}:null;}catch{return null;}}
+const pendingMutations=new Map<string,Promise<any>>();
 export async function socialRequest(path:string,body?:unknown){
+ const title=body===undefined?undefined:requestTitle(path,body);
+ if(!title)return socialTransport(path,body);
+ const key=path+'|'+JSON.stringify(body),existing=pendingMutations.get(key);if(existing)return existing;
+ const promise=withOperation(title,()=>socialTransport(path,body));pendingMutations.set(key,promise);
+ try{return await promise;}finally{if(pendingMutations.get(key)===promise)pendingMutations.delete(key);}
+}
+async function socialTransport(path:string,body?:unknown){
+ if(body!==undefined)operationStage(path.includes('settle')||(body as {action?:string}|null)?.action==='claim'?'Checking your recorded flight and waiting for its result…':'Sending your request and waiting for confirmation…');
   if(body!==undefined&&['economy/join','economy/start','economy/defend','economy/settle','workshop/action'].includes(path)){const result=await(await import('./chain-client')).chainRequest(path,body);if(result.handled)return result.value;}
   let response:Response;
   try{response=await fetch('/api/guest/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',headers:body===undefined?{}:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(15000)});}catch{throw new Error('The game service is unavailable. Your local progress is safe.');}

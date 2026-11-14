@@ -1,0 +1,20 @@
+import {useState} from 'react';
+import {CHAPTERS} from '@rivalghost/game-data';
+import {Ship,Keycap} from './Brand';
+import {GameDialog} from './GameDialog';
+import {FEATURES,featureOpen,clearedChapters,type Feature,type Journey} from './player-journey';
+import type {FlightProfile} from './flight-profile';
+export function WelcomeBriefing({onStart,onSkip}:{onStart:()=>void;onSkip:()=>void}){
+ const [step,setStep]=useState(0);
+ return <GameDialog title={step?'MOVE. PULSE. MAKE YOUR MARK.':'YOUR GHOST STARTS HERE.'} eyebrow={`MOTH / FLIGHT SCHOOL · ${step+1} OF 2`} onClose={onSkip}>
+  <Ship className="briefing-ship"/><p>{step?'Your guns fire automatically. Steer out of danger, then use Pulse to clear nearby bullets. I’ll guide you during a real Chapter 01 flight.':'HOUND controls the signal. Fly a one-minute mission, record your best line, and come back to beat your ghost. Every chapter opens more of the city.'}</p>
+  {step?<div className="briefing-controls"><p><Keycap>WASD</Keycap> / arrows or drag to steer</p><p><Keycap>SPACE</Keycap> / tap the lightning button to Pulse</p><p>Mint pods rescue couriers and repair hull. Gold cells upgrade your gun.</p></div>:<p className="journey-note">Start free. You can set up a wallet when you reach the Workshop.</p>}
+  <button className="pilot-save" onClick={step?onStart:()=>setStep(1)}>{step?'START GUIDED FLIGHT':'SHOW ME THE CONTROLS'}</button><button className="text-button" onClick={onSkip}>I’LL EXPLORE ON MY OWN</button>
+ </GameDialog>;
+}
+export function UnlockGate({feature,onClose,onFlight}:{feature:Feature;onClose:()=>void;onFlight:()=>void}){const f=FEATURES.find(f=>f.id===feature)!;return <GameDialog title={f.name} eyebrow="YOUR NEXT CLEAR OPENS MORE" onClose={onClose}><p>{f.description}</p><p className="unlock-requirement">{f.reward}</p><p>Story flights are free. This unlock is saved on this device.</p><button className="pilot-save" onClick={onFlight}>BACK TO YOUR NEXT MISSION</button></GameDialog>;}
+export function JourneyPanel({profile,journey,onTutorial,onNext}:{profile:FlightProfile;journey:Journey;onTutorial:()=>void;onNext:()=>void}){
+ const [expanded,setExpanded]=useState(false),clears=clearedChapters(profile),next=FEATURES.find(f=>!featureOpen(f.id,profile,journey));
+ return <section className="journey-panel" aria-label="Pilot journey"><div className="journey-lead"><p className="eyebrow">PILOT JOURNEY / {clears} OF 10 SIGNALS BROKEN</p><h2>{clears===10?'THE CITY KNOWS YOUR NAME.':next?next.reward.toUpperCase():'CHASE YOUR NEXT MEDAL.'}</h2><p>{next?`Next up: ${FEATURES.filter(f=>f.reward===next.reward).map(f=>f.name).join(' + ')}.`:'Replay chapters for rescue and no-damage medals, then take your best line to a rival.'}</p>{journey.legacy&&<small>Returning pilot access retained. Your campaign medals are unchanged.</small>}</div><div className="journey-actions"><button className="pilot-save" onClick={onNext}>{clears===10?'CHOOSE A CHAPTER':'PREPARE NEXT MISSION'}</button><button className="text-button" onClick={onTutorial}>REPLAY FLIGHT SCHOOL</button><button className="text-button" aria-expanded={expanded} onClick={()=>setExpanded(v=>!v)}>{expanded?'HIDE':'VIEW'} UNLOCK ROADMAP</button></div>{expanded&&<ol className="journey-roadmap">{FEATURES.map(f=><li key={f.id} className={featureOpen(f.id,profile,journey)?'is-unlocked':''}><span>{featureOpen(f.id,profile,journey)?'✓':String(f.clears).padStart(2,'0')}</span><div><strong>{f.name}</strong><p>{f.reward} · {f.description}</p></div></li>)}<li><span>10</span><div><strong>Reclaim the full signal</strong><p>All {CHAPTERS.length} story chapters cleared. Chase all 30 medals for Original Ace.</p></div></li></ol>}</section>;
+}
+export function UnlockRewards({features}:{features:readonly {id:string;name:string;description:string}[]}){if(!features.length)return null;return <aside className="unlock-rewards" aria-label="New unlocks" role="status"><p className="eyebrow">NEW DOORS OPEN</p>{features.map(f=><div key={f.id}><strong>✓ {f.name}</strong><p>{f.description}</p></div>)}</aside>;}

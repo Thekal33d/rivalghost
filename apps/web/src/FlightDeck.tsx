@@ -1,3 +1,4 @@
+import type {Feature} from './player-journey';
 import { useEffect } from "react";
 import { CHAPTERS, RIGS, type Rig } from "@rivalghost/game-data";
 import { ArcadeButton, EnemyDart, Hound, Icon, Keycap, MedalDiamonds, Ship } from "./Brand";
@@ -12,7 +13,7 @@ const STAT_LABELS = ["Power", "Spread", "Defense"];
 export function useEnterToLaunch(onLaunch: () => void) {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.key !== "Enter" || e.repeat) return;
+      if (e.key !== "Enter" || e.repeat || document.querySelector("dialog[open]")) return;
       const t = e.target as HTMLElement | null;
       if (t && t.closest("button,a,input,select,textarea,summary,[contenteditable]")) return;
       e.preventDefault(); onLaunch();
@@ -23,7 +24,8 @@ export function useEnterToLaunch(onLaunch: () => void) {
 }
 const QUOTES = ["“THAT SIGNAL KNOWS YOU.”", "“STAY OUT OF THE RED.”", "“MAKE IT REGRET IT.”"];
 
-export function FlightDeck({ mode, onMode, chapter, medals, rig, onRig, best, ghostReady, locked, grazes, onLaunch, onMap, onManual, manualOpen, dailyKey }: {
+export function FlightDeck({ dailyUnlocked=true,rigUnlocked=()=>true,onLocked,mode, onMode, chapter, medals, rig, onRig, best, ghostReady, locked, grazes, onLaunch, onMap, onManual, manualOpen, dailyKey }: {
+  dailyUnlocked?:boolean;rigUnlocked?:(rig:Rig)=>boolean;onLocked?:(feature:Feature)=>void;
   mode: "story" | "daily"; onMode: (m: "story" | "daily") => void; chapter: Chapter; medals: number;
   rig: Rig; onRig: (r: Rig) => void; best?: number; ghostReady: boolean; locked: boolean; grazes: number;
   onLaunch: () => void; onMap: () => void; onManual: () => void; manualOpen: boolean; dailyKey: string;
@@ -40,7 +42,7 @@ export function FlightDeck({ mode, onMode, chapter, medals, rig, onRig, best, gh
         <h1>STEAL YOUR<br/><em>GHOST</em> BACK.</h1>
         <div className="deck-modes" role="group" aria-label="Game mode">
           <button className="mode-pill" aria-pressed={!daily} onClick={() => onMode("story")}><Icon name="map" size={18}/><span>STORY</span><small>{CHAPTERS.length} CHAPTERS</small></button>
-          <button className="mode-pill" aria-pressed={daily} onClick={() => onMode("daily")}><Icon name="clock" size={18}/><span>DAILY</span><small>EXPERT · {dailyKey}</small></button>
+          <button className="mode-pill" aria-pressed={daily} aria-label={dailyUnlocked?undefined:"Daily signal locked: clear 2 story chapters"} onClick={() => dailyUnlocked?onMode("daily"):onLocked?.("daily")}><Icon name="clock" size={18}/><span>DAILY</span><small>{dailyUnlocked?`EXPERT · ${dailyKey}`:"CLEAR 2 CHAPTERS"}</small></button>
         </div>
       </div>
 
@@ -79,12 +81,12 @@ export function FlightDeck({ mode, onMode, chapter, medals, rig, onRig, best, gh
     </section>
 
     <aside className="deck-loadout" aria-label="Choose a ship rig">
-      <div className="deck-loadout-head"><h2>PICK YOUR RIG</h2><span>ALL FREE</span></div>
-      {RIGS.map(r => <button key={r.id} className="rig-card" aria-pressed={rig === r.id} onClick={() => onRig(r.id)}>
+      <div className="deck-loadout-head"><h2>PICK YOUR RIG</h2><span>UNLOCK THROUGH PLAY</span></div>
+      {RIGS.map(r => <button key={r.id} className="rig-card" aria-pressed={rig === r.id} aria-label={rigUnlocked(r.id)?undefined:`${r.name} locked: clear ${r.id==='needle'?1:2} story chapters`} onClick={() => rigUnlocked(r.id)?onRig(r.id):onLocked?.(r.id as Feature)}>
         {rig === r.id && <span className="rig-equipped"><Icon name="check" size={12}/>EQUIPPED</span>}
         <span className="rig-portrait"><Ship color={RIG_COLORS[r.id]}/></span>
         <span className="rig-info">
-          <b>{r.name}</b><small>{r.title.toUpperCase()}</small>
+          <b>{r.name}</b><small>{rigUnlocked(r.id)?r.title.toUpperCase():`LOCKED · CLEAR ${r.id==='needle'?1:2} CHAPTER${r.id==='needle'?'':'S'}`}</small>
           <span className="rig-stats">{RIG_STATS[r.id].map((v, i) => <span key={i} className="rig-stat" title={STAT_LABELS[i]}>
             <Icon name={STAT_ICONS[i]} size={15}/><span className="sr-only">{STAT_LABELS[i]} {v} of 3</span>
             {[0, 1, 2].map(n => <i key={n} className={n < v ? "on" : ""}/>)}
