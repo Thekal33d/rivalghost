@@ -1,0 +1,56 @@
+{
+  "checkedAt": "2026-11-14T06:02:55.476412+00:00",
+  "provider": "login.testnet.fast-auth.com",
+  "clientId": "np8paqIpMWmNbzT4xAvOOapZBjsOpptl",
+  "results": [
+    {
+      "case": "localhost control",
+      "redirectUri": "http://localhost:3000",
+      "responseMode": "query",
+      "httpStatus": 302,
+      "callbackMismatch": false,
+      "redirectPath": "/u/login/identifier"
+    },
+    {
+      "case": "configured public callback",
+      "redirectUri": "https://rivalghost.xyz/auth/callback",
+      "responseMode": "query",
+      "httpStatus": 403,
+      "callbackMismatch": true,
+      "redirectPath": ""
+    },
+    {
+      "case": "public root",
+      "redirectUri": "https://rivalghost.xyz",
+      "responseMode": "query",
+      "httpStatus": 403,
+      "callbackMismatch": true,
+      "redirectPath": ""
+    },
+    {
+      "case": "public root trailing slash",
+      "redirectUri": "https://rivalghost.xyz/",
+      "responseMode": "query",
+      "httpStatus": 403,
+      "callbackMismatch": true,
+      "redirectPath": ""
+    },
+    {
+      "case": "SDK-style public popup",
+      "redirectUri": "https://rivalghost.xyz",
+      "responseMode": "web_message",
+      "httpStatus": 403,
+      "callbackMismatch": true,
+      "redirectPath": ""
+    },
+    {
+      "case": "SDK-style localhost popup control",
+      "redirectUri": "http://localhost:3000",
+      "responseMode": "web_message",
+      "httpStatus": 302,
+      "callbackMismatch": false,
+      "redirectPath": "/u/login/identifier"
+    }
+  ],
+  "note": "Unauthenticated configuration probes only. No credentials, tokens or transactions submitted."
+}

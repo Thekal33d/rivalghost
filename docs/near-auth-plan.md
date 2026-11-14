@@ -44,3 +44,24 @@ Game relays persist signed bytes/hash before broadcast and reconcile the same tr
 The personal OIDC login and provider MPC delegate approval both completed. The finalized authorization receipt is `zsMkjS9bQHuBsQcTVnTVKRzuAP3S4orztEW1GrDhtJi`. A direct finalized `get_pilot` query confirmed 100 CR, session epoch 1 and expiry `2026-11-14T09:07:29.493Z`. See `docs/evidence/near-auth-live-testnet.json`. Human browser job/claim, second-device recovery and hosted callback validation remain open. Contract Wasm is unchanged at **98,677 bytes**.
 
 The follow-up UI shows active session, balance and local expiry only when the on-chain session key matches this browser and has not expired. It refreshes on window focus and after authorization; unavailable status requests a recheck rather than another authorization. The identity banner no longer asks an already-authorized user to authorize. Frontend typecheck/build pass; the active-state visual update still needs confirmation in the user’s signed-in browser.
+
+## November 14 hosted callback diagnosis
+
+The tutorial at https://docs.near.org/web3-apps/tutorials/near-auth points to the same NEAR Auth provider already configured here. Its React/JavaScript SDK wrapper differs from our custom OIDC identity flow, but the provider domain, testnet client ID and signing audience match the official testnet resources.
+
+The official JavascriptProvider uses popup login by default and redirect login when redirectUri is supplied. Its popup delegates to Auth0 SPA; the installed Auth0 SPA source sends response_mode=web_message with window.location.origin as the default redirect URI. A popup therefore still supplies a callback URL for the provider to validate.
+
+Unauthenticated control probes on November 14 compared six configurations. Both localhost:3000 requests (query redirect and SDK-style web_message popup) returned 302 to the login identifier page. The configured https://rivalghost.xyz/auth/callback, apex origin, apex with trailing slash, and SDK-style apex popup each returned 403 with Callback URL mismatch. No user credentials, signing payload, token exchange or on-chain transaction was involved. Full sanitized results: docs/evidence/near-auth-callback-diagnostic.json. This is a configuration preflight, not an end-to-end SDK browser login test.
+
+Auth0 documents this error as a redirect_uri not matching the selected application's Allowed Callback URLs. We cannot read the provider's private application settings; the error and control comparison establish that the tested public URLs are rejected while localhost is accepted. DNS, Caddy routing, the economy contract and sponsorship balance do not explain this provider-side callback rejection. Changing only the SDK, callback path or popup mode does not solve the observed issue.
+
+The administrator of the shared testnet Auth0 application must add https://rivalghost.xyz/auth/callback to Allowed Callback URLs and configure https://rivalghost.xyz as an Allowed Web Origin. Add the apex origin as a callback too if switching to the SDK's default popup. Alternatively, obtain a dedicated client on the same NEAR Auth testnet provider with those settings. Preserve the provider/identity mapping so existing pilots keep their accounts. Creating an unrelated Auth0 tenant is not a drop-in replacement for the deployed NEAR Auth guard.
+
+The docs advertise no approval for testnet, but the pages reviewed do not provide a self-service registration path for arbitrary hosted testnet callbacks. The documented production-access form concerns mainnet, so it should not be presented as an established testnet fix. Contact the NEAR Auth provider/application administrator; this does not specifically require a hackathon organizer.
+
+References:
+- https://docs.auth.near.org/resources/testnet
+- https://docs.auth.near.org/sdks/javascript-provider
+- https://docs.auth.near.org/home/apply
+- https://github.com/Peersyst/fast-auth/blob/main/packages/providers/javascript/src/provider.ts
+- https://support.auth0.com/center/s/article/Callback-URL-Mismatch-Error-Is-Not-in-the-List-of-Allowed-Callback-URLs
