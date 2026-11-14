@@ -39,3 +39,9 @@
 .economy-guide-button:hover{background:rgba(255,209,102,.16)}
 .pit-header-side .economy-guide-button{align-self:flex-end}
 @media(max-width:760px){.pit-header-side .economy-guide-button{align-self:flex-start}}
+
+/* A coach can never strand a phone behind an overlay with off-screen controls. */
+.walkthrough-card{max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain}
+.walkthrough-actions{position:sticky;bottom:-18px;background:var(--panel);padding-block:8px}
+.walkthrough-x{min-width:44px;min-height:44px}
+@media(max-width:639px){.walkthrough-card{transition:none}.walkthrough-card h2{font-size:24px}.walkthrough-card p{font-size:13px}.walkthrough-top{letter-spacing:1px}}

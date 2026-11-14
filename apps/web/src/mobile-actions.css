@@ -1,0 +1,89 @@
+.mobile-details-trigger{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;padding:10px 14px;margin:8px 0;border:1px solid var(--line-bright);border-radius:10px;background:var(--panel-top);color:var(--mint);font:700 12px var(--ui);letter-spacing:.06em;text-align:left}
+.game-shell dialog.game-dialog:not([open]){display:none}
+.game-shell dialog.mobile-sheet{max-height:calc(100dvh - 24px);width:calc(100vw - 24px);padding:24px 18px;overscroll-behavior:contain}
+.mobile-sheet .dialog-close{position:sticky;top:0;float:right;z-index:2;min-width:44px;min-height:44px;background:var(--panel);border-radius:50%}
+.result-primary-actions{display:contents}
+.mobile-choice{display:none}
+@media(max-width:760px){
+ .screen-result .campaign-result{display:flex;flex-direction:column;gap:8px;margin:14px auto 0;padding-bottom:180px;width:100%;max-width:500px}
+ .campaign-result>.result-detail{order:0;width:100%;min-width:0;text-align:center}
+ .campaign-result>.mobile-details-trigger{order:1}
+ .campaign-result>.mobile-sheet{order:2}
+ .campaign-result .result-detail>.eyebrow{margin:10px 0 4px;font-size:10px}
+ .campaign-result .result-detail h1{font-size:clamp(32px,8vw,44px);line-height:1;margin:6px 0}
+ .campaign-result .result-detail h1 br{display:none}
+ .campaign-result .final-score{font-size:clamp(46px,12vw,62px);padding:12px!important;margin:10px 0!important}
+ .campaign-result .score-gap{font-size:13px;margin:8px 0;line-height:1.4}
+ .campaign-result .result-stats{margin:10px 0;padding:8px 0}.campaign-result .result-stats dd{font-size:23px}
+ .campaign-result .medal-results{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0}.campaign-result .medal-results p{font-size:10px;margin:0}
+ .screen-result .result-primary-actions{position:fixed;z-index:65;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line-bright);box-shadow:0 -8px 24px #07101466}
+ .result-primary-actions .primary-button,.result-primary-actions .next-chapter{width:100%;margin:0;min-height:50px;padding:10px;font-size:14px}
+ .result-primary-actions .next-chapter{grid-column:2;grid-row:1;background:var(--mint);color:var(--bg);font-weight:800}
+ .result-primary-actions .primary-button:only-child{grid-column:1/-1}
+ .result-primary-actions .result-actions{grid-column:1/-1;display:flex;justify-content:space-between;margin:0}
+ .result-primary-actions .text-button{margin:0;min-height:44px;font-size:10px}
+ .mobile-sheet .result-art{margin:10px 0;transform:none}.mobile-sheet .unlock-rewards{margin-bottom:0}
+ /* Put the work above the character poster; details can be opened explicitly. */
+ .workshop{gap:10px!important;margin-top:10px!important}.workshop-side{gap:8px!important;padding:0!important}
+ .workshop-side>.moth-card,.workshop-side>h1,.workshop-side>.workshop-side-note{display:none}
+ .workshop-side .workshop-balance{margin:0;padding:10px;gap:10px}.workshop-balance b{font-size:16px!important}.workshop-balance small{font-size:9px!important}
+ .workshop-side>.arcade-button{min-height:44px;font-size:17px;margin:0}
+ .workshop-side .economy-guide-button{min-height:36px;font-size:10px}
+ .workshop .workshop-tabs{display:flex!important;gap:4px;margin:0!important;padding:0!important;overflow:auto}
+ .workshop .workshop-tabs button{flex:0 0 auto;min-height:44px;padding:8px;font-size:10px}.workshop-tabs .icon{width:16px;height:16px}
+ .workshop .workshop-section-head{gap:8px;margin:12px 0}.workshop .workshop-section-head h2{font-size:23px}.workshop .workshop-section-head p{font-size:12px;margin:6px 0}
+ .mobile-choice{display:flex;gap:6px;width:100%;margin:8px 0}.mobile-choice button{flex:1;min-width:0;min-height:44px;padding:8px 4px;border:1px solid var(--line-bright);border-radius:8px;color:var(--text);background:var(--panel);font-size:11px}.mobile-choice button[aria-pressed=true]{color:var(--bg);background:var(--mint)}
+ .workshop .job-board{margin-top:6px;gap:0}.workshop .job-board article{padding:12px}.workshop .job-board article:not(.mobile-selected),.pit-targets article:not(.mobile-selected){display:none}
+ .workshop .job-board h3{font-size:25px;margin:4px 0}.workshop .job-board .job-top{display:none}.workshop .job-board p{margin:6px 0}.workshop .job-note{font-size:11px}.workshop .job-board .arcade-button{min-height:44px;font-size:18px;margin:8px 0 0}
+ .workshop .workshop-badges{display:none}.workshop .stepper{min-height:44px}.workshop .filter-label{display:none}
+ .workshop .blueprint-row article{padding:12px}.workshop .blueprint-row svg{max-height:52px}.workshop .blueprint-row h3{font-size:25px;margin:6px 0}
+ .screen-pit .pit-header{gap:10px;margin-block:10px}.screen-pit .pit-header h1{font-size:30px;margin:0}.screen-pit .pit-header>div>p{display:none}
+ .screen-pit .pit-header-side{gap:6px}.screen-pit .pit-wallets{gap:10px}.screen-pit .pit-wallet strong{font-size:24px}.screen-pit .pit-targets{gap:0}
+ .screen-pit .pit-target{padding:14px}.screen-pit .pit-target h2{font-size:30px;margin:6px 0}.screen-pit .pit-bounty{margin:8px 0}.screen-pit .pit-reason{font-size:12px;margin:8px 0}.screen-pit .pit-target-foot{margin:6px 0}
+ .screen-profile .pilot-studio{display:flex;flex-direction:column;gap:12px;margin-top:12px}.screen-profile .pilot-pass-wrap{display:none}.screen-profile .pilot-workshop{display:flex;flex-direction:column;gap:14px;padding:14px}.screen-profile .pilot-workshop h1{font-size:30px;margin:0}.screen-profile .pilot-workshop .pilot-eyebrow{display:none}.screen-profile .pilot-field{margin:10px 0}
+}
+@media(max-width:760px) and (max-height:650px){
+ .screen-result .campaign-result{padding-bottom:150px}.campaign-result .result-detail>.eyebrow{display:none}.campaign-result .result-detail h1{font-size:30px}.campaign-result .final-score{font-size:42px;margin:6px 0!important;padding:8px!important}.campaign-result .result-stats{margin:6px 0}.campaign-result .score-gap{font-size:11px}
+ .workshop .workshop-section-head h2{display:none}.workshop .job-board .job-owner,.workshop .job-board .job-note{display:none}
+}
+@media(max-width:760px){
+ .workshop .blueprint-row article:not(.mobile-selected){display:none}
+ .workshop-side>.arcade-button+.workshop-side-note{display:block;font-size:11px;margin:0;line-height:1.4}
+ .mobile-sheet .salvage-counter{margin:12px 0;padding:12px}.mobile-sheet .salvage-counter h2{font-size:24px}.mobile-sheet .salvage-actions{display:grid;gap:8px}
+ .mobile-sheet .hound-dossier{display:block;padding:12px}.mobile-sheet .dossier-portrait{max-height:160px}
+ .screen-result .game-dialog .result-art,.screen-result .game-dialog .unlock-rewards{display:block}
+}
+
+.pilot-account-panel{grid-column:1/-1}
+@media(max-width:760px){
+ .pilot-studio>.pilot-account-panel{order:-1}
+ .pilot-account-panel .pilot-account{margin:0;padding:14px}
+ .pilot-account-panel .pilot-account-head h2{font-size:26px}
+ .pilot-account-panel .pilot-account p{font-size:12px;line-height:1.45;margin:8px 0}
+ .pilot-account-panel .device-wallet-panel{margin-top:12px;padding-top:12px}
+ .pilot-account-panel .pilot-save,.pilot-account-panel .pilot-account-save{min-height:44px}
+}
+@media(max-width:760px){
+ .top-bar-right{gap:5px}.top-brand .logo-mark{width:34px;height:34px}.top-bar .pilot-chip{padding:0;min-width:44px}.top-bar .medal-count{padding:0 7px 0 3px;gap:3px;height:40px}.top-bar .medal-count-icon{width:22px;height:22px}
+ .workshop .workshop-tabs{flex-wrap:nowrap}.workshop .workshop-tabs button{height:44px;flex-direction:row;gap:4px;letter-spacing:.4px;white-space:nowrap}
+ .workshop-balance>span{padding:7px 4px;gap:2px;min-height:55px}.workshop-balance>span>.icon{display:none}
+ .workshop .workshop-main{gap:8px}.workshop .job-board{grid-template-columns:1fr}.workshop .job-board article{gap:4px;padding-bottom:16px}
+ .screen-workshop .workshop,.screen-pit .crown-pit{padding-bottom:90px}
+ .workshop .job-board .mobile-selected>.arcade-button,.screen-pit .pit-target.mobile-selected>.arcade-button{position:fixed;z-index:65;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom));width:calc(100% - 32px);height:52px;min-height:52px;margin:0;box-shadow:0 0 0 12px var(--bg),0 -16px 30px var(--bg)}
+ .screen-pit .pit-header{padding-bottom:0}.screen-pit .pit-header h1{font-size:26px;line-height:1}.screen-pit .pit-target{gap:6px}.screen-pit .pit-bounty{padding:8px;margin:0}.screen-pit .pit-bounty strong{font-size:34px}
+ .screen-pit .pit-target h2{font-size:27px;margin:0}.screen-pit .pit-target-top{font-size:9px}.screen-pit .pit-reason{margin:4px 0}.screen-pit .pit-score b{font-size:23px}
+}
+@media(max-width:760px){
+ .workshop-side{display:grid!important;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:8px!important}
+ .workshop-side .workshop-balance{padding:0;gap:4px}.workshop-side .economy-guide-button{width:44px;height:44px;min-height:44px;padding:0;justify-content:center;font-size:0}
+ .workshop-side>.arcade-button,.workshop-side>.workshop-side-note{grid-column:1/-1}
+ .workshop-balance b{font-size:14px!important}.workshop-balance small{font-size:8px!important;letter-spacing:.5px}
+ .workshop .workshop-section-head{margin:4px 0}.workshop .filter-group{min-width:0}.workshop .stepper{height:44px}
+ .screen-pit .pit-header-side{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}
+ .screen-pit .pit-header-side .economy-guide-button{height:44px;width:44px;padding:0;font-size:0;justify-content:center}
+ .screen-pit .pit-wallets{gap:6px}.screen-pit .wallet-pill{padding:4px 8px;gap:5px}.screen-pit .wallet-pill b{font-size:21px}.screen-pit .wallet-pill small{font-size:9px}
+ .pilot-account-panel,.pilot-account-panel .pilot-account,.pilot-account-panel .device-wallet-panel{min-width:0;max-width:100%;width:100%;box-sizing:border-box}
+ .pilot-account-panel button,.pilot-account-panel input{max-width:100%;min-width:0;box-sizing:border-box;white-space:normal}
+ .pilot-account-panel .pilot-account{padding-bottom:90px}
+ .pilot-account-panel .device-wallet-panel>.pilot-save{position:fixed;z-index:65;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom));width:calc(100% - 32px);min-height:50px;margin:0;box-shadow:0 0 0 12px var(--bg),0 -16px 30px var(--bg)}
+}

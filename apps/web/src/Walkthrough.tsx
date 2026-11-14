@@ -1,10 +1,11 @@
+import {walkthroughPosition} from './walkthrough-position';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ArcadeButton, Icon } from "./Brand";
 import { FEATURES, type Feature } from "./player-journey";
 import type { Tour } from "./tours";
 
 type Rect = { top: number; left: number; width: number; height: number };
-const PAD = 8, GAP = 16, CARD_W = 360;
+const PAD = 8, CARD_W = 360;
 
 /** Finds the step's target, waiting briefly for screens that load their content. */
 function useTargetRect(selector: string | undefined, step: number) {
@@ -18,7 +19,7 @@ function useTargetRect(selector: string | undefined, step: number) {
       if (!el) { if (tries++ < 90) frame = requestAnimationFrame(measure); return; }
       const r = el.getBoundingClientRect();
       if (!r.width && !r.height) { if (tries++ < 90) frame = requestAnimationFrame(measure); return; }
-      if (!scrolled) {
+      if (!scrolled && innerWidth >= 640) {
         scrolled = true;
         const inView = r.top >= 80 && r.bottom <= innerHeight - 40;
         if (!inView) { el.scrollIntoView({ block: r.height > innerHeight * .6 ? "start" : "center", behavior: "auto" }); frame = requestAnimationFrame(measure); return; }
@@ -31,20 +32,6 @@ function useTargetRect(selector: string | undefined, step: number) {
     return () => { cancelAnimationFrame(frame); removeEventListener("resize", update); removeEventListener("scroll", update, true); };
   }, [selector, step]);
   return rect;
-}
-
-/** Places the card beside the spotlight where it fits, otherwise centered. */
-function cardPosition(rect: Rect | null, card: { w: number; h: number }) {
-  const vw = innerWidth, vh = innerHeight, w = Math.min(CARD_W, vw - 32);
-  if (!rect || vw < 640) return rect && vw < 640
-    ? { left: 16, top: rect.top + rect.height + GAP + card.h < vh ? rect.top + rect.height + GAP : Math.max(16, rect.top - GAP - card.h), width: vw - 32 }
-    : { left: (vw - w) / 2, top: Math.max(16, (vh - card.h) / 2), width: w };
-  const clampX = (x: number) => Math.min(Math.max(16, x), vw - w - 16), clampY = (y: number) => Math.min(Math.max(16, y), vh - card.h - 16);
-  if (rect.top + rect.height + GAP + card.h <= vh - 16) return { left: clampX(rect.left), top: rect.top + rect.height + GAP, width: w };
-  if (rect.top - GAP - card.h >= 16) return { left: clampX(rect.left), top: rect.top - GAP - card.h, width: w };
-  if (rect.left + rect.width + GAP + w <= vw - 16) return { left: rect.left + rect.width + GAP, top: clampY(rect.top), width: w };
-  if (rect.left - GAP - w >= 16) return { left: rect.left - GAP - w, top: clampY(rect.top), width: w };
-  return { left: (vw - w) / 2, top: clampY(vh - card.h - 24), width: w };
 }
 
 export function Walkthrough({ tour, onDone, onTipsOff }: { tour: Tour; onDone: () => void; onTipsOff: () => void }) {
@@ -68,7 +55,7 @@ export function Walkthrough({ tour, onDone, onTipsOff }: { tour: Tour; onDone: (
     };
     addEventListener("keydown", key, true); return () => removeEventListener("keydown", key, true);
   }, [last, step, onDone]);
-  const pos = cardPosition(rect, size);
+  const pos = walkthroughPosition(rect, size, innerWidth, window.visualViewport?.height ?? innerHeight);
   return <div className="walkthrough" role="presentation">
     {rect ? <div className="walkthrough-spot" style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }} aria-hidden="true"/> : <div className="walkthrough-dim" aria-hidden="true"/>}
     <div className="walkthrough-block" aria-hidden="true" onClick={e => e.stopPropagation()}/>
@@ -94,7 +81,7 @@ const ECONOMY_SLIDES = [
 /** The economy primer on its own, reopenable from the Workshop and Crown Pit. */
 export function EconomyGuide({ onClose }: { onClose: () => void }) {
   const [slide, setSlide] = useState(0), ref = useRef<HTMLDialogElement>(null), titleId = useId();
-  useEffect(() => { const d = ref.current!, prev = document.activeElement as HTMLElement | null; d.showModal(); return () => { d.close(); prev?.focus?.(); }; }, []);
+  useEffect(() => { const d = ref.current!, prev = document.activeElement as HTMLElement | null; d.showModal(); return () => { d.close(); prev?.focus?.({preventScroll:true}); }; }, []);
   const cur = ECONOMY_SLIDES[slide], last = slide === ECONOMY_SLIDES.length - 1;
   return <dialog ref={ref} className="game-dialog unlock-celebration" aria-labelledby={titleId} onCancel={e => { e.preventDefault(); onClose(); }}>
     <button className="dialog-close" aria-label="Close" onClick={onClose}>×</button>
@@ -115,7 +102,7 @@ export function UnlockCelebration({ features, onGo, onClose }: { features: Featu
   const economy = features.includes("workshop");
   const [slide, setSlide] = useState(economy ? 0 : ECONOMY_SLIDES.length);
   const ref = useRef<HTMLDialogElement>(null), titleId = useId(), list = FEATURES.filter(f => features.includes(f.id));
-  useEffect(() => { const d = ref.current!, prev = document.activeElement as HTMLElement | null; d.showModal(); return () => { d.close(); prev?.focus?.(); }; }, []);
+  useEffect(() => { const d = ref.current!, prev = document.activeElement as HTMLElement | null; d.showModal(); return () => { d.close(); prev?.focus?.({preventScroll:true}); }; }, []);
   const primary = economy ? "workshop" : list[0]?.id;
   const onSlides = slide < ECONOMY_SLIDES.length, cur = ECONOMY_SLIDES[slide];
   return <dialog ref={ref} className="game-dialog unlock-celebration" aria-labelledby={titleId} onCancel={e => { e.preventDefault(); onClose(); }}>

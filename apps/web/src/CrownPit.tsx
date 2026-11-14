@@ -1,3 +1,4 @@
+import {ResponsiveDetails} from './ResponsiveDetails';
 import {useEffect,useState} from 'react';
 import {CHAPTERS,type ChapterId} from '@rivalghost/game-data';
 import type {ExpeditionReplay} from '@rivalghost/sim';
@@ -7,10 +8,11 @@ export interface PitTarget {id:number;name:string;chapter:ChapterId;style:string
 interface Attempt {id:string;crown:number;expires:number;status:'live'|'settled'|'refunded'|'forfeited'}
 export interface PitLaunch {attempt:Attempt;target:PitTarget}
 interface Receipt {settled?:boolean;explorer?:string;transactionHash?:string;id:string;won:boolean;score:number;target:number;entryReturned:number;bountyPaid:number;bountyAdded:number;holderPaid:number;balance:number;hash:string}
-interface PitView {mode:'local-demo'|'onchain';balance:number|null;joined:boolean;houndBalance:number;reserve:number;total:number;spentToday:number;now:number;crowns:PitTarget[];attempt:Attempt|null;events:{id:string;kind:string;text:string;at:number;explorer?:string}[]}
+interface PitView {automation?:{enabled:boolean;dailyTransactionLimit:number};mode:'local-demo'|'onchain';balance:number|null;joined:boolean;houndBalance:number;reserve:number;total:number;spentToday:number;now:number;crowns:PitTarget[];attempt:Attempt|null;events:{id:string;kind:string;text:string;at:number;explorer?:string}[]}
 interface Lab {days:{day:number;player:number;hound:number;bounties:number;total:number;npcSpent:number}[];events:{id:string;kind:string;text:string}[]}
 export const PIT_PENDING='rivalghost.pit.pending.v1';
 export function CrownPit({onFly,onProfile,onEconomyGuide}:{onFly:(flight:PitLaunch)=>void;onProfile:()=>void;onEconomyGuide?:()=>void}){
+  const [selectedCrown,setSelectedCrown]=useState(0);
   const [data,setData]=useState<PitView|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[lab,setLab]=useState<Lab|null>(null),[notice,setNotice]=useState('');
   const [pending,setPending]=useState<{id:string;replay:ExpeditionReplay}|null>(()=>{try{const value=JSON.parse(localStorage.getItem(PIT_PENDING)??'null');return typeof value?.id==='string'&&value?.replay?value:null;}catch{return null;}});
   async function refresh(){setData(await socialRequest('economy'));}
@@ -34,10 +36,10 @@ export function CrownPit({onFly,onProfile,onEconomyGuide}:{onFly:(flight:PitLaun
     </header>
     {error&&<p className="social-error" role="alert">{error}</p>}{notice&&<p className="social-success" role="status">{notice}</p>}
     {pending&&<div className="pit-recovery"><h3>YOUR LAST FLIGHT HAS A RECEIPT TO CHECK.</h3><p>Retrying cannot pay twice. New ranked entries are forfeited after two minutes, including time spent paused or disconnected.</p><button className="social-primary" disabled={busy} onClick={()=>void action(async()=>{const r:Receipt=await socialRequest('economy/settle',pending);localStorage.removeItem(PIT_PENDING);setPending(null);setNotice(`Replay checked. Wallet after settlement: ${r.balance} CR.`);await refresh();})}>RECOVER RESULT</button><button className="text-button" onClick={()=>{localStorage.removeItem(PIT_PENDING);setPending(null);}}>DISMISS SAVED REPLAY</button></div>}
-    <div className="pit-grid">
+    <nav className="mobile-choice" aria-label="Choose Crown">{['PUP','HOUND','ALPHA'].map((name,i)=><button key={name} aria-pressed={selectedCrown===i} onClick={()=>setSelectedCrown(i)}>{name}</button>)}</nav><div className="pit-grid">
       <div className="pit-targets">{!data&&!error&&<p className="board-loading" role="status">Opening the Crown Pit…</p>}{data?.crowns.map(c=>{const reserved=data.attempt?.status==='live'&&data.attempt.crown===c.id;const canStart=data.joined&&c.active&&c.bounty>=20&&!c.you&&(!c.lock||reserved)&&(!data.attempt||data.attempt.status!=='live'||reserved)&&(reserved||data.now+120000<=c.expires)&&(reserved||(data.balance??0)>=10);const minutes=Math.max(0,Math.ceil((c.expires-data.now)/60000));
         const label=reserved?'RESUME RESERVED FLIGHT':c.you?'YOUR GHOST HOLDS THIS':c.lock?'FLIGHT IN PROGRESS':c.bounty<20?'WAITING FOR DEFENSE':!data.joined?'ACTIVATE PILOT':'ENTER FOR 10 CR';
-        return <article className={`pit-target tone-${crownTone[c.id%3]}`} key={c.id}>
+        return <article className={`pit-target tone-${crownTone[c.id%3]} ${selectedCrown===c.id?'mobile-selected':''}`} key={c.id}>
         <div className="pit-target-top"><span>{String(c.id+1).padStart(2,'0')} · {c.style.toUpperCase()}</span><span className={c.active?'pit-open':'pit-closed'}><i/>{c.active?'ROUND OPEN':'PURSE CLOSED'}</span></div>
         <h2>{c.name}<Icon name="crown" size={28}/></h2>
         <p className="pit-chips"><span>{CHAPTERS[c.chapter].name}</span><span><Icon name="spread" size={14}/>FAN</span></p>
@@ -47,14 +49,14 @@ export function CrownPit({onFly,onProfile,onEconomyGuide}:{onFly:(flight:PitLaun
         {c.you&&c.bounty===0&&!c.defended&&c.active?<><ArcadeButton tone="steel" size="sm" disabled={busy||(data.balance??0)<20||data.now+120000>c.expires} onClick={()=>void action(async()=>{await socialRequest('economy/defend',{crown:c.id});await refresh();setNotice('Defense funded with 20 CR. HOUND will evaluate it on its next tick.');})}><Icon name="shield" size={18}/>STAKE 20 CR / DEFEND</ArcadeButton><small>Optional. Keeping the payout costs nothing.</small></>:<ArcadeButton tone={canStart?'coral':'steel'} size="sm" disabled={busy||!canStart} onClick={()=>void start(c)}><Icon name={canStart?'play':'lock'} size={18}/>{label}</ArcadeButton>}
         <p className="pit-target-foot">{c.active?<><span><Icon name="clock" size={14}/>{minutes} MIN ROUND</span><span>2 MIN HOLD</span></>:<span>HOUND reopens when its budget allows.</span>}</p>
       </article>;})}</div>
-      <aside className="hound-dossier">
+      <ResponsiveDetails title="HOUND’s playbook" label="HOUND / BUDGET & RULES"><aside className="hound-dossier">
         <span className="dossier-label">HOUND / AUTONOMOUS RULE-BASED NPC</span>
-        <Hound className="dossier-portrait"/>
+        <p className="dossier-worker-status">{data?.mode==='onchain'?(data.automation?.enabled?`WORKER ACTIVE · UP TO ${data.automation.dailyTransactionLimit} ACTIONS / DAY`:'WORKER PAUSED'):'LOCAL SIMULATION'}</p><Hound className="dossier-portrait"/>
         <blockquote>“I WANT MY CROWN BACK. I’M NOT GOING BROKE FOR IT.”</blockquote>
         <div className="dossier-stats"><span><b>20 CR</b>RESERVE</span><span><b>2 MIN</b>BETWEEN ATTACKS</span></div>
         <div className="dossier-budget"><span>ATTACK BUDGET / UTC DAY</span><span>{data?.spentToday??0} / 60 CR</span></div>
         <div className="dossier-bar" role="progressbar" aria-label="HOUND attack budget used" aria-valuemin={0} aria-valuemax={60} aria-valuenow={data?.spentToday??0}><i style={{width:`${Math.min(100,(data?.spentToday??0)/60*100)}%`}}/></div>
-      </aside>
+      </aside></ResponsiveDetails>
     </div>
     <ul className="pit-rules">
       <li><Icon name="coin" size={22}/><span><b>10 CR</b>reserve a flight</span></li>

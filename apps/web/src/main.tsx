@@ -9,3 +9,5 @@ import "./reference-design.css";
 import "./wallet-welcome.css";
 import "./walkthrough.css";
 createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);
+
+import "./mobile-actions.css";

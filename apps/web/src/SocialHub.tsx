@@ -2,6 +2,7 @@ import {useEffect,useState,type ReactNode} from 'react';
 import {CHAPTERS,RIGS,PILOT_PALETTES,PILOT_HELMETS,PILOT_BADGES,DEFAULT_AVATAR,type SocialProfile,type ChapterId,type Rig} from '@rivalghost/game-data';
 import type {ExpeditionReplay} from '@rivalghost/sim';
 import {Pilot} from './Pilot';
+import {ResponsiveDetails} from './ResponsiveDetails';
 import {ArcadeButton,Icon} from './Brand';
 import {callsign,medalCount,flightKey,type FlightProfile} from './flight-profile';
 import {socialRequest,saveIdentity,ensurePilotSession,publishOnce,autoPostEnabled,setAutoPost,ghostLink,type Board,type SharedGhost} from './social-client';
@@ -13,7 +14,7 @@ export function PilotStudio({identity,profile,onSave,account}:{identity:SocialPr
   const HELMET_ICONS={crest:'bolt',antenna:'map',halo:'target'} as const,BADGE_ICONS={bolt:'bolt',star:'star',wings:'wings'} as const;
   return <section className="pilot-studio" aria-label="Customize your pilot">
     <div className="pilot-pass-wrap"><div className="pilot-pass"><span className="pilot-pass-shine" aria-hidden="true"/><div className="pilot-pass-top"><span>RIVALGHOST / PILOT LICENSE</span><Icon name="bolt" size={22}/></div><div className="license-portrait"><Pilot avatar={avatar}/></div><span className="license-rank">{callsign(profile)}</span><h1>{name||'YOUR NAME'}</h1><div className="license-stats"><span><Icon name="medal" size={20}/><b>{medalCount(profile)}</b>MEDALS</span><span><Icon name="map" size={20}/><b>{profile.medals.filter(m=>m&1).length}</b>/ 10 CHAPTERS</span></div><p>One pilot. A hundred rivalries.</p></div></div>
-    <form className="pilot-workshop" onSubmit={e=>{e.preventDefault();void save();}}>
+    <ResponsiveDetails title="Your callsign & look" label="CUSTOMIZE MY PILOT"><form className="pilot-workshop" onSubmit={e=>{e.preventDefault();void save();}}>
       <div className="pilot-col">
         <p className="deck-eyebrow pilot-eyebrow"><Icon name="target" size={18}/>MAKE YOURSELF RECOGNIZABLE.</p><h1>WHO’S ON<br/><em>THEIR SIX?</em></h1>
         <div className="pilot-field"><label className="username-label" htmlFor="pilot-username">CALLSIGN</label><div className="username-input"><span>@</span><input id="pilot-username" value={name} onChange={e=>{setName(e.target.value);setNotice('');}} placeholder="Your callsign" minLength={3} maxLength={16} pattern="[A-Za-z0-9_]{3,16}" required autoComplete="off" autoCapitalize="off" spellCheck={false} aria-describedby="username-help"/></div><p id="username-help" className="studio-help">3–16 letters, numbers or underscores. Unique on this server.</p></div>
@@ -24,11 +25,11 @@ export function PilotStudio({identity,profile,onSave,account}:{identity:SocialPr
       <div className="pilot-col">
         <fieldset><legend>02 / HELMET</legend><div className="style-options">{PILOT_HELMETS.map(h=><button type="button" key={h} aria-pressed={avatar.helmet===h} onClick={()=>{setAvatar(a=>({...a,helmet:h}));setNotice('');}}><Icon name={HELMET_ICONS[h as keyof typeof HELMET_ICONS]??'star'} size={26}/>{h.toUpperCase()}</button>)}</div></fieldset>
         <fieldset><legend>03 / FLIGHT INSIGNIA</legend><div className="style-options">{PILOT_BADGES.map(b=><button type="button" key={b} aria-pressed={avatar.badge===b} onClick={()=>{setAvatar(a=>({...a,badge:b}));setNotice('');}}><Icon name={BADGE_ICONS[b as keyof typeof BADGE_ICONS]??'star'} size={26}/>{b.toUpperCase()}</button>)}</div></fieldset>
-        {account}
         <label className="autopost-toggle"><input type="checkbox" checked={autoPost} onChange={e=>{setAutoPost(e.target.checked);setAutoPostState(e.target.checked);}}/><span><b>AUTO-POST MY SCORES</b>Finished story, daily and rival flights go to the Rivals board.</span></label>
         <p className="studio-help">All styles are free and cosmetic. Your username and avatar become public when saved here{autoPost?', and your finished flights post to the board automatically':'; scores are posted only when you choose'}. Keep this browser’s site data to retain access.</p>
       </div>
-    </form>
+    </form></ResponsiveDetails>
+    {account&&<div className="pilot-account-panel">{account}</div>}
   </section>;
 }
 export function ShareFlight({replay,mode,day,identity,onProfile,autoPost=false,postKey}:{replay:ExpeditionReplay;mode:'story'|'daily';day?:string;identity:SocialProfile|null;onProfile:()=>void;autoPost?:boolean;postKey?:string}){
@@ -39,7 +40,7 @@ export function ShareFlight({replay,mode,day,identity,onProfile,autoPost=false,p
   useEffect(()=>{if(auto&&identity&&!shared)void post();// Post once when the result opens or a username arrives.
   },[auto,identity?.id]);
   async function copy(){try{await navigator.clipboard.writeText(ghostLink(shared!.id));setCopied(true);}catch{setError('Copy the challenge address below to share it.');}}
-  return <div className="share-flight"><span className="eyebrow">{auto?'AUTO-POSTED TO RIVALS':'GIVE SOMEONE A SCORE TO CHASE.'}</span><h3>YOUR GHOST. THEIR PROBLEM.</h3><p>{auto?'Finished flights post to the leaderboard automatically, and each one comes with a link that challenges a friend on the same chapter, rig and seed.':'Post this flight to the board and send its ghost to a rival. They fly the same chapter, rig and seed.'}</p>
+  return <div className="share-flight"><span className="eyebrow">{shared?'POSTED TO RIVALS':busy?'POSTING TO RIVALS…':auto?'YOUR NEXT RIVAL STARTS HERE':'GIVE SOMEONE A SCORE TO CHASE.'}</span><h3>YOUR GHOST. THEIR PROBLEM.</h3><p>{auto?'Finished flights post to the leaderboard automatically, and each one comes with a link that challenges a friend on the same chapter, rig and seed.':'Post this flight to the board and send its ghost to a rival. They fly the same chapter, rig and seed.'}</p>
     {!identity?<button className="social-primary" onClick={onProfile}>{auto?'CHOOSE A USERNAME TO AUTO-POST →':'CHOOSE A USERNAME TO POST →'}</button>:!shared?(auto&&busy?<p className="social-success" role="status">Posting your score… the server is re-checking your replay.</p>:<button className="social-primary" disabled={busy} onClick={()=>void post()}>{busy?'CHECKING YOUR REPLAY…':error&&auto?'RETRY POSTING ↻':'POST SCORE + CREATE CHALLENGE ↗'}</button>):<><p className="social-success" role="status">Posted as @{shared.pilot.username} · {shared.score.toLocaleString()} points · replay checked</p><label className="share-link-label">CHALLENGE LINK<input readOnly value={ghostLink(shared.id)} onFocus={e=>e.target.select()}/></label><button className="social-primary" onClick={()=>void copy()}>{copied?'LINK COPIED ✓':'COPY “BEAT MY GHOST” LINK ↗'}</button>{['localhost','127.0.0.1'].includes(location.hostname)&&<small className="local-link-note">This is a local preview address. Friends can open these links once the same service is hosted publicly.</small>}</>}
     {error&&<p className="social-error" role="alert">{error}</p>}<small>Public score + replay. Off-chain; no rewards or gas fees. Shared flights expire after 30 days; daily links expire at UTC midnight.{autoPost&&' Turn auto-posting off on the Pilot screen.'}</small>
   </div>;
