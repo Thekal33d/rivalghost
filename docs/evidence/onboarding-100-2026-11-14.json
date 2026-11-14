@@ -1,0 +1,26 @@
+{
+  "network": "testnet",
+  "site": "https://rivalghost.xyz",
+  "deployedRelease": "dc84d67",
+  "newSponsoredAccountsPerUtcDay": 100,
+  "fundingPerNewAccountNear": "0.005",
+  "ordinarySignInsConsumeOnboardingAllowance": false,
+  "relayDailyRequestLimit": 500,
+  "relayDailyConservativeReservationNear": "20",
+  "automaticRefills": false,
+  "operatorTopUpNear": "1",
+  "operatorTopUpTransaction": "6mczgtxtwXFKHjGuWbcMwe4eaex6cC5foBGhSews89PJ",
+  "existingReservationsRetained": 4,
+  "aiDailyRequestsUnchanged": 4,
+  "aiPilotUsdUnchanged": 1,
+  "finiteEconomyLifetimeStarterPilotLimit": 1000,
+  "verification": {
+    "testsPassed": 181,
+    "mobileBrowsers": [
+      "Chromium",
+      "WebKit"
+    ],
+    "physicalIphoneTest": false,
+    "publicAssetsMatchTestedBuild": true
+  }
+}
