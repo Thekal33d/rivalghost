@@ -1,3 +1,4 @@
+import type {EmbeddedAuth} from './embedded-auth.js';
 import {isIP} from 'node:net';
 import {ChainError} from './chain-relay.js';
 import type {ChainEconomy} from './chain-economy.js';
@@ -18,7 +19,7 @@ async function json(req:IncomingMessage){const chunks:Buffer[]=[];let size=0;for
 export function proxyClientIp(remote:string|undefined,header:string|string[]|undefined,trust:boolean){
   return trust&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(remote??'')&&typeof header==='string'&&isIP(header)?header:remote??'unknown';
 }
-export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService,chain?:{economy:ChainEconomy;auth:ChainSessionAuth},options:{trustLoopbackProxy?:boolean}={}){
+export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService,chain?:{economy:ChainEconomy;auth:ChainSessionAuth},options:{trustLoopbackProxy?:boolean;embeddedAuth?:EmbeddedAuth}={}){
   const store=service.store,social=new SocialService(store),secure=store.origin.startsWith("https:");
   const cookie=(value:string,age=43200)=>`rg_guest=${value}; HttpOnly; SameSite=Strict; Path=/api/guest; Max-Age=${age}${secure?"; Secure":""}`;
   let economy:EconomyService|undefined;
@@ -30,6 +31,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
     const authBinding=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith('rg_near_flow='))?.slice(13)??'';
     const authCookie=(value:string)=>`rg_near_flow=${value}; HttpOnly; SameSite=Strict; Path=/api/guest/near-auth; Max-Age=600${secure?'; Secure':''}`;
     if(req.method==='GET'&&req.url==='/api/guest/chain/config'){send(res,200,chain?await chain.economy.status(guest):{enabled:false,mode:'local-demo'});return;}
+    if(req.method==='GET'&&req.url==='/api/guest/embedded/config'){send(res,200,{enabled:!!options.embeddedAuth,network:'testnet'});return;}
     if(req.method==='GET'&&req.url==='/api/guest/near-auth/config'){send(res,200,nearAuth?.status()??{enabled:false});return;}
     if(req.method==="GET"&&req.url==="/api/guest/me"){send(res,200,{guest,onlineAvailable:service.configured,authMethod:store.authMethod(session)});return;}
     if(req.method==="GET"&&req.url==="/api/guest/compute"){store.rate("compute-read",60);send(res,200,{...(compute?.status()??{enabled:false,dailyLimit:0,callsToday:0,source:"local"}),stake:await compute?.stake()??{state:"not-configured"}});return;}
@@ -54,6 +56,12 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
         if(typeof input.nonce!=="string"||typeof input.publicKey!=="string"||typeof input.signature!=="string")throw new Error("Invalid guest proof");
         const signed=store.authenticate(input.nonce,input.publicKey,input.signature);send(res,200,{guest:signed.guest,onlineAvailable:service.configured},cookie(signed.token));return;
       }
+      if(req.url?.startsWith('/api/guest/embedded/')){
+        const embedded=options.embeddedAuth;if(!embedded){send(res,503,{error:'Embedded wallets are not enabled here.'});return;}
+        if(req.url==='/api/guest/embedded/begin'){send(res,200,embedded.begin(input.accountId,clientIp));return;}
+        if(req.url==='/api/guest/embedded/complete'){const signed=await embedded.complete(input.nonce,input.signature);send(res,200,{guest:signed.guest,authMethod:'embedded',onlineAvailable:false},cookie(signed.token));return;}
+        send(res,404,{error:'Unknown wallet route'});return;
+      }
       if(req.url?.startsWith('/api/guest/near-auth/')){
         if(!nearAuth){send(res,503,{error:'NEAR Auth sponsorship is not configured.'});return;}
         if(req.url.endsWith('/begin')){const flow=nearAuth.beginIdentity(input.mode,session,clientIp,input.expectedPublicKey);send(res,200,flow.challenge,authCookie(flow.binding));return;}
@@ -65,9 +73,11 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
       if(!guest){send(res,401,{error:req.url?.startsWith('/api/guest/chain/')?"Sign in with NEAR before authorizing a game session or using the on-chain economy.":"Reconnect your saved pilot"});return;}
       if(req.url?.startsWith('/api/guest/chain/')){
         if(!chain){send(res,503,{error:'On-chain economy is not enabled'});return;}
-        if(store.authMethod(session)!=='near')throw new NearAuthError('Sign in with NEAR before using the on-chain economy.');
+        if(!['near','embedded'].includes(store.authMethod(session)??''))throw new NearAuthError('Sign in with NEAR before using the on-chain economy.');
+        if(store.authMethod(session)==='embedded'&&!options.embeddedAuth)throw new NearAuthError('Device wallets are temporarily paused. Your on-chain items are safe.');
         req.setTimeout(90000);
         if(req.url.endsWith('/session/begin')){send(res,200,await chain.auth.begin(guest,session,input.publicKey));return;}
+        if(req.url.endsWith('/session/embedded')){send(res,200,await chain.auth.completeEmbedded(guest,session,input.id,input.signature));return;}
         if(req.url.endsWith('/session/complete')){send(res,200,await chain.auth.complete(guest,session,input.id,input.jwt));return;}
         if(req.url.endsWith('/execute')){send(res,200,await chain.economy.execute(guest,input.intent,input.requestId));return;}
         if(req.url.endsWith('/settle')){send(res,200,await chain.economy.settle(guest,input.id,input.replay));return;}
@@ -85,7 +95,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
       if(req.url==="/api/guest/social/rival"){send(res,200,social.follow(guest,input.id,input.follow));return;}
       if(req.url==="/api/guest/logout"){store.logout(session);send(res,200,{ok:true},cookie("",0));return;}
       if(req.url==="/api/guest/provision"){
-        if(store.authMethod(session)==="near"){send(res,409,{error:"NEAR Auth account provisioning uses a separate flow."});return;}
+        if(["near","embedded"].includes(store.authMethod(session)??"")){send(res,409,{error:"NEAR Auth account provisioning uses a separate flow."});return;}
         if(!service.configured){send(res,503,{error:"Online rivalry is not available yet. Your local pilot is saved."});return;}
         try{send(res,200,{guest:await service.provision(guest),onlineAvailable:true});}catch{send(res,503,{error:"Account setup is pending or sponsorship is paused. Keep playing locally and retry later."});}return;
       }

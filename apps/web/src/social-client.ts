@@ -15,7 +15,7 @@ export async function socialRequest(path:string,body?:unknown){
 }
 export async function ensurePilotSession(){
   const current=await socialRequest('me');
-  if(current.authMethod==='near'&&current.guest)return;
+  if(['near','embedded'].includes(current.authMethod)&&current.guest)return;
   const key=await getOrCreatePilotKey();
   if(current.guest?.publicKey===key.publicKey)return;
   const challenge=await socialRequest('challenge',{publicKey:key.publicKey});

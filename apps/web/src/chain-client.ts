@@ -21,12 +21,13 @@ function action(path:string,body:any):[number,number,number]{
 export async function chainRequest(path:string,body:any):Promise<{handled:boolean;value?:any}>{
  if(!['economy/join','economy/start','economy/defend','economy/settle','workshop/action'].includes(path))return {handled:false};
  const config=await chainHttp('chain/config');if(!config.enabled)return {handled:false};
- const me=await chainHttp('me');if(me.authMethod!=='near'||!config.actor)throw new Error('Open Pilot Identity and sign in with NEAR to use on-chain items and CR. Free play stays available.');
+ const me=await chainHttp('me');if(!['near','embedded'].includes(me.authMethod)||!config.actor)throw new Error('Open Pilot Identity and sign in with NEAR to use on-chain items and CR. Free play stays available.');
  if(path==='economy/settle'||body.action==='claim')return {handled:true,value:await chainHttp('chain/settle',{id:String(body.id??body.ticket),replay:body.replay})};
  const key=await getOrCreatePilotKey(),p=config.pilot as ChainPilot|null;
  const ready=!!p&&p.session_until>Date.now()&&p.session_key.map(n=>n.toString(16).padStart(2,'0')).join('')===key.publicKey;
  if(path==='economy/join'){
   if(ready)return {handled:true,value:{balance:p!.cr}};
+  if(me.authMethod==='embedded')throw new Error('Open Pilot Identity to unlock your wallet and authorize this browser.');
   await(await import('./near-auth-client')).beginEconomySession(key.publicKey);return {handled:true,value:{}};
  }
  if(!ready)throw new Error('Authorize this browser’s game session in Pilot Identity, then retry. Your on-chain items are safe.');

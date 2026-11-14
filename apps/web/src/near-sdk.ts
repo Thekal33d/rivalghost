@@ -27,6 +27,8 @@ export async function sdkAccount(client:FastAuthClient<JavascriptProvider>){
  return {signer,publicKey:publicKey.toString(),accountId:Buffer.from(publicKey.data).toString('hex')};
 }
 export async function sdkDelegate(flow:DelegateFlow,actor:string,deviceKey:string){
+ (globalThis as typeof globalThis & {Buffer:typeof Buffer}).Buffer??=Buffer;
+ (globalThis as typeof globalThis & {global:typeof globalThis}).global??=globalThis;
  const {DelegateAction,actionCreators,encodeDelegateAction}=await import('@near-js/transactions');
  const {PublicKey}=await import('@near-js/crypto');
  const d=flow.descriptor;

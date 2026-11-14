@@ -17,3 +17,5 @@ export * from './workshop.js';
 export * from './near-auth.js';
 
 export * from "./economy-v3.js";
+
+export * from './embedded-wallet.js';

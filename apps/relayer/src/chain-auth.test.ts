@@ -16,7 +16,7 @@ function setup(){
  const network={deriveKey:vi.fn(async()=>publicKey.toString()),ownsImplicitAccount:vi.fn(async()=>true)};
  const signing={sign:vi.fn(async(_jwt:string,payload:number[])=>Buffer.from(JSON.stringify({signature:[...sign(null,createHash('sha256').update(Uint8Array.from(payload)).digest(),pair.privateKey)]})).toString('base64'))};
  const auth=new ChainSessionAuth(relay,network,signing,async token=>JSON.parse(token));
- return {store,session,guest:store.guest(id)!,auth,signing,delegate,network};
+ return {pair,relay,store,session,guest:store.guest(id)!,auth,signing,delegate,network};
 }
 describe('NEAR Auth delegated game authorization',()=>{
  it('binds explicit join/session actions to identity and browser session, without another paid signature on retry',async()=>{
@@ -36,4 +36,21 @@ describe('NEAR Auth delegated game authorization',()=>{
    const calls=x.delegate.mock.calls as any;expect(Buffer.from(calls[0][1].encode())).toEqual(Buffer.from(calls[1][1].encode()));
   }finally{x.store.close();}
  });
+});
+
+describe('Embedded wallet session authorization',()=>{
+ it('validates the owner signature and recovers the same signed bytes after an uncertain submission',async()=>{
+  const x=setup();try{x.store.db.prepare("UPDATE sessions SET auth_method='embedded'").run();const flow=await x.auth.begin(x.guest,x.session,'11'.repeat(32));
+   const signature=sign(null,createHash('sha256').update(Uint8Array.from(flow.payload)).digest(),x.pair.privateKey).toString('hex');
+   await expect(x.auth.completeEmbedded(x.guest,x.session,flow.id,'00'.repeat(64))).rejects.toThrow('signature');expect(x.delegate).not.toHaveBeenCalled();
+   await expect(x.auth.complete(x.guest,x.session,flow.id,'unused')).rejects.toThrow('own authorization');
+   x.delegate.mockRejectedValueOnce(new Error('uncertain'));await expect(x.auth.completeEmbedded(x.guest,x.session,flow.id,signature)).rejects.toThrow('uncertain');
+   await expect(x.auth.completeEmbedded(x.guest,'wrong',flow.id,signature)).rejects.toThrow();
+   const receipt=await x.auth.completeEmbedded(x.guest,x.session,flow.id,signature);expect(receipt.settled).toBe(true);
+   const calls=x.delegate.mock.calls as any;expect(Buffer.from(calls[0][1].encode())).toEqual(Buffer.from(calls[1][1].encode()));
+   await x.auth.completeEmbedded(x.guest,x.session,flow.id,signature);expect(x.delegate).toHaveBeenCalledTimes(2);expect(x.signing.sign).not.toHaveBeenCalled();
+  }finally{x.store.close();}
+ });
+ it('rejects expired flows and revoked ownership before broadcasting',async()=>{const x=setup();try{x.store.db.prepare("UPDATE sessions SET auth_method='embedded'").run();const f=await x.auth.begin(x.guest,x.session,'11'.repeat(32)),sig=sign(null,createHash('sha256').update(Uint8Array.from(f.payload)).digest(),x.pair.privateKey).toString('hex');x.network.ownsImplicitAccount.mockResolvedValueOnce(false);await expect(x.auth.completeEmbedded(x.guest,x.session,f.id,sig)).rejects.toThrow('ownership');x.store.db.prepare('UPDATE economy_auth_flows SET expires=0').run();await expect(x.auth.completeEmbedded(x.guest,x.session,f.id,sig)).rejects.toThrow('expired');expect(x.delegate).not.toHaveBeenCalled();}finally{x.store.close();}});
+ it('caps new-account sponsorship durably at four accounts per day',()=>{const x=setup();try{const reserve=(x.auth as any).reserveEmbeddedFunding.bind(x.auth);for(let i=0;i<4;i++)reserve(String(i));reserve('0');expect(()=>reserve('fifth')).toThrow('four-wallet');expect(x.store.db.prepare('SELECT count(*) n FROM embedded_funding_reservations').get()!.n).toBe(4);}finally{x.store.close();}});
 });
