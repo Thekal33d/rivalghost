@@ -38,14 +38,20 @@ Dialogs use native modal focus containment, Escape/close controls, focus restora
 
 ## Wallet invitation on opening the game
 
-Signed-out players see a wallet invitation in the hangar on each fresh page load. It explains on-chain CR/items and encrypted wallet recovery, offers **Connect my wallet**, and keeps **Play first — connect later** equally reachable. Close and Escape also dismiss it for the current opening; navigation and focus changes do not nag again. Dismissal is intentionally not persisted across fresh openings, as requested.
+Signed-out players see a wallet invitation in the hangar on each fresh page load. It explains game CR/items and account recovery, offers **Sign in**, and keeps **Play first** equally reachable. Close and Escape also dismiss it for the current opening; navigation and focus changes do not nag again. Dismissal is intentionally not persisted across fresh openings, as requested.
 
 The invitation checks `/api/guest/me` and embedded-wallet availability. An actual NEAR/embedded account session suppresses it; a cached callsign, guest account or saved backup alone does not count as a wallet login. Failed or slow checks skip the invitation and release onboarding after a bounded wait. Flights and auth callbacks are never covered by this invitation.
 
-The connect action opens Pilot Identity, focuses and scrolls to the device-wallet section, and does not create a wallet, sign anything or authorize spending automatically. New-player flight school follows the invitation when they return to the hangar or choose to play first. Campaign medals and best flights are explicitly described as device-local. The existing encrypted backup and game-session authorization flows remain unchanged.
+The sign-in action opens Pilot Identity, focuses and scrolls to the device-wallet section, and does not create a wallet, sign anything or authorize spending automatically. New-player flight school follows the invitation when they return to the hangar or choose to play first. Campaign medals and best flights are explicitly described as device-local. The existing encrypted backup and game-session authorization flows remain unchanged.
 
 Validation: frontend typecheck/build and all 163 tests passed. Production-browser checks cover signed-in suppression (embedded and NEAR), guest-only prompting, single-modal ordering, direct setup focus, no automatic mutations, dismissal/navigation/reload, Escape/free flight, failed/slow checks, disabled wallet service, and phone/landscape fit.
 
 The encrypted-wallet regression also passed through the new invitation, including backup acknowledgement/reload, signed login and delegated game-session authorization, password retry and recovery in a second browser.
 
 Wallet invitation release `5ea1991` was published to rivalghost.xyz on 2026-11-14. Public checks confirmed the matching release asset, signed-out invitation, one dialog at a time, wallet-section focus, retained onboarding, dismissal during navigation, fresh-load prompting and mobile fit. API health and wallet/on-chain-spending availability passed. Backup: `wallet-invitation-20261114T105755Z`; no pending chain transactions at cutover. Runtime configuration was preserved, and no wallet was created or transaction sent during verification.
+
+## Plain-language account flow
+
+The invitation and device-account setup use Sign in, Create account, Restore account and Play first. Purchase permission is labelled Enable game purchases and explains the 12-hour CR/trading/flight scope and replacement of another browser’s session. Progress messages and sign-in recovery guidance use the same account terminology. NEAR testnet and older NEAR Auth account distinctions remain in setup disclosures; password recovery requirements and device-local campaign limits remain explicit. Authentication, encryption, transaction validation and spending consent are unchanged.
+
+Validation: frontend typecheck/build, all 163 tests, invitation suppression/dismissal/onboarding checks at desktop and phone sizes, and encrypted-file creation/recovery, signed login, delegated permission, password retry and re-upload checks passed. Browser account checks used mocked API responses with real browser cryptography and sent no live transactions.

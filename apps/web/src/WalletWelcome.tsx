@@ -26,16 +26,16 @@ export function useWalletWelcome(){
 }
 
 export function WalletWelcome({onConnect,onPlay}:{onConnect:()=>void;onPlay:()=>void}){
- return <GameDialog className="wallet-welcome" title="YOUR PILOT. YOUR WALLET." eyebrow="WELCOME TO THE HANGAR" onClose={onPlay}>
-  <div className="wallet-welcome-art" aria-hidden="true"><Ship ghost/><span className="wallet-link-line"/><Ship/><span className="wallet-link-badge"><Icon name="lock" size={15}/>MAKE THE CONNECTION</span></div>
-  <p className="wallet-welcome-lead">Bring your wallet into the game.</p>
+ return <GameDialog className="wallet-welcome" title="MAKE IT YOURS." eyebrow="WELCOME TO THE HANGAR" onClose={onPlay}>
+  <div className="wallet-welcome-art" aria-hidden="true"><Ship ghost/><span className="wallet-link-line"/><Ship/><span className="wallet-link-badge"><Icon name="lock" size={15}/>YOUR PILOT ACCOUNT</span></div>
+  <p className="wallet-welcome-lead">Sign in. Build your collection. Take on your rivals.</p>
   <ul className="wallet-welcome-benefits">
-   <li><Icon name="chip" size={22}/><span><b>Put your CR and items on NEAR</b><small>Use the Workshop and trade cosmetics as you unlock them.</small></span></li>
-   <li><Icon name="shield" size={22}/><span><b>Bring your wallet to another device</b><small>Restore your device wallet with its encrypted backup and password.</small></span></li>
+   <li><Icon name="chip" size={22}/><span><b>Make every CR count</b><small>Use the Workshop and trade cosmetics as you unlock them.</small></span></li>
+   <li><Icon name="shield" size={22}/><span><b>Take your collection with you</b><small>Recover your account on another device with your recovery file and password.</small></span></li>
   </ul>
-  <p className="wallet-welcome-setup">Create a device wallet here, or restore your encrypted backup.</p>
-  <ArcadeButton tone="mint" className="wallet-welcome-connect" onClick={onConnect}><Icon name="lock" size={20}/>CONNECT MY WALLET<Icon name="chevronRight" size={20}/></ArcadeButton>
-  <button className="text-button wallet-welcome-play" onClick={onPlay}>PLAY FIRST — CONNECT LATER</button>
-  <p className="wallet-welcome-note">NEAR testnet · Free flights stay free. Campaign medals and best flights stay on this device. Connecting does not authorize spending.</p>
+  <p className="wallet-welcome-setup">New here? Create an account. Returning? Sign in or restore your account.</p>
+  <ArcadeButton tone="mint" className="wallet-welcome-connect" onClick={onConnect}><Icon name="lock" size={20}/>SIGN IN<Icon name="chevronRight" size={20}/></ArcadeButton>
+  <button className="text-button wallet-welcome-play" onClick={onPlay}>PLAY FIRST</button>
+  <p className="wallet-welcome-note">Free flights stay free. Campaign medals and best flights stay on this device. Signing in does not enable purchases.</p>
  </GameDialog>;
 }

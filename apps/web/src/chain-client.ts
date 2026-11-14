@@ -3,7 +3,7 @@ import {economyIntentMessage,type EconomyIntent,type ChainPilot} from '@rivalgho
 import {getOrCreatePilotKey} from './guest-key';
 const PENDING='rivalghost.chain.pending.v1',ITEMS=['afterglow','ion','sunflare'],JOBS=['','recovery','courier','commission'];
 export async function chainHttp(path:string,body?:unknown){
- if(body!==undefined){const stages:Record<string,string>={'embedded/begin':'Requesting a one-time wallet challenge…','embedded/complete':'Verifying wallet ownership…','chain/session/begin':'Preparing your sponsored NEAR game session…','chain/session/embedded':'Waiting for NEAR to confirm your game session…','chain/execute':'Waiting for NEAR to confirm your game action…','chain/settle':'Verifying your flight and waiting for NEAR settlement…'};if(stages[path])operationStage(stages[path]);}
+ if(body!==undefined){const stages:Record<string,string>={'embedded/begin':'Preparing secure sign-in…','embedded/complete':'Verifying your account…','chain/session/begin':'Preparing your purchase permissions…','chain/session/embedded':'Confirming your purchase permissions…','chain/execute':'Confirming your game action…','chain/settle':'Verifying your flight and confirming rewards…'};if(stages[path])operationStage(stages[path]);}
  let response:Response;try{response=await fetch('/api/guest/'+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',headers:body===undefined?{}:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(90000)});}catch{throw new Error('NEAR confirmation is unavailable. Retry the same action to recover its transaction.');}
  const data=await response.json();if(!response.ok){const error=new Error(data.error??'The chain request failed') as Error&{transactionHash?:string};error.transactionHash=data.transactionHash;throw error;}return data;
 }
@@ -23,16 +23,16 @@ function action(path:string,body:any):[number,number,number]{
 export async function chainRequest(path:string,body:any):Promise<{handled:boolean;value?:any}>{
  if(!['economy/join','economy/start','economy/defend','economy/settle','workshop/action'].includes(path))return {handled:false};
  const config=await chainHttp('chain/config');if(!config.enabled)return {handled:false};
- const me=await chainHttp('me');if(!['near','embedded'].includes(me.authMethod)||!config.actor)throw new Error('Open Pilot Identity and sign in with NEAR to use on-chain items and CR. Free play stays available.');
+ const me=await chainHttp('me');if(!['near','embedded'].includes(me.authMethod)||!config.actor)throw new Error('Open Pilot Identity and sign in to use your account’s items and CR. Free play stays available.');
  if(path==='economy/settle'||body.action==='claim')return {handled:true,value:await chainHttp('chain/settle',{id:String(body.id??body.ticket),replay:body.replay})};
  const key=await getOrCreatePilotKey(),p=config.pilot as ChainPilot|null;
  const ready=!!p&&p.session_until>Date.now()&&p.session_key.map(n=>n.toString(16).padStart(2,'0')).join('')===key.publicKey;
  if(path==='economy/join'){
   if(ready)return {handled:true,value:{balance:p!.cr}};
-  if(me.authMethod==='embedded')throw new Error('Open Pilot Identity to unlock your wallet and authorize this browser.');
+  if(me.authMethod==='embedded')throw new Error('Open Pilot Identity to unlock your account and enable game purchases.');
   await(await import('./near-auth-client')).beginEconomySession(key.publicKey);return {handled:true,value:{}};
  }
- if(!ready)throw new Error('Authorize this browser’s game session in Pilot Identity, then retry. Your on-chain items are safe.');
+ if(!ready)throw new Error('Enable game purchases in Pilot Identity, then try again. Your items are safe.');
  if(path==='economy/start'&&p!.run?.kind===0&&p!.run.slot===body.crown&&p!.run.expires>Date.now())return {handled:true,value:{id:String(p!.run.id),crown:p!.run.slot,expires:p!.run.expires,status:'live'}};
  const {requestId:_r,issuedAt:_t,...semantic}=body,fingerprint=path+'|'+JSON.stringify(semantic);
  let pending=JSON.parse(localStorage.getItem(PENDING)??'null') as {fingerprint:string;requestId:string;intent:EconomyIntent}|null;
