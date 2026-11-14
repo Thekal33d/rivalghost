@@ -79,3 +79,92 @@
 }
 .music-credit{font-size:12px;line-height:1.5;color:var(--muted)}
 .music-credit a{color:var(--mint);text-decoration:underline}
+
+/* Phone hangar: mission first, compact rival briefing, then a three-ship selector. */
+@media(max-width:760px){
+  .top-bar{padding:6px 12px 0;gap:6px;min-height:0}
+  .top-tabs{width:calc(100% + 24px);margin:0 -12px}
+  .top-tab{height:48px;font-size:9px;min-height:44px}
+  .top-bar .round-button{width:44px;height:44px}
+  .top-bar .pilot-chip{height:44px;min-width:44px}
+  .game-shell:not(.screen-run)>:not(.top-bar):not(.deck-backdrop){padding-left:12px;padding-right:12px}
+  .game-shell>.flight-deck{margin-top:12px;gap:12px}
+  .deck-stage{padding:14px;gap:12px;border-radius:16px}
+  .deck-headline{order:0;gap:8px}
+  .deck-headline h1{font-size:clamp(32px,9vw,40px);line-height:.94;letter-spacing:.5px}
+  .deck-headline h1 br{display:none}
+  .deck-eyebrow{font-size:8px;letter-spacing:.9px;line-height:1.4}
+  .deck-modes{margin-top:2px;gap:8px}
+  .mode-pill{min-height:44px;height:44px;font-size:11px}
+  .deck-chapter{order:1;display:flex;align-items:center;gap:8px;padding:0;flex-wrap:wrap}
+  .deck-mission{flex:1;min-width:0}
+  .deck-chapter-card{gap:10px;padding:0;background:none;border:0;box-shadow:none}
+  .deck-chapter-num{font-size:38px}
+  .deck-chapter-text b{font-size:25px;line-height:1}
+  .deck-chapter-text small{font-size:8px;letter-spacing:1px;line-height:1.4}
+  .deck-objective{font-size:11px;line-height:1.4;margin-top:6px;gap:6px}
+  .deck-medals{gap:7px;flex-wrap:wrap;margin-top:7px}
+  .deck-medals li{font-size:7px;letter-spacing:.4px}
+  .deck-chapter>.arcade-button{font-size:11px;min-height:44px;height:44px;padding:0 9px;margin:0;letter-spacing:.4px}
+  .deck-chapter>.arcade-button .icon{width:16px;height:16px}
+  .deck-rival{order:2;align-self:stretch;max-width:none;width:100%;height:96px;box-sizing:border-box;padding:10px 100px 10px 10px;background:#13272e;border:1px solid var(--line-strong);border-radius:12px;overflow:hidden}
+  .deck-rival-head{gap:6px}.deck-rival-head>span{gap:5px}
+  .deck-rival-head b{font-size:20px}.deck-rival-head .icon{width:17px;height:17px}
+  .deck-rival-head small{font-size:7px;letter-spacing:.5px}
+  .deck-rival-meter{font-size:8px;margin-top:5px;line-height:1}
+  .deck-rival-meter b{font-size:15px}
+  .deck-rival-bar{height:7px;margin-top:5px;border-width:1px;box-shadow:none}
+  .deck-rival .deck-hound{width:86px;left:auto;right:2px;top:2px;translate:none;animation:none;filter:none}
+  .deck-rival-ring,.deck-rival-glow{display:none}
+  .deck-rival .deck-quote{left:10px;right:96px;top:auto;bottom:7px;width:auto;margin:0;padding:0;max-width:none;border:0;box-shadow:none;background:none;color:var(--text);transform:none;font-size:8px;letter-spacing:.5px;line-height:1.25}
+  .deck-tactics{order:3;gap:8px 12px;padding:0;margin:0;align-items:center}
+  .deck-tactics li{font-size:8px;letter-spacing:.5px}
+  .deck-tactics li:nth-child(4){display:none}
+  .deck-tactics .link-button{min-height:32px;font-size:9px}
+  .deck-loadout{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .deck-loadout-head{gap:8px;min-height:20px}
+  .deck-loadout-head h2{font-size:19px;letter-spacing:1px}
+  .deck-loadout-head span{font-size:7px;letter-spacing:.7px}
+  .rig-card{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 5px 7px;min-height:122px;border-radius:12px;text-align:center}
+  .rig-portrait{width:40px;height:40px;min-height:40px}
+  .rig-portrait svg{width:38px}
+  .rig-info{width:100%;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .rig-info>b{font-size:20px;line-height:1}
+  .rig-info>small{font-size:7px;line-height:1.2;letter-spacing:.3px;min-height:17px;white-space:normal}
+  .rig-equipped{top:5px;right:4px;font-size:0;padding:2px;border-radius:50%}
+  .rig-equipped .icon{width:12px;height:12px}
+  .rig-stats{justify-content:center;gap:3px;flex-wrap:nowrap;margin:1px 0 0}
+  .rig-stat{gap:1px}.rig-stat>.icon{width:8px;height:8px}.rig-stat i{width:3px;height:6px}
+  .deck-best{padding:8px 2px;gap:6px;margin:0;min-height:0;font-size:10px}
+  .deck-best>span{font-size:10px;gap:5px}.deck-best>b{font-size:18px}.deck-best .icon{width:15px;height:15px}
+  .deck-launch{padding:8px 18px calc(8px + env(safe-area-inset-bottom))}
+  .deck-launch .arcade-button{height:64px;min-height:64px}
+  .deck-launch .launch-text{font-size:32px}
+  .screen-lobby,.screen-map{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+  .flight-topbar{display:flex;flex-wrap:nowrap;gap:6px;min-height:64px;padding:6px 8px}
+  .flight-topbar .hud-left,.flight-topbar .hud-right{gap:5px}
+  .flight-identity{max-width:82px}.flight-identity b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .flight-score{margin-left:auto;flex-direction:column;gap:0}.flight-score small{display:none}.flight-score strong{font-size:21px;min-width:0}.flight-score em{font-size:10px}
+  .flight-clock{gap:0}.flight-clock>.icon,.flight-clock small{display:none}.flight-clock strong{font-size:23px}
+  .flight-topbar .hud-round{width:44px;height:44px;min-width:44px}
+}
+@media(max-width:350px){
+  .deck-rival{padding-right:82px}.deck-rival .deck-hound{width:72px;top:12px}.deck-rival .deck-quote{right:78px;font-size:7px}
+  .deck-rival-head small{display:none}
+  .deck-chapter>.arcade-button{width:100%}
+  .flight-identity{max-width:58px}.flight-identity b{font-size:12px}
+  .flight-topbar .flight-exit{display:none}
+}
+@media(max-width:760px){
+  .deck-headline h1{font-size:clamp(28px,8.2vw,36px)}
+  .deck-headline h1 em{margin-left:.16em}
+  .deck-tactics li:not(:last-child){display:none}
+  .deck-tactics .link-button{min-height:44px}
+  .rig-card{min-height:108px;gap:2px}
+  .rig-portrait{width:34px;height:34px;min-height:34px}.rig-portrait svg{width:32px}
+  .rig-info>b{font-size:18px}.rig-stat-label{display:none}
+  .immersive-flight .flight-topbar .flight-score{display:flex;flex-direction:column;gap:0;margin-left:auto}
+  .immersive-flight .flight-score em{background:none;box-shadow:none;border:0;border-radius:0;transform:none;rotate:none;padding:0;min-width:0;line-height:1;font-size:10px;color:var(--gold)}
+  .immersive-flight .flight-clock{display:flex;flex-direction:column;gap:0;line-height:1}
+  .immersive-flight .flight-clock small{display:block;font-size:7px;line-height:1}
+}
