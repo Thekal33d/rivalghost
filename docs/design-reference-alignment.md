@@ -27,3 +27,11 @@ The live application shows actual inventory, session state, NPC availability and
 - All ten chapters were rendered from real deterministic simulation snapshots at tick 2650, including boss damage and reduced-motion rendering. CPU draw submission measured below 1 ms/frame in this local headless sample; this is not a device performance guarantee.
 
 The production check additionally waits for fonts before measuring. It caught a nested mobile loadout grid expanding to its content width; the grid now uses an explicit zero-minimum column and reserves space for the angled launch button.
+
+## Release evidence — 2026-11-14
+
+- Application revision `bbaaa0a` is deployed at https://rivalghost.xyz/, incorporating implementation milestone `70c44e1`. Both commits are on GitHub main under Thekal33d.
+- Final production-bundle checks passed at all six viewport sizes with fonts loaded before measuring.
+- Public browser checks confirmed the deployed asset matches the release, all ten route nodes, the updated live flight, frozen pause stats, mobile pause layout and no uncaught browser errors.
+- Public onboarding checks passed for welcome, locked Workshop explanation, replayable guided flight and persisted onboarding. API health, embedded wallet availability and on-chain spending remained enabled.
+- Database/configuration backup: `design-20261114T104117Z`. No pending chain transactions existed at cutover. Runtime configuration was preserved. AI/HOUND automation remain disabled. No contract deployment, paid inference, wallet purchase or staking was performed.
