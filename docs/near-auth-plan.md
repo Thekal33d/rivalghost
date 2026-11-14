@@ -2,7 +2,7 @@
 
 November 14, 2026
 
-**Current implementation:** the official Browser SDK and JavaScript provider now handle browser login and delegated signing. Server-held PKCE still verifies the API identity. The November 13 live receipts below validate the previous flow; a fresh human end-to-end test of the SDK flow remains required. Hosted sign-in remains disabled until the provider accepts the public callback.
+**Current implementation:** the official Browser SDK and JavaScript provider now handle browser login and delegated signing. Server-held PKCE still verifies the API identity. The November 13 live receipts below validate the previous flow; a fresh human end-to-end test of the SDK flow remains required. Public sign-in and on-chain economy were enabled after the explicitly approved November 14 cutover. The provider callback rejection still prevents a successful hosted login; activation is not proof of provider acceptance.
 
 The funded testnet integration now separates **OIDC identity login** from **signed game-session authorization**. Use **http://localhost:3000** exactly. Personal login and subsequent MPC delegate approval now completed successfully on testnet. The pilot has 100 starter CR and session epoch 1, confirmed at finalized block 277563686.
 
@@ -90,3 +90,5 @@ Official references: https://docs.near.org/web3-apps/tutorials/near-auth and htt
 Production-browser verification: an isolated Chromium run served the compiled web bundle at localhost:3000, clicked the real sign-in control, and reached `https://login.testnet.fast-auth.com/u/login/identifier` (Log in | Example) with no page errors. No credentials were entered and no authorization or transaction was submitted. Complete SDK login and session approval still require a fresh human test after provider configuration.
 
 Deployment: release `13c1da5` is installed at https://rivalghost.xyz. API health and HTTPS return successfully, with public auth/on-chain economy disabled as expected. The existing preview database was backed up and retained; no live keys were migrated. The local API was restarted with its existing configuration to expose the new descriptor/account-binding checks.
+
+Latest deployment status: the approved live-state cutover supersedes the disabled-preview checkpoint above. Public auth/on-chain economy are enabled, the local signer is stopped, and AI/HOUND remain disabled. Public UI/configuration and unsigned-write rejection checks pass. See `docs/hetzner-deployment.md` for validation and the outstanding provider callback requirement.

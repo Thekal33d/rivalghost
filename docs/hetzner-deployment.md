@@ -1,5 +1,7 @@
 # RivalGhost deployment
 
+**Current status (November 14):** public testnet sign-in and on-chain economy are enabled at https://rivalghost.xyz after the approved live-state cutover. The provider callback is still rejected, so human login/session approval is not yet verified on the public domain. AI and autonomous HOUND spending remain disabled. Earlier preview checkpoints below are historical.
+
 RivalGhost can run as one persistent Node 24 API service with a static web frontend and Caddy. The supplied systemd templates run it as an unprivileged user with resource limits. SQLite, replay records and transaction journals require persistent storage.
 
 ## Build and validate
@@ -41,3 +43,15 @@ Reference: [official testnet configuration](https://docs.auth.near.org/resources
 On November 13, public DNS began resolving and the prepared Caddy site was activated at https://rivalghost.xyz/. External checks passed: HTTPS certificate validation, HTTP 200 for the frontend, API health, disabled NEAR Auth with the correct hosted callback, and explicit local-demo economy configuration. APP_ORIGIN now matches the HTTPS domain. Existing Caddy routes were preserved and protected configuration rollback copies were taken. The previous SSH preview URL is no longer the canonical application origin.
 
 This is a public demo preview, not the live on-chain service. It retains the staging database; no live player database, signer credentials or AI key was migrated. Paid inference and chain signing remain disabled. Public browser gameplay and two-player social testing remain to be completed. Hosted NEAR Auth allowlisting and a coordinated live-state migration remain prerequisites for enabling the testnet economy here.
+
+## Approved public testnet cutover — November 14
+
+The existing local signer was stopped and its ordinary local configuration disabled before migration. A consistent live SQLite snapshot was integrity-checked and transferred with only the three approved credentials: authentication sponsor, game relay and gameplay verifier. The preview database remains separate and backed up. Identity records, replay/settlement records, transaction journal and budget reservations were preserved. No HOUND key, operator wallet key or AI credential was exported.
+
+The public runtime now has `NEAR_AUTH_ENABLED=true`, `ECONOMY_MODE=onchain`, the exact HTTPS application origin and the existing testnet contract. Authentication signing remains capped at four requests/day and player relay submissions at forty/day, with their existing daily reserve limits. Bootstrap provisioning, AI and HOUND are disabled. Only the public service now runs the migrated signing credentials.
+
+Scheduled backups now use the migrated live database via a systemd drop-in. An immediate backup passed SQLite integrity checking. The service and backup timer are active; protected credential permissions were verified and temporary credential-transfer copies removed. Prior preview configuration and database are retained for rollback.
+
+Validation passed: HTTPS 200, API health, public sign-in button enabled, game authorization disabled before login, economy reads from the testnet contract, unsigned economic write rejected with HTTP 401, and no browser errors. All 53 existing transaction records were preserved, no pending transactions remain, and validation generated no new chain transactions. These checks do not establish a successful hosted login or a completed player purchase.
+
+The remaining external blocker is the NEAR Auth provider's callback allowlist. Both the apex origin (SDK popup) and `/auth/callback` (redirect) must be accepted, along with the apex web origin. After that change, complete a fresh public login, game-session approval and signed item transaction/recovery test.
