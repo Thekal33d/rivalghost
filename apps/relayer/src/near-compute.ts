@@ -3,7 +3,7 @@ export const PILOT_MODEL='Qwen/Qwen3-VL-30B-A3B-Instruct';
 export const REQUEST_RESERVE_MICRO_USD=3000; // $0.003; covers the full allowed context at the pinned price ceilings.
 export interface ComputeConfig {totalBudgetMicroUsd?:number;enabled:boolean;apiKey?:string;model?:string;dailyLimit:number;stakeToken?:string;organization?:string;nearAccount?:string}
 type Focus='recovery'|'courier';
-interface Decision {focus:Focus;source:'local'|'near-ai';at:number;responseId?:string;reason:string}
+export interface Decision {focus:Focus;source:'local'|'near-ai';at:number;responseId?:string;reason:string}
 const BASE='https://cloud-api.near.ai/v1';
 const fallback=(stock:number):Focus=>stock<8?'recovery':'courier';
 /** Only public world aggregates leave the server. No pilot identifiers, chat or wallet keys. */

@@ -1,6 +1,7 @@
 import type {EmbeddedAuth} from './embedded-auth.js';
 import {isIP} from 'node:net';
 import {ChainError} from './chain-relay.js';
+import type {ChainFocus} from './chain-focus.js';
 import type {ChainEconomy} from './chain-economy.js';
 import type {ChainSessionAuth} from './chain-auth.js';
 import {NearAuthService,NearAuthError} from './near-auth.js';
@@ -19,7 +20,7 @@ async function json(req:IncomingMessage){const chunks:Buffer[]=[];let size=0;for
 export function proxyClientIp(remote:string|undefined,header:string|string[]|undefined,trust:boolean){
   return trust&&['127.0.0.1','::1','::ffff:127.0.0.1'].includes(remote??'')&&typeof header==='string'&&isIP(header)?header:remote??'unknown';
 }
-export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService,chain?:{economy:ChainEconomy;auth:ChainSessionAuth},options:{trustLoopbackProxy?:boolean;embeddedAuth?:EmbeddedAuth}={}){
+export function createGuestServer(service:GuestService,gateway?:VerificationGateway,compute?:NearCompute,nearAuth?:NearAuthService,chain?:{economy:ChainEconomy;auth:ChainSessionAuth;focus?:ChainFocus},options:{trustLoopbackProxy?:boolean;embeddedAuth?:EmbeddedAuth}={}){
   const store=service.store,social=new SocialService(store),secure=store.origin.startsWith("https:");
   const cookie=(value:string,age=43200)=>`rg_guest=${value}; HttpOnly; SameSite=Strict; Path=/api/guest; Max-Age=${age}${secure?"; Secure":""}`;
   let economy:EconomyService|undefined;
@@ -34,7 +35,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
     if(req.method==='GET'&&req.url==='/api/guest/embedded/config'){send(res,200,{enabled:!!options.embeddedAuth,network:'testnet'});return;}
     if(req.method==='GET'&&req.url==='/api/guest/near-auth/config'){send(res,200,nearAuth?.status()??{enabled:false});return;}
     if(req.method==="GET"&&req.url==="/api/guest/me"){send(res,200,{guest,onlineAvailable:service.configured,authMethod:store.authMethod(session)});return;}
-    if(req.method==="GET"&&req.url==="/api/guest/compute"){store.rate("compute-read",60);send(res,200,{...(compute?.status()??{enabled:false,dailyLimit:0,callsToday:0,source:"local"}),stake:await compute?.stake()??{state:"not-configured"}});return;}
+    if(req.method==="GET"&&req.url==="/api/guest/compute"){store.rate("compute-read",60);send(res,200,{...(compute?.status()??{enabled:false,dailyLimit:0,callsToday:0,source:"local"}),chain:chain?.focus?.status()??{enabled:false},stake:await compute?.stake()??{state:"not-configured"}});return;}
     if(req.method==="GET"&&req.url==="/api/guest/workshop"){store.rate("workshop-read",180);send(res,200,await (chain?.economy??pit()).workshop(guest));return;}
     if(req.method==="GET"&&req.url==="/api/guest/economy"){store.rate("pit-read-global",180);store.rate("pit-read-ip:"+clientIp,60);send(res,200,await (chain?.economy??pit()).view(guest));return;}
     if(req.method==="GET"&&req.url?.startsWith("/api/guest/social/")){
@@ -108,5 +109,7 @@ export function createGuestServer(service:GuestService,gateway?:VerificationGate
     }catch(error){send(res,error instanceof Error&&/Too many attempts/.test(error.message)?429:400,{error:error instanceof ChainError||error instanceof NearAuthError||error instanceof WorkshopError||error instanceof SocialError||error instanceof EconomyError?error.message:error instanceof Error&&/attempts|capacity|proof|public key/.test(error.message)?error.message:"Invalid guest request",...(error instanceof ChainError&&error.transactionHash?{transactionHash:error.transactionHash}:{})});}
   });server.requestTimeout=10000;server.headersTimeout=5000;server.timeout=20000;server.maxHeadersCount=30;
   let stopped=false,thinking=false;
-  const heartbeat=setInterval(()=>{if(chain){if(!thinking){thinking=true;void chain.economy.tick().catch(()=>console.error('On-chain NPC tick pending or rejected; no local economic fallback.')).finally(()=>{thinking=false;});}return;}try{economy?.tick();if(economy&&compute&&!thinking){thinking=true;const world=economy.workshop(null);void compute.decide(world.moth.stock,world.districts.filter(n=>n>=60).length).then(d=>{if(!stopped)economy?.setFocus(d.focus);}).catch(()=>{}).finally(()=>{thinking=false;});}}catch{console.error('HOUND tick failed; no partial economy write committed.');}},15000);heartbeat.unref();server.on('close',()=>{stopped=true;clearInterval(heartbeat);});return server;
+  let focusing=false,focusTask:Promise<void>|undefined,houndTask:Promise<void>|undefined;
+  const focusHeartbeat=setInterval(()=>{if(stopped||!chain?.focus||focusing)return;focusing=true;focusTask=chain.focus.tick().catch(()=>console.error('MOTH focus pending or rejected; existing contract focus retained.')).finally(()=>{focusing=false;});},15000);focusHeartbeat.unref();
+  const heartbeat=setInterval(()=>{if(chain){if(!thinking){thinking=true;houndTask=chain.economy.tick().catch(()=>console.error('On-chain NPC tick pending or rejected; no local economic fallback.')).finally(()=>{thinking=false;});}return;}try{economy?.tick();if(economy&&compute&&!thinking){thinking=true;const world=economy.workshop(null);houndTask=compute.decide(world.moth.stock,world.districts.filter(n=>n>=60).length).then(d=>{if(!stopped)economy?.setFocus(d.focus);}).catch(()=>{}).finally(()=>{thinking=false;});}}catch{console.error('HOUND tick failed; no partial economy write committed.');}},15000);heartbeat.unref();server.on('close',()=>{stopped=true;clearInterval(heartbeat);clearInterval(focusHeartbeat);});return Object.assign(server,{drainWorkers:()=>Promise.allSettled([focusTask,houndTask])});
 }

@@ -420,6 +420,14 @@ impl Economy {
         self.paused = paused;
         self.focus = focus;
     }
+    /// MOTH may feature one free job. No pause, verifier, price or balance authority.
+    pub fn set_focus(&mut self, slot: u8) -> u8 {
+        self.active();
+        require!(env::predecessor_account_id() == self.moth, "MOTH only");
+        require!((1..=2).contains(&slot), "Invalid focus");
+        self.focus = slot;
+        self.focus
+    }
     pub fn execute(&mut self, intent: Intent) -> Pilot {
         // Cancellation and unequipping remain available while entries are paused.
         if intent.op != 5 && intent.op != 7 && intent.op != 12 {

@@ -146,3 +146,5 @@
 .device-wallet-panel .pilot-status small{color:inherit}
 
 .device-wallet-recovery strong{overflow-wrap:anywhere}
+
+.compute-chain-proof{margin-top:24px;padding:22px;border:1px solid var(--mint);background:#7df5c00a}.compute-chain-proof h3{color:var(--mint);font-size:clamp(24px,4vw,32px)}.compute-chain-proof p{margin-top:10px}.compute-chain-proof small{display:block;margin-top:16px;font-size:11px;line-height:1.6;opacity:.8}.compute-chain-proof a{min-height:44px;display:inline-flex;align-items:center}

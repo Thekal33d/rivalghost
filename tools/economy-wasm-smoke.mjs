@@ -64,6 +64,16 @@ async function exercise(file) {
  await reject('join',{},actors[2],timestamp,{deposit:1});
  // Attested jobs, mission binding, single claim and rollover.
  await action(actors[2],1,1,0);
+ // MOTH's narrow focus control cannot rewrite an already-reserved job or any other world field.
+ const beforeFocus=await world(),heldBefore=await pilot(actors[2]);
+ for(const [args,who]of [[{slot:2},'attacker.testnet'],[{slot:3},actors[1]],[{slot:0},actors[1]]])await reject('set_focus',args,who);
+ await reject('set_focus',{slot:2,paused:false},actors[1]);
+ await reject('set_focus',{slot:2},actors[1],timestamp,{deposit:1});
+ const bytesBefore=[...storage.values()].reduce((n,b)=>n+b.length,0);
+ assert.equal(await call('set_focus',{slot:2},actors[1]),2);
+ assert.deepEqual(await world(),{...beforeFocus,focus:2});assert.deepEqual(await pilot(actors[2]),heldBefore);
+ assert.equal([...storage.values()].reduce((n,b)=>n+b.length,0),bytesBefore,'Focus must not grow contract storage');
+ await call('set_focus',{slot:1},actors[1]);
  const valid=await cert(actors[2]);
  for(const changes of [{actor:actors[3]},{run_id:valid.run_id+1},{kind:2},{chapter:1},{stage:1},{bonus:!valid.bonus},{day:valid.day+1},{seed:valid.seed+1},{expires:valid.expires-1},{issued:timestamp+1},{key_version:2}]){
   await reject('settle',{certificate:encodeEconomyCertificate(await cert(actors[2],changes))},'relay.testnet');
@@ -109,7 +119,7 @@ async function exercise(file) {
  }
  assert.equal(new Set(sizes).size,1,'Repeated daily jobs grew retained storage');
  // Pause blocks new spending but permits completion of already reserved runs.
- await action(actors[3],1,2,0);await call('configure',{paused:true,verifier:publicKey,focus:2});
+ await action(actors[3],1,2,0);await call('configure',{paused:true,verifier:publicKey,focus:2});await reject('set_focus',{slot:1},actors[1]);
  p=await pilot(actors[3]);await reject('execute',{intent:{actor:actors[3],nonce:p.nonce+1,epoch:p.session_epoch,deadline:timestamp+300000,op:2,a:0,b:0,signature:[]}},actors[3]);
  await settle(actors[3]);await conservation();
  console.log(JSON.stringify({artifact:file.pathname.split('/').slice(-2).join('/'),rejectedCalls:rejected,retainedKeyValueBytes:sizes[0],cyclesWithoutGrowth:10}));

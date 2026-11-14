@@ -1,6 +1,8 @@
 import {EmbeddedAuth} from './embedded-auth.js';
 import {ChainRelay} from './chain-relay.js';
 import {ChainSessionAuth} from './chain-auth.js';
+import {ChainFocus} from './chain-focus.js';
+import {KeyPair} from 'near-api-js';
 import {ChainEconomy} from './chain-economy.js';
 import {JsonRpcProvider} from 'near-api-js';
 import {NearAuthService} from './near-auth.js';
@@ -47,7 +49,10 @@ async function main(){
     const privateKey=(await readFile(required('NEAR_AUTH_KEY_FILE'),'utf8')).trim() as KeyPairString;
     authRelay=new AuthRelay(store,authNetwork,{accountId:required('NEAR_AUTH_SPONSOR_ID'),privateKey,dailyBudget:BigInt(required('NEAR_AUTH_DAILY_BUDGET_YOCTO')),maxDailyRequests:Number(required('NEAR_AUTH_MAX_DAILY_REQUESTS')),gasPriceCap:BigInt(required('NEAR_AUTH_GAS_PRICE_CAP_YOCTO'))});
   }
-  let chain:{economy:ChainEconomy;auth:ChainSessionAuth}|undefined;
+  const cloudEnv={...process.env};
+  if(cloudEnv.NEAR_AI_API_KEY_FILE)cloudEnv.NEAR_AI_API_KEY=(await readFile(cloudEnv.NEAR_AI_API_KEY_FILE,'utf8')).trim();
+  const compute=new NearCompute(store,computeConfig(cloudEnv));
+  let chain:{economy:ChainEconomy;auth:ChainSessionAuth;focus?:ChainFocus}|undefined;
   if(process.env.ECONOMY_MODE==='onchain'){
     if(!authRelay||process.env.NEAR_NETWORK!=='testnet')throw new Error('On-chain mode requires testnet NEAR Auth');
     const required=(name:string)=>{const v=process.env[name];if(!v)throw new Error('Missing '+name);return v;};
@@ -59,10 +64,19 @@ async function main(){
     const npc=process.env.HOUND_ENABLED==='true'?await make('HOUND'):undefined;
     const economy=new ChainEconomy(relay,key,npc),world=await economy.world();
     if(world.version!==3||Buffer.from(world.verifier).toString('base64url')!==jwk.x||npc&&world.hound!==npc.config.accountId)throw new Error('Economy deployment does not match server keys');
-    chain={economy,auth:new ChainSessionAuth(relay,authNetwork,authRelay)};
+    let focus:ChainFocus|undefined;
+    if(process.env.NEAR_AI_ONCHAIN_ENABLED==='true'){
+      const signer=await make('MOTH_FOCUS');await signer.check();
+      if(signer.config.accountId!==world.moth)throw new Error('Focus signer must be MOTH');
+      const access=await rpc.viewAccessKey({accountId:signer.config.accountId,publicKey:KeyPair.fromString(signer.config.privateKey).getPublicKey(),finalityQuery:{finality:'final'}});
+      const permission=access.permission;
+      if(typeof permission==='string'||!('FunctionCall' in permission)||permission.FunctionCall.receiver_id!==signer.config.contractId||permission.FunctionCall.method_names.length!==1||permission.FunctionCall.method_names[0]!=='set_focus'||!permission.FunctionCall.allowance||BigInt(permission.FunctionCall.allowance)<=0n)throw new Error('Focus key must be restricted to set_focus with a finite allowance');
+      focus=new ChainFocus(signer,compute);
+    }
+    chain={economy,auth:new ChainSessionAuth(relay,authNetwork,authRelay),focus};
   }
-  const server=createGuestServer(service,gateway,new NearCompute(store,computeConfig(process.env)),new NearAuthService(store,authNetwork,authRelay),chain,{trustLoopbackProxy:process.env.TRUST_LOOPBACK_PROXY==='true',embeddedAuth:chain&&process.env.EMBEDDED_WALLET_ENABLED==='true'?new EmbeddedAuth(store,authNetwork):undefined});
+  const server=createGuestServer(service,gateway,compute,new NearAuthService(store,authNetwork,authRelay),chain,{trustLoopbackProxy:process.env.TRUST_LOOPBACK_PROXY==='true',embeddedAuth:chain&&process.env.EMBEDDED_WALLET_ENABLED==='true'?new EmbeddedAuth(store,authNetwork):undefined});
   server.listen(port,"127.0.0.1",()=>console.log(`RivalGhost guest gateway: 127.0.0.1:${port}; ${service.configured?"testnet provisioning enabled":"provisioning disabled"}; NEAR Auth ${authRelay?"enabled":"disabled"}; NPC Cloud ${process.env.NEAR_AI_ENABLED==="true"?"enabled":"disabled"}`));
-  for(const signal of ["SIGINT","SIGTERM"] as const)process.once(signal,()=>server.close(()=>store.close()));
+  for(const signal of ["SIGINT","SIGTERM"] as const)process.once(signal,()=>server.close(()=>{void server.drainWorkers().finally(()=>store.close());}));
 }
 main().catch(()=>{console.error("Guest gateway startup failed. Check its configuration and private key file; no credentials are logged.");process.exitCode=1;});

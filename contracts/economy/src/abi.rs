@@ -123,6 +123,7 @@ view!(next_sequence, EmptyArgs);
 change!(join, EmptyArgs);
 change!(set_session, SessionArgs, public_key, until);
 change!(configure, ConfigArgs, paused, verifier, focus);
+change!(set_focus, SlotArgs, slot);
 change!(execute, IntentArgs, intent);
 
 change!(expire, ActorArgs, actor);

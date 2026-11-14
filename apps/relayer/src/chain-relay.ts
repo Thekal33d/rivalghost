@@ -25,7 +25,7 @@ export class ChainRelay {
   return rows.length;
  });}
  change<T>(id:string,method:string,args:Record<string,unknown>):Promise<ChainReceipt<T>>{
-  if(!['execute','settle','expire','close_crown','seed_crown','configure'].includes(method))throw new ChainError('Relay method denied');
+  if(!['execute','settle','expire','close_crown','seed_crown','configure','set_focus'].includes(method))throw new ChainError('Relay method denied');
   return this.submit<T>(id,this.config.contractId,[actions.functionCall(method,args,this.config.gas,0n)],0n);
  }
  fundIdentity(id:string,actor:string){if(!/^[a-f0-9]{64}$/.test(actor))throw new ChainError('Implicit identity required');return this.submit(id,actor,[actions.transfer(5000000000000000000000n)],5000000000000000000000n);}
