@@ -55,3 +55,8 @@ Scheduled backups now use the migrated live database via a systemd drop-in. An i
 Validation passed: HTTPS 200, API health, public sign-in button enabled, game authorization disabled before login, economy reads from the testnet contract, unsigned economic write rejected with HTTP 401, and no browser errors. All 53 existing transaction records were preserved, no pending transactions remain, and validation generated no new chain transactions. These checks do not establish a successful hosted login or a completed player purchase.
 
 The remaining external blocker is the NEAR Auth provider's callback allowlist. Both the apex origin (SDK popup) and `/auth/callback` (redirect) must be accepted, along with the apex web origin. After that change, complete a fresh public login, game-session approval and signed item transaction/recovery test.
+
+
+### Device wallet release — 14 November 2026
+
+Deployed `f3d102c` from main, preserving the live database and existing signing keys. `EMBEDDED_WALLET_ENABLED=true` enables local owner-signature login and sponsored delegated game sessions; original NEAR Auth remains available for existing accounts. The deployment retained a consistent database/config backup and the previous release for rollback. AI and HOUND remain disabled. See [device-wallet.md](device-wallet.md) for the player recovery flow, limits and live testnet receipts.

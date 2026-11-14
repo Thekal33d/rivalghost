@@ -33,3 +33,18 @@ Deploy the portable release built from committed main; retain the live SQLite da
 - Full TypeScript/build checks and 154 automated tests pass, including password/tampering/account-binding rejection, challenge replay/origin/expiry checks, identity conflicts, signed delegate recovery and the funding cap.
 - Chromium test of the built interface passes: backup acknowledgement survives reload, encrypted download, login signature, delegate signature, locked reload, wrong password, second-browser restoration, and 390px mobile layout. This test uses a mock chain transport; live evidence is recorded separately after deployment.
 - Contract WASM is unchanged by this feature.
+
+## Live verification — 14 November 2026
+
+Release f3d102c is deployed at https://rivalghost.xyz with embedded wallets enabled. The previous release and a consistent live-database/config backup were retained. Existing AI and HOUND switches remain disabled.
+
+One isolated test wallet was used: `1d36e8b3c18ae4fbab439bf32c1c3944e8dd5644f49523bbe71ed3f627b7081b`.
+
+- Owner-signature login, sponsored implicit-account creation and initial game authorization completed: [session receipt](https://testnet.nearblocks.io/txns/HMvHzaSVr6aLMnFrbQdRKAWvLb5D11Qx154QjbfDuiKw).
+- The Workshop bought one salvage for 7 CR: [purchase receipt](https://testnet.nearblocks.io/txns/4vzQtA4cqpgbU1PHzaDZRAnz1R1tAJ5wzh3PeNamPTND). The initial 100 CR became 93 CR.
+- The encrypted recovery file restored the same account in a separate browser profile at a 390px mobile viewport. Authorizing its new device key incremented the session epoch to 2 and preserved 93 CR plus one salvage: [restored-session receipt](https://testnet.nearblocks.io/txns/4pCRiQmJtZNaorVre4vfq5ienUrZwQGHWuffAk6hMQPU).
+- A direct finalized NEAR RPC query independently confirmed CR 93, salvage 1 and session epoch 2. No extra starter credits were issued.
+- The live journal contained 57 finalized transactions, no pending/failed entries, and one embedded-wallet funding reservation after these checks.
+- The economy WASM remains 98,677 bytes; this release did not modify or redeploy it.
+
+Recovery files, passwords, browser profiles and server credentials are deliberately excluded from source control.
