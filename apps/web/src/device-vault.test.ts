@@ -11,6 +11,7 @@ it('round-trips an encrypted backup into a non-exportable signing key',async()=>
 });
 it('rejects wrong passwords, tampering, account swaps, wrong networks and malicious KDF parameters',async()=>{
  const v=await createBackup('another strong test password');
+ await expect(decryptBackup(v,'')).rejects.toThrow('Enter your recovery password');
  await expect(decryptBackup(v,'wrong password')).rejects.toThrow('Wrong password');
  await expect(decryptBackup({...v,ciphertext:(v.ciphertext[0]==='0'?'1':'0')+v.ciphertext.slice(1)},'another strong test password')).rejects.toThrow();
  await expect(decryptBackup({...v,accountId:'00'.repeat(32)},'another strong test password')).rejects.toThrow();

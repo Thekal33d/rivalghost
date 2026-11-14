@@ -24,8 +24,8 @@ export async function createBackup(password:string):Promise<WalletBackup>{
  return parseBackup(JSON.stringify(v));
 }
 export async function decryptBackup(input:WalletBackup,password:string):Promise<CryptoKey>{
- const v=parseBackup(JSON.stringify(input));let raw:Uint8Array<ArrayBuffer>;
- try{raw=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(v.iv),additionalData:aad(v)},await wrappingKey(password,v),bytes(v.ciphertext)));}catch{throw new Error('Wrong password or damaged recovery file.');}
+ const v=parseBackup(JSON.stringify(input)),wrapping=await wrappingKey(password,v);let raw:Uint8Array<ArrayBuffer>;
+ try{raw=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(v.iv),additionalData:aad(v)},wrapping,bytes(v.ciphertext)));}catch{throw new Error('Wrong password or damaged recovery file.');}
  try{
   const privateKey=await crypto.subtle.importKey('pkcs8',raw,'Ed25519',false,['sign']);
   const publicKey=await crypto.subtle.importKey('raw',bytes(v.accountId),'Ed25519',false,['verify']);

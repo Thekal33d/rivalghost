@@ -6,7 +6,7 @@ Implemented on main, 14 November 2026. This is an additional NEAR testnet identi
 
 Open Customize → Device Wallet. Choose and confirm a recovery password of at least 12 characters, create the wallet, download the encrypted JSON recovery file, and acknowledge saving it. Connect the wallet, then authorize a 12-hour game session. The server sponsors account creation and relays the owner-signed join/set_session transaction. Gameplay spends CR through the existing signed, nonce-protected economy intents.
 
-After reloading, the owner key is locked. An already-authorized game session can keep using its separate non-exportable device key. Unlock the owner wallet only to renew or replace the game session. Restoring the file with its password in another browser recovers the same identity; authorizing the new browser replaces the previous game session. Local campaign saves are not synced.
+After reloading, the owner key is locked. An already-authorized game session can keep using its separate non-exportable device key. Unlock the owner wallet only to renew or replace the game session. To restore, select the encrypted file, enter its original password in the separate Backup password field, and click Restore Wallet. Restoring in another browser recovers the same identity; authorizing the new browser replaces the previous game session. Local campaign saves are not synced.
 
 ## Key handling
 
@@ -48,3 +48,10 @@ One isolated test wallet was used: `1d36e8b3c18ae4fbab439bf32c1c3944e8dd5644f495
 - The economy WASM remains 98,677 bytes; this release did not modify or redeploy it.
 
 Recovery files, passwords, browser profiles and server credentials are deliberately excluded from source control.
+
+
+### Recovery form correction — 14 November 2026
+
+File selection previously attempted decryption immediately with the shared password field, which could already be cleared or hidden after wallet creation. That could incorrectly show a wrong-password/damaged-file message for a valid backup. Recovery now retains the selected file and requires a separate original-backup password plus an explicit Restore Wallet action. An empty password is reported separately from failed decryption. Wrong-password retries retain the file; cancelled restoration leaves the existing vault intact.
+
+Validated with TypeScript/build checks, encrypted-vault regression tests, and Chromium scenarios covering selection without a password, wrong-password retry without re-upload, re-upload while unlocked, and restoration in another browser. No encryption format, stored wallet or on-chain behavior changes.
