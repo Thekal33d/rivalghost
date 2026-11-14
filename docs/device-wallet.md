@@ -77,3 +77,5 @@ For an existing account, reload the page without clearing site data. Finish savi
 ## Mobile process notices
 
 On phone layouts, successful-action notices and minimized progress controls now sit at the top safe area. The bottom primary button stays unobstructed. Pending/error dialogs still require dismissal or offer Hide progress; hiding progress does not cancel or resubmit an action. Browser regression checks measure notice/button rectangles and verify both success and minimized-pending states in Chromium and WebKit.
+
+The daily sponsorship allowance does not remove the economy contract’s existing lifetime starter allocation: at most 1,000 pilots can join while the 100-CR starter reserve lasts. This preserves the finite supply; it is separate from ordinary sign-in and the daily account-funding limit.

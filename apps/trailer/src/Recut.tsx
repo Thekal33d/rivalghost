@@ -4,6 +4,7 @@ import {Audio,Video} from '@remotion/media';
 import {loadFont} from '@remotion/fonts';
 import {Hound,Moth,Ship,Icon,LogoMark} from './BrandAssets';
 import './recut.css';
+import aiDecision from './ai-decision.json';
 loadFont({family:'Barlow Condensed',url:staticFile('fonts/BarlowCondensed-BlackItalic.ttf'),weight:'900',style:'italic'});
 loadFont({family:'Chakra Petch',url:staticFile('fonts/ChakraPetch-SemiBold.ttf'),weight:'600'});
 const C={paper:'#F3ECDC',ink:'#11272D',mint:'#7DF5C0',coral:'#FF6B4A',gold:'#FFD166',violet:'#B79CFF'};
@@ -62,7 +63,19 @@ function CrownRun(){const f=useCurrentFrame(),win=f>=113&&f<225,miss=f>=225;retu
  </div>
  <Caption color={C.paper} style={{position:'absolute',left:80,bottom:115,background:C.ink,padding:'12px 20px',fontSize:22}}>HOUND / RULE-BASED RIVAL</Caption><Caption color="#A6B6B2" style={{position:'absolute',left:840,bottom:150,fontSize:23}}>{miss?'LOSE, TIE OR EXPIRE: ENTRY STAYS IN THE ECONOMY.':'THE PURSE IS GAME CREDITS. NO CASH VALUE.'}</Caption><Footer/>
  </AbsoluteFill>}
-function LastFlight(){return <GameBeat name="city" title="TEN CHAPTERS. ONE MORE RUN." kicker="BUILD YOUR LOOK. DARE A FRIEND TO BEAT YOUR GHOST."/>}
+function AIFocus(){const f=useCurrentFrame(),settled=f>=32;return <AbsoluteFill style={{background:C.mint,overflow:'hidden'}}>
+ <Edge section="THE CITY HAS A MIND / NEAR AI CLOUD"/>
+ <div style={{position:'absolute',left:45,top:265,width:650,height:650,borderRadius:'50%',background:C.ink}}/>
+ <div style={{position:'absolute',left:40,top:190,width:690,transform:`translateY(${(1-ease(p(f,0,18)))*65}px)`}}><Moth/></div>
+ <div style={{position:'absolute',left:120,bottom:158,background:C.paper,border:`4px solid ${C.ink}`,padding:'16px 30px',transform:'rotate(-4deg)'}}><Type size={70}>MOTH’S NEXT MOVE.</Type></div>
+ <div style={{position:'absolute',left:790,top:190,right:100}}><Caption style={{fontSize:32}}>NEAR AI PICKS. NEAR CONFIRMS.</Caption><Type size={142}>RECOVERY.<br/>REWARDED.</Type>
+ <div style={{marginTop:45,padding:'25px 32px',background:C.paper,border:`4px solid ${C.ink}`,boxShadow:`9px 9px 0 ${C.ink}`}}>
+ <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}><Type size={105}>+1 SALVAGE</Type><div style={{fontSize:62,transform:`scale(${settled?snap(f-32):0})`}}>✓</div></div>
+ <Caption style={{fontSize:26,margin:'20px 0 0'}}>NEW MATCHING JOBS · CONFIRMED ON NEAR</Caption></div>
+ <Caption style={{fontSize:24,marginTop:40}}>4 DECISIONS / DAY · DEVELOPER-FUNDED</Caption></div>
+ <div style={{position:'absolute',left:110,bottom:55,fontSize:20,letterSpacing:1}}>LIVE DECISION, VISUALIZED · TESTNET RECEIPT {aiDecision.transactionHash.slice(0,8)}…</div><Grain/>
+ </AbsoluteFill>}
+
 function ProofBeat(){const f=useCurrentFrame();return <AbsoluteFill style={{background:C.gold}}><Edge section="BUILT ON NEAR"/>
  <div style={{position:'absolute',left:110,top:205,transform:`translateY(${(1-ease(p(f,0,10)))*75}px)`}}><Caption>ONE FINITE ECONOMY.</Caption><Type size={265}>100,100 <span style={{fontSize:120}}>CR</span></Type><Caption style={{fontSize:34,marginTop:30}}>FIXED SUPPLY. NO MINTING.</Caption></div>
  <div style={{position:'absolute',left:110,right:110,bottom:175,display:'flex',borderTop:`4px solid ${C.ink}`,paddingTop:45,gap:80}}><Caption style={{fontSize:29}}>REPLAY-VERIFIED REWARDS</Caption><Caption style={{fontSize:29}}>COSMETIC PURCHASES</Caption><Caption style={{fontSize:29}}>ZERO COMBAT ADVANTAGE</Caption></div><Grain/>
@@ -74,6 +87,6 @@ function End(){const f=useCurrentFrame();return <AbsoluteFill className="v2-pape
  <div className="v2-credit">MUSIC: “EXIT THE PREMISES” — KEVIN MACLEOD · INCOMPETECH.COM<br/>CC BY 4.0 · CREATIVECOMMONS.ORG/LICENSES/BY/4.0/ · EXCERPT, FADES & LEVEL EDIT</div><Grain/>
  </AbsoluteFill>}
 export function Recut(){return <AbsoluteFill className="v2">
- <Sequence durationInFrames={112}><Chase/></Sequence><Sequence from={112} durationInFrames={113}><RivalReveal/></Sequence><Sequence from={225} durationInFrames={56}><LogoBeat/></Sequence><Sequence from={281} durationInFrames={338}><GameplayRun/></Sequence><Sequence from={619} durationInFrames={337}><EconomyRun/></Sequence><Sequence from={956} durationInFrames={338}><CrownRun/></Sequence><Sequence from={1294} durationInFrames={169}><LastFlight/></Sequence><Sequence from={1463} durationInFrames={112}><ProofBeat/></Sequence><Sequence from={1575} durationInFrames={165}><End/></Sequence>
+ <Sequence durationInFrames={112}><Chase/></Sequence><Sequence from={112} durationInFrames={113}><RivalReveal/></Sequence><Sequence from={225} durationInFrames={56}><LogoBeat/></Sequence><Sequence from={281} durationInFrames={338}><GameplayRun/></Sequence><Sequence from={619} durationInFrames={337}><EconomyRun/></Sequence><Sequence from={956} durationInFrames={338}><CrownRun/></Sequence><Sequence from={1294} durationInFrames={169}><AIFocus/></Sequence><Sequence from={1463} durationInFrames={112}><ProofBeat/></Sequence><Sequence from={1575} durationInFrames={165}><End/></Sequence>
  <Audio src={staticFile('audio/recut-music.wav')}/>
  </AbsoluteFill>}

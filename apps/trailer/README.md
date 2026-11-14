@@ -32,7 +32,7 @@ The audio command downloads the composer's source track, checks its recorded SHA
 | 9.37–20.63 | Continuous graze/surge, rescue and boss replay excerpts |
 | 20.63–31.87 | Moving salvage → MOTH → craft → market → city illustration |
 | 31.87–43.13 | Crown entry, win and loss branches with moving CR token |
-| 43.13–48.77 | Another environment and cosmetic trail; ten-chapter invitation |
+| 43.13–48.77 | Live NEAR AI decision visualized: MOTH features Recovery; new matching jobs earn +1 salvage |
 | 48.77–52.50 | Finite supply, verification and cosmetic-only purchase proof |
 | 52.50–58.00 | Play link, legal line and music attribution |
 
@@ -44,7 +44,8 @@ Major cuts follow the 128 BPM track's measured approximately 30 ms onset phase, 
 - Crown entry: 10 CR. A win returns entry plus existing bounty. A loss, tie or expiry allocates 8 CR to the bounty and 2 CR to the holder.
 - Recovery job pays 4 salvage before bonuses. MOTH's illustrative 5 CR price changes with stock. The 20 CR marketplace listing is an example, not a completed sale.
 - City illustration depicts the existing 30-salvage Streets Relit milestone.
-- HOUND is rule based. Automatic live counterattacks are not claimed. Reward verification uses a trusted server; no trustless claim.
+- HOUND is rule based. The separate MOTH segment shows NEAR AI Cloud selecting a job focus that the bounded server validates and settles on NEAR. The frozen source receipt is in `src/ai-decision.json`; this is an illustration of a real confirmed decision, not a live dashboard. The developer-funded worker allows four decisions/day under the existing $1 pilot ceiling. It does not demonstrate player staking or unrestricted AI transactions.
+- Reward verification uses a trusted server; no trustless claim.
 - Purchases shown are cosmetic. Campaign rig unlocks remain earned through play.
 - Economy and Crown scenes are illustrations, not captured settlement receipts.
 
