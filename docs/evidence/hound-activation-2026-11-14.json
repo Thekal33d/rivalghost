@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-11-14T13:38:00.763398+00:00",
+  "applicationRevision": "9002c3d",
+  "network": "testnet",
+  "contractId": "game.rivalghost-ops-thekal33d.testnet",
+  "houndAccount": "hound.rivalghost-ops-thekal33d.testnet",
+  "automation": {
+    "enabled": true,
+    "logic": "deterministic",
+    "dailyTransactionLimit": 16,
+    "dailyGasReserveYocto": "480000000000000000000000",
+    "inferenceEnabled": false
+  },
+  "houndBalanceCR": 20,
+  "crowns": [
+    {"id": 0, "holderName": "HOUND", "score": 19820, "bountyCR": 20, "activeAtCheck": true, "expires": 1794665245059, "transactionHash": "Pc1yibkPPncTVgWsocHR6DenEGfawfGXjtGsFWdbfNG"},
+    {"id": 1, "holderName": "HOUND", "score": 28200, "bountyCR": 20, "activeAtCheck": true, "expires": 1794665263293, "transactionHash": "9AXENHcd7yqEbHCyjQA6dnqSMVYo5fNK2dPAao3Lmfqd"},
+    {"id": 2, "holderName": "HOUND", "score": 30400, "bountyCR": 20, "activeAtCheck": true, "expires": 1794665275557, "transactionHash": "7D1QtP2EFHwAZchB32Z83eC2wQDokzYXoGXZ4BbjoeiZ"}
+  ],
+  "transactionStates": ["final", "final", "final"],
+  "pendingTransactions": 0,
+  "priorDailyRequestsPreserved": 8,
+  "notes": "Snapshot from the live API and durable transaction journal. Crown availability changes as rounds expire or are challenged. Gas reservation is a ceiling, not actual gas spent. No AI inference or mainnet spending was enabled."
+}

@@ -1,6 +1,6 @@
 # Mobile journey repair and bounded HOUND activation
 
-November 14, 2026. Application changes: `a092fc6` and `9002c3d` on main.
+November 14, 2026. Application changes: `a092fc6` and `9002c3d` on main; final account spacing and validation in `d884b0f`.
 
 ## Mobile failure and repair
 
@@ -23,6 +23,10 @@ PLAYWRIGHT_MODULE=/absolute/path/to/playwright CHECK_URL=http://127.0.0.1:4192 n
 ```
 
 The browser checks use isolated API fixtures. They do not create accounts or send economic transactions.
+
+## Activation evidence
+
+At 13:38 UTC, all three Crown rounds were active with 20 CR bounties and actual replay scores of 19,820, 28,200 and 30,400. All three seed transactions finalized, no transaction remained pending, and HOUND retained 20 CR. See the [timestamped evidence and transaction hashes](evidence/hound-activation-2026-11-14.json). Both first-boss browser checks also passed against the public site.
 
 ## HOUND operating limits
 

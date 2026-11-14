@@ -61,7 +61,7 @@ These are browser-local progression gates, not contract security controls. Retur
 | Economic ownership | Live on NEAR testnet: CR, salvage, cosmetics, equipped items, listings, restoration, job/Crown settlement | [Contract](contracts/economy/src/lib.rs), [real transaction evidence](docs/evidence/economy-v3-testnet.json) |
 | Recoverable sign-in | Live device account, encrypted backup, sponsored authorization and signed game actions | [Recovery test + receipts](docs/device-wallet.md) |
 | MOTH | Contract-enforced stock-sensitive exchange, finite funds, reserve and daily budget | [Economy rules](docs/economy.md) |
-| HOUND | Live bounded testnet worker: verified ghosts, separate account, 16 signed actions/day and a 0.48 test-NEAR gas reserve cap. Daily limits can pause round availability | [Policy](packages/game-data/src/hound-policy.ts), [worker](apps/relayer/src/chain-economy.ts) |
+| HOUND | Live bounded testnet worker: verified ghosts, separate account, 16 signed actions/day and a 0.48 test-NEAR gas reserve cap. Daily limits can pause round availability | [Activation receipts](docs/evidence/hound-activation-2026-11-14.json), [worker and limits](docs/mobile-and-hound-release.md) |
 | NEAR AI Cloud | One successful live inference test; recurring inference **disabled**. No live Cloud-to-contract focus automation | [Usage and latency evidence](docs/evidence/near-ai-first-decision.json) |
 | Stake-to-compute / external item standards | Not active. No staking, NEP-245, NEAR Intents or external NFT marketplace integration | [Current limitations](#trust-and-current-limitations) |
 
