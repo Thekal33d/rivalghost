@@ -1,0 +1,4 @@
+interface:
+  display_name: "Motion Production"
+  short_description: "Direct, render and verify branded motion videos"
+  default_prompt: "Use $motion-production to build a reference-led motion video, with deterministic rendering and visual/audio quality checks."
