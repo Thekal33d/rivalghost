@@ -1,0 +1,12 @@
+RivalGhost flight music
+
+“Exit the Premises” — Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0 License
+https://creativecommons.org/licenses/by/4.0/
+Track: https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1500029
+
+Changes: 62-second excerpt with a 33 ms opening trim, loudness normalization,
+short entry fade and two-second ending fade, compressed to stereo MP3.
+Source SHA-256: 441d1b594a15b0acdac531495e9c56906e3df5d4002fc651b5a0b763f679c70b
+No endorsement is implied. Attribution is also available in the Flight Manual.
+Combat effects are synthesized by RivalGhost's Web Audio mixer.
