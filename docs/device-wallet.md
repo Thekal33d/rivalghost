@@ -20,7 +20,9 @@ Login challenges bind origin, account, nonce, testnet and expiry. A valid owner 
 
 The frontend independently reconstructs and byte-compares the NEP-366 delegate through the NEAR SDK. Only join and set_session on the configured economy contract are allowed, with zero attached NEAR and a maximum 12-hour session. The relayer verifies the owner signature before saving and broadcasting the exact signed delegate. An uncertain broadcast is recovered using the same signed bytes and request ID.
 
-New embedded-account funding is capped at four distinct accounts per UTC day, reserved durably before funding. Each receives 0.005 test NEAR; transaction gas is also charged against the existing daily relay allowance. These caps are a pilot guard, not Sybil-resistant registration. Existing 40-request/day and conservative gas-budget limits still apply. AI and HOUND settings are unchanged.
+New embedded-account funding is reserved durably before funding. Each receives 0.005 test NEAR. The original four-account pilot guard is configurable with `EMBEDDED_DAILY_NEW_ACCOUNTS` (1–100; fresh-clone default 4). The approved public-demo setting is now **100 new accounts per UTC day**, up to **0.5 test NEAR/day** in identity funding plus gas. This is a sponsorship limit, not a restriction on ordinary sign-ins, and is not Sybil-resistant registration. Existing reservations are preserved when the cap changes.
+
+The shared game relay is configured for **500 submitted transactions/day**, covering initial funding, session authorization, gameplay and maintenance. Its conservative daily reservation ceiling is **20 test NEAR**: 100 complete setups reserve up to 9.5 (including funding and gas at the configured price ceiling), leaving capacity for 300 ordinary 30-Tgas actions. Reservations are not actual fees or an automatic funding commitment; insufficient sponsor balance still pauses sponsorship. A one-time 1-test-NEAR top-up supports this demo expansion. There are no automatic top-ups. AI’s four requests/day and HOUND’s limits are unchanged.
 
 ## Operations
 
@@ -71,3 +73,7 @@ PLAYWRIGHT_MODULE=/absolute/path/to/playwright CHECK_URL=http://127.0.0.1:4192 n
 ```
 
 For an existing account, reload the page without clearing site data. Finish saving the recovery download in Files/Downloads, check “I saved my recovery file and password,” enter the original password if prompted, and select **Sign in**. Never ask users to share their password or backup to diagnose a format error; the revised non-secret error text identifies the validation stage.
+
+## Mobile process notices
+
+On phone layouts, successful-action notices and minimized progress controls now sit at the top safe area. The bottom primary button stays unobstructed. Pending/error dialogs still require dismissal or offer Hide progress; hiding progress does not cancel or resubmit an action. Browser regression checks measure notice/button rectangles and verify both success and minimized-pending states in Chromium and WebKit.

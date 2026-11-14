@@ -5,7 +5,7 @@ import {GuestStore} from './guest-store.js';
 import {ChainSessionAuth} from './chain-auth.js';
 import type {ChainRelay} from './chain-relay.js';
 afterEach(()=>vi.restoreAllMocks());
-function setup(){
+function setup(limit=4,now=Date.now){
  const store=new GuestStore(':memory:','http://localhost:5173'),pair=generateKeyPairSync('ed25519'),raw=pair.publicKey.export({type:'spki',format:'der'}).subarray(-32),actor=raw.toString('hex'),publicKey=new PublicKey({keyType:KeyType.ED25519,data:raw}),session='b'.repeat(64),id='a'.repeat(64);
  store.db.prepare("INSERT INTO guests(id,public_key,account_id,state) VALUES(?,?,?,'local')").run(id,'near:'+actor,actor);
  store.db.prepare("INSERT INTO sessions(hash,guest_id,expires,auth_method) VALUES(?,?,?,'near')").run(createHash('sha256').update(session).digest('hex'),id,Date.now()+3600000);
@@ -15,7 +15,7 @@ function setup(){
  const relay={store,rpc,config:{contractId:'game.testnet'},delegate,fundIdentity} as unknown as ChainRelay;
  const network={deriveKey:vi.fn(async()=>publicKey.toString()),ownsImplicitAccount:vi.fn(async()=>true)};
  const signing={sign:vi.fn(async(_jwt:string,payload:number[])=>Buffer.from(JSON.stringify({signature:[...sign(null,createHash('sha256').update(Uint8Array.from(payload)).digest(),pair.privateKey)]})).toString('base64'))};
- const auth=new ChainSessionAuth(relay,network,signing,async token=>JSON.parse(token));
+ const auth=new ChainSessionAuth(relay,network,signing,async token=>JSON.parse(token),now,limit);
  return {pair,relay,store,session,guest:store.guest(id)!,auth,signing,delegate,network};
 }
 describe('NEAR Auth delegated game authorization',()=>{
@@ -52,5 +52,19 @@ describe('Embedded wallet session authorization',()=>{
   }finally{x.store.close();}
  });
  it('rejects expired flows and revoked ownership before broadcasting',async()=>{const x=setup();try{x.store.db.prepare("UPDATE sessions SET auth_method='embedded'").run();const f=await x.auth.begin(x.guest,x.session,'11'.repeat(32)),sig=sign(null,createHash('sha256').update(Uint8Array.from(f.payload)).digest(),x.pair.privateKey).toString('hex');x.network.ownsImplicitAccount.mockResolvedValueOnce(false);await expect(x.auth.completeEmbedded(x.guest,x.session,f.id,sig)).rejects.toThrow('ownership');x.store.db.prepare('UPDATE economy_auth_flows SET expires=0').run();await expect(x.auth.completeEmbedded(x.guest,x.session,f.id,sig)).rejects.toThrow('expired');expect(x.delegate).not.toHaveBeenCalled();}finally{x.store.close();}});
- it('caps new-account sponsorship durably at four accounts per day',()=>{const x=setup();try{const reserve=(x.auth as any).reserveEmbeddedFunding.bind(x.auth);for(let i=0;i<4;i++)reserve(String(i));reserve('0');expect(()=>reserve('fifth')).toThrow('four-wallet');expect(x.store.db.prepare('SELECT count(*) n FROM embedded_funding_reservations').get()!.n).toBe(4);}finally{x.store.close();}});
+ it('caps new-account sponsorship durably at four accounts per day',()=>{const x=setup();try{const reserve=(x.auth as any).reserveEmbeddedFunding.bind(x.auth);for(let i=0;i<4;i++)reserve(String(i));reserve('0');expect(()=>reserve('fifth')).toThrow('4-player');expect(x.store.db.prepare('SELECT count(*) n FROM embedded_funding_reservations').get()!.n).toBe(4);}finally{x.store.close();}});
+});
+
+it('raises the configured pilot allowance without resetting reservations and enforces UTC rollover',()=>{
+ let now=Date.UTC(2026,10,14,12);const x=setup(4,()=>now);try{
+  const reserve=(auth:ChainSessionAuth,id:string)=>(auth as any).reserveEmbeddedFunding(id);
+  for(let i=0;i<4;i++)reserve(x.auth,String(i));
+  const expanded=new ChainSessionAuth(x.relay,x.network,x.signing,undefined,()=>now,100);
+  for(let i=4;i<100;i++)reserve(expanded,String(i));
+  reserve(expanded,'0');expect(()=>reserve(expanded,'101st')).toThrow('100-player');
+  expect(x.store.db.prepare('SELECT count(*) n FROM embedded_funding_reservations').get()!.n).toBe(100);
+  now+=86400000;reserve(expanded,'101st');reserve(expanded,'0');
+  expect(x.store.db.prepare('SELECT count(*) n FROM embedded_funding_reservations').get()!.n).toBe(101);
+  for(const bad of [0,101,1.5,NaN])expect(()=>new ChainSessionAuth(x.relay,x.network,x.signing,undefined,()=>now,bad)).toThrow('allowance');
+ }finally{x.store.close();}
 });

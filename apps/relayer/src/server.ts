@@ -73,7 +73,7 @@ async function main(){
       if(typeof permission==='string'||!('FunctionCall' in permission)||permission.FunctionCall.receiver_id!==signer.config.contractId||permission.FunctionCall.method_names.length!==1||permission.FunctionCall.method_names[0]!=='set_focus'||!permission.FunctionCall.allowance||BigInt(permission.FunctionCall.allowance)<=0n)throw new Error('Focus key must be restricted to set_focus with a finite allowance');
       focus=new ChainFocus(signer,compute);
     }
-    chain={economy,auth:new ChainSessionAuth(relay,authNetwork,authRelay),focus};
+    chain={economy,auth:new ChainSessionAuth(relay,authNetwork,authRelay,undefined,undefined,Number(process.env.EMBEDDED_DAILY_NEW_ACCOUNTS??4)),focus};
   }
   const server=createGuestServer(service,gateway,compute,new NearAuthService(store,authNetwork,authRelay),chain,{trustLoopbackProxy:process.env.TRUST_LOOPBACK_PROXY==='true',embeddedAuth:chain&&process.env.EMBEDDED_WALLET_ENABLED==='true'?new EmbeddedAuth(store,authNetwork):undefined});
   server.listen(port,"127.0.0.1",()=>console.log(`RivalGhost guest gateway: 127.0.0.1:${port}; ${service.configured?"testnet provisioning enabled":"provisioning disabled"}; NEAR Auth ${authRelay?"enabled":"disabled"}; NPC Cloud ${process.env.NEAR_AI_ENABLED==="true"?"enabled":"disabled"}`));

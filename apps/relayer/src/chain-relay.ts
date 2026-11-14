@@ -11,7 +11,7 @@ const digest=(s:string|Uint8Array)=>createHash('sha256').update(s).digest('hex')
 export class ChainRelay {
  readonly account:Account;private queue:Promise<unknown>=Promise.resolve();
  constructor(readonly store:GuestStore,readonly rpc:JsonRpcProvider,readonly config:RelayConfig,private readonly now=Date.now){
-  if(!config.contractId.endsWith('.testnet')||!config.accountId.endsWith('.testnet')||config.gasPriceCap<1000000000n||config.gas<10000000000000n||config.gas>100000000000000n||config.dailyBudget<config.gas*config.gasPriceCap||!Number.isInteger(config.maxDailyRequests)||config.maxDailyRequests<1||config.maxDailyRequests>200)throw new Error('Invalid game relay allowance');
+  if(!config.contractId.endsWith('.testnet')||!config.accountId.endsWith('.testnet')||config.gasPriceCap<1000000000n||config.gas<10000000000000n||config.gas>100000000000000n||config.dailyBudget<config.gas*config.gasPriceCap||!Number.isInteger(config.maxDailyRequests)||config.maxDailyRequests<1||config.maxDailyRequests>500)throw new Error('Invalid game relay allowance');
   this.account=new Account(config.accountId,rpc,config.privateKey);
   store.db.exec(`CREATE TABLE IF NOT EXISTS chain_transactions(id TEXT PRIMARY KEY,signer TEXT NOT NULL,fingerprint TEXT NOT NULL,day TEXT NOT NULL,reserved TEXT NOT NULL,hash TEXT UNIQUE NOT NULL,bytes TEXT NOT NULL,state TEXT NOT NULL,result TEXT);`);
  }

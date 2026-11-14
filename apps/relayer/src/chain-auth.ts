@@ -6,7 +6,8 @@ import {ChainRelay} from './chain-relay.js';
 import type {Guest} from './guest-store.js';
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 export class ChainSessionAuth {
- constructor(readonly relay:ChainRelay,readonly network:NearAuthNetwork,readonly signing:NearAuthRelay,private readonly claims:(jwt:string)=>Promise<AuthClaims>=checkJwt,private readonly now=Date.now){
+ constructor(readonly relay:ChainRelay,readonly network:NearAuthNetwork,readonly signing:NearAuthRelay,private readonly claims:(jwt:string)=>Promise<AuthClaims>=checkJwt,private readonly now=Date.now,readonly dailyNewAccounts=4){
+  if(!Number.isInteger(dailyNewAccounts)||dailyNewAccounts<1||dailyNewAccounts>100)throw new Error('New-player allowance must be between 1 and 100 per UTC day');
   relay.store.db.exec('CREATE TABLE IF NOT EXISTS economy_auth_flows(id TEXT PRIMARY KEY,session TEXT NOT NULL,actor TEXT NOT NULL,payload TEXT NOT NULL,descriptor TEXT NOT NULL,expires INTEGER NOT NULL,state TEXT NOT NULL,result TEXT)');
  }
  async begin(guest:Guest,session:string,publicKey:unknown){
@@ -30,7 +31,7 @@ export class ChainSessionAuth {
   db.exec('BEGIN IMMEDIATE');
   try{
    if(!db.prepare('SELECT actor FROM embedded_funding_reservations WHERE actor=?').get(actor)){
-    if(Number(db.prepare('SELECT count(*) n FROM embedded_funding_reservations WHERE day=?').get(day)!.n)>=4)throw new NearAuthError("Today's four-wallet testnet onboarding allowance is full. Free play remains available.");
+    if(Number(db.prepare('SELECT count(*) n FROM embedded_funding_reservations WHERE day=?').get(day)!.n)>=this.dailyNewAccounts)throw new NearAuthError(`Today's ${this.dailyNewAccounts}-player testnet setup allowance is full. It resets at 00:00 UTC. You can still sign in and play free.`);
     db.prepare('INSERT INTO embedded_funding_reservations VALUES(?,?)').run(actor,day);
    }
    db.exec('COMMIT');
