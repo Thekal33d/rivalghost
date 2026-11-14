@@ -1,7 +1,7 @@
 import { CHAPTERS, DISTRICTS,RECIPES,type TrailId } from "@rivalghost/game-data";
 import type { CombatEvent, ExpeditionSnapshot, Foe } from "@rivalghost/sim";
-import { ship } from "./arena-art";
-import {drawDistrict} from "./district-art";
+import {drawJet,drawPatrol} from './jet-art';
+import {drawFlightScene} from './flight-scene';
 import {applyFlightView,type FlightView} from "./flight-view";
 
 const ink="#14282e",cream="#fff0d0",mint="#a1e7bf",gold="#f7cc64",coral="#ff785b";
@@ -28,8 +28,7 @@ function boss(c:CanvasRenderingContext2D,f:Foe,color:string,chapter:number,hit:b
 
 export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,events:readonly CombatEvent[],reduced:boolean,ghost:ExpeditionSnapshot|undefined,view:FlightView,ghostLabel="BEST",trail?:TrailId|null,restorationStage=0) {
   const t=s.tick;
-  c.save();c.fillStyle=DISTRICTS[s.chapter].sky;c.fillRect(0,0,view.width,view.height);applyFlightView(c,view);
-  drawDistrict(c,s,reduced);
+  c.save();drawFlightScene(c,s,view,reduced,restorationStage);applyFlightView(c,view);
   // Restoration lives at the scenery edges: never cover bullets or alter collision.
   if(restorationStage>0){c.save();for(let i=0;i<12;i++){const y=(i*64+(reduced?0:t*.3))%680-20;for(const x of [9,345]){c.fillStyle=restorationStage===3?gold:mint;c.globalAlpha=.45;c.fillRect(x,y,6,restorationStage*5);if(restorationStage>=2){c.globalAlpha=.12;c.fillRect(x-4,y-3,14,24);}}}c.restore();}
 
@@ -65,24 +64,23 @@ export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,e
   for(const f of s.foes) {
     const impact=recent.some(e=>e.type==="damage"&&e.targetId===f.id&&t-e.tick<5);
     if(f.kind==="boss") boss(c,f,CHAPTERS[s.chapter].color,s.chapter,impact&&!reduced);
-    else {ship(c,f.x,f.y,f.kind==="dart" ? "skitter" : f.kind==="weaver" ? "lance" : "bulwark",t);}
+    else {drawPatrol(c,f.x,f.y,f.kind,impact&&!reduced);}
     if(f.kind==="boss"&&f.hp<f.maxHp*.5){c.strokeStyle=ink;c.lineWidth=3;c.beginPath();c.moveTo(f.x-26,f.y-20);c.lineTo(f.x-9,f.y-6);c.lineTo(f.x-18,f.y+6);c.stroke();}
     if(impact){c.strokeStyle=gold;c.lineWidth=2;for(let i=0;i<4;i++){const a=i*Math.PI/2;c.beginPath();c.moveTo(f.x+Math.cos(a)*20,f.y+Math.sin(a)*20);c.lineTo(f.x+Math.cos(a)*29,f.y+Math.sin(a)*29);c.stroke();}}
     if(f.kind!=="boss" && f.hp<f.maxHp){c.fillStyle=ink;c.fillRect(f.x-16,f.y-27,32,3);c.fillStyle=coral;c.fillRect(f.x-16,f.y-27,32*f.hp/f.maxHp,3);}
   }
   for(const b of s.bolts) {
     if(b.friendly) {
-      c.fillStyle=s.surge>0 ? gold : mint;c.fillRect(b.x-2,b.y-8,s.weapon===3 ? 4 : 3,14);
-      c.fillStyle="#a1e7bf44";c.fillRect(b.x-3,b.y+6,6,10);
+      c.save();c.strokeStyle=s.surge>0?gold:mint;c.lineCap="round";c.lineWidth=s.weapon===3?5:3;c.shadowColor=c.strokeStyle;c.shadowBlur=reduced?0:7;
+      c.beginPath();c.moveTo(b.x,b.y+5);c.lineTo(b.x,b.y-7);c.stroke();c.shadowBlur=0;c.strokeStyle=cream;c.lineWidth=1;c.stroke();c.restore();
     } else {
       c.fillStyle=b.grazed ? "#8bad9466" : "#ff785b33";c.beginPath();c.arc(b.x,b.y,9,0,Math.PI*2);c.fill();
       c.fillStyle=b.grazed ? "#91b49a" : coral;c.beginPath();c.arc(b.x,b.y,5,0,Math.PI*2);c.fill();c.fillStyle=cream;c.fillRect(b.x-1,b.y-2,2,4);
     }
   }
   if(ghost && ghost.player.health>0 && ghost.tick>60) {
-    c.globalAlpha=.35;c.strokeStyle=cream;c.lineWidth=1;c.setLineDash([3,3]);
-    c.beginPath();c.moveTo(ghost.player.x,ghost.player.y-20);c.lineTo(ghost.player.x+18,ghost.player.y+15);c.lineTo(ghost.player.x,ghost.player.y+8);c.lineTo(ghost.player.x-18,ghost.player.y+15);c.closePath();c.stroke();c.setLineDash([]);
-    text(ghostLabel,ghost.player.x,ghost.player.y+30,cream,10);c.globalAlpha=1;
+    drawJet(c,ghost.player.x,ghost.player.y,ghost.rig,reduced?0:t,true);
+    text(ghostLabel,ghost.player.x,ghost.player.y+34,"#B79CFF",10);
   }
   if(s.player.health>0) {
     const p=s.player;
@@ -92,7 +90,7 @@ export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,e
     if(p.shield){c.strokeStyle=mint;c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,29,0,Math.PI*2);c.stroke();}
     c.strokeStyle=s.surge>0?gold:"#82bdad88";c.lineWidth=1;c.setLineDash([3,5]);c.strokeRect(p.x-23,p.y-23,46,46);c.setLineDash([]);
     c.globalAlpha=p.invulnerable>0 && !reduced && t%8<4 ? .35 : 1;
-    ship(c,p.x,p.y,"player",reduced ? 0 : t);
+    drawJet(c,p.x,p.y,s.rig,reduced ? 0 : t);
     if(s.weapon>=2){c.fillStyle=gold;c.fillRect(p.x-15,p.y-3,3,8);c.fillRect(p.x+12,p.y-3,3,8);}
     c.fillStyle=cream;c.fillRect(p.x-3,p.y-3,6,6);c.globalAlpha=1;
   }
@@ -107,8 +105,9 @@ export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,e
       c.strokeStyle=mint;c.globalAlpha=Math.max(0,1-age/40);c.lineWidth=5;c.beginPath();c.arc(e.x,e.y,reduced ? 150 : Math.min(180,age*10),0,Math.PI*2);c.stroke();c.globalAlpha=1;
     } else if(e.type==="kill" || e.type==="hit") {
       c.globalAlpha=1-age/52;
+      if(e.type==="kill"&&age<20){c.save();c.translate(e.x,e.y);c.rotate(reduced?0:age*.035);c.beginPath();for(let n=0;n<16;n++){const a=n*Math.PI/8,r=n%2?8:Math.max(8,24-age*.6);n?c.lineTo(Math.cos(a)*r,Math.sin(a)*r):c.moveTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fillStyle=gold;c.strokeStyle=ink;c.lineWidth=2;c.fill();c.stroke();c.fillStyle=cream;c.beginPath();c.arc(0,0,6,0,Math.PI*2);c.fill();c.restore();}
       for(let i=0;i<(reduced?4:12);i++){const angle=i*Math.PI/6;c.fillStyle=i%2?coral:gold;c.fillRect(e.x+Math.cos(angle)*age,e.y+Math.sin(angle)*age,Math.max(1,6-age/10),Math.max(1,6-age/10));}
-      c.globalAlpha=1;if(e.type==="kill")text(`+${e.value}`,e.x,e.y-15-age*.4,gold,13);
+      c.globalAlpha=1;if(e.type==="kill")text(`+${e.value}`,e.x,e.y-20-age*.4,gold,18);
     } else if(["rescue","upgrade","graze","shield"].includes(e.type)) {
       const message=e.type==="rescue" ? "COURIER SAFE +500" : e.type==="upgrade" ? `WEAPON UP / LV ${e.value}` : e.type==="shield" ? "SHIELD SAVED YOU" : "+100 GRAZE";
       text(message,Math.max(90,Math.min(270,e.x)),e.y-25-age*.4,e.type==="upgrade"?gold:mint,14);
@@ -116,7 +115,7 @@ export function drawExpedition(c:CanvasRenderingContext2D,s:ExpeditionSnapshot,e
   }
   c.restore();
   if(s.surge>0){c.strokeStyle=gold;c.lineWidth=4;c.strokeRect(2,2,356,636);text("SURGE / DOUBLE KILL SCORE",180,610,gold,17);}
-  if(s.combo>1) text(`CHAIN ×${s.combo}`,306,68,gold,15);
+  if(s.combo>1) text(`CHAIN ×${s.combo}`,view.landscape?306:310,view.landscape?110:90,gold,view.landscape?24:15);
 
 
   if(s.bossDefeated)text("SIGNAL BROKEN / EXTRACTING",180,70,mint,18);

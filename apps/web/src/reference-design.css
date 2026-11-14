@@ -1,0 +1,58 @@
+/* Matches the Nov 14 reference while keeping live progression and transaction states. */
+.game-shell.screen-run>.immersive-flight{margin:0;padding:0}
+.arcade-button:focus-visible,.map-node>button:focus-visible{outline:3px solid var(--gold);outline-offset:6px}
+.deck-launch .launch-text{font-size:58px;line-height:1}.deck-launch .launch-text small{font-size:11px;line-height:1.3}
+.deck-rival .deck-quote{left:0;bottom:3%;max-width:240px;font-size:12px;z-index:4}
+.deck-modes{position:relative;z-index:5}
+.rig-portrait svg{width:94px}.deck-ship{width:190px}
+
+/* A continuous campaign path, with three acts as map regions. */
+.signal-map .map-board{padding:18px 20px 10px;min-width:0;background:linear-gradient(90deg,#17382e22 0 33.33%,#55466522 33.33% 66.66%,#873c2822 66.66%),repeating-linear-gradient(0deg,transparent 0 23px,#8ab8a308 24px),repeating-linear-gradient(90deg,transparent 0 23px,#8ab8a308 24px),var(--panel)}
+.map-board-head h1{font-size:25px}.map-board-head span{font-size:10px;letter-spacing:1px}
+.map-route-stage{position:relative;flex:1;min-height:570px;margin-top:14px}
+.map-act-labels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;position:relative;z-index:1}
+.map-act-labels h2{font-size:15px;line-height:1.15;display:flex;align-items:center;gap:6px}
+.map-act-labels small{padding:5px;background:var(--mint);color:var(--bg);font:700 9px var(--ui);border-radius:3px;white-space:nowrap}
+.map-act-labels h2:nth-child(2) small{background:var(--violet)}.map-act-labels h2:nth-child(3) small{background:var(--coral)}
+.map-connections{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.map-connections line{vector-effect:non-scaling-stroke;stroke-linecap:round}.route-track{stroke:#09181e;stroke-width:11}.route-signal{stroke:#6c898d;stroke-width:2;stroke-dasharray:5 9}.route-cleared .route-signal{stroke:var(--mint);stroke-dasharray:none;stroke-width:3}.route-next .route-signal{stroke:var(--coral);stroke-width:3}
+.phone-route{display:none}.map-route-nodes{list-style:none;margin:0;padding:0;position:absolute;inset:0}
+.map-route-nodes .map-node{position:absolute;left:var(--x);top:var(--y);translate:-50% -50%;width:120px;gap:4px}
+.map-route-nodes .map-node>button{width:56px;height:56px;font-size:23px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1}
+.map-route-nodes .map-node.is-current>button{width:74px;height:74px;font-size:34px}
+.map-route-nodes .map-node>b{font-size:14px;line-height:1.1;max-width:110px}
+.map-route-nodes .map-node.is-locked>b{color:#94aaa8}
+.map-route-nodes .map-node.is-finale>button{border-color:var(--gold);box-shadow:0 0 22px #FFD16642;color:var(--gold);width:78px;height:78px;background:#3b3824}
+.map-route-nodes .map-you{top:-24px;right:auto;left:50%;translate:-50% 0;font-size:9px;padding:3px 7px}
+.map-final-rival{position:absolute;width:64px;right:-18px;top:-38px;pointer-events:none}
+.map-medal-summary{display:flex;gap:10px;align-items:center;margin-top:auto;color:var(--gold)}.map-medal-summary .medal-diamonds{width:62px;height:20px}.map-medal-summary>span{font-size:10px;letter-spacing:1px;color:var(--muted)}
+.map-launch{margin-top:4px}.map-brief{border-top-color:var(--gold)}
+
+/* Pausing freezes combat and presents a readable card over that exact scene. */
+.immersive-flight .flight-paused{position:fixed;inset:0;z-index:25;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;padding:32px 16px;overflow:auto;background:#071318dd;backdrop-filter:blur(3px)}
+.pause-card{position:relative;width:min(550px,100%);min-width:0;box-sizing:border-box;padding:44px 28px 24px;border:1px solid var(--gold);border-radius:20px;background:linear-gradient(150deg,#243c45,#101e25);box-shadow:0 0 60px #FFD16616,0 24px 80px #020d18;text-align:center}
+.pause-medallion{position:absolute;top:-28px;left:50%;translate:-50% 0;display:grid;place-items:center;width:60px;height:60px;border:4px solid var(--bg);border-radius:50%;background:linear-gradient(#FFF3C4,#FFD166);box-shadow:0 0 0 2px var(--gold),0 0 22px #FFD16655;color:var(--bg)}
+.pause-card .eyebrow{margin:0;font-size:10px;color:var(--mint)}.pause-card h2{font-size:clamp(40px,5vw,64px);line-height:1.02;color:var(--gold);margin:18px 0 22px;text-shadow:0 4px 0 #09191f}
+.pause-card .pause-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 14px}.pause-card .pause-stats div{padding:10px 5px;background:#0b1b23;border:1px solid var(--line-strong);border-radius:10px;display:flex;flex-direction:column-reverse;gap:6px}.pause-card .pause-stats dt{font-size:9px;letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:4px}.pause-card .pause-stats dd{font-size:28px;margin:0}.pause-card .pause-stats div:nth-child(2) dd{color:var(--gold)}.pause-card .pause-stats div:last-child dd{color:var(--mint)}
+.pause-card .pause-twist{font-size:12px;line-height:1.5;max-width:none;margin-bottom:20px!important;padding:10px;gap:6px}.pause-card .pause-deadline{font-size:12px;color:var(--gold);line-height:1.5;margin:0 0 18px}
+.pause-card .pause-resume{width:calc(100% - 10px);margin:0 auto 20px;font-size:26px}.pause-card .pause-actions{display:flex;justify-content:center;align-items:center;gap:16px}.pause-card .pause-exit{padding:0 14px;margin:0 0 6px;border:3px solid var(--bg);font:900 italic 18px/1 var(--display);letter-spacing:1px;text-decoration:none}.pause-card .round-button{width:44px;height:44px}
+.flight-coach{z-index:10}.immersive-flight .boss-readout{z-index:11;border-radius:10px;border-top:3px solid var(--coral)}
+.flight-vitals meter{border-radius:6px;border:2px solid #0B1418;height:17px;box-shadow:0 0 0 1px #527a70}.flight-rescues .courier-icons{color:var(--line-bright)}.flight-rescues .courier-icons .on{color:var(--mint)}
+@media(max-width:1100px){.map-route-nodes .map-node{width:98px}.map-route-nodes .map-node>b{font-size:12px;max-width:90px}.map-act-labels h2{font-size:12px;display:block}.map-act-labels small{display:inline-block;margin-bottom:5px}.map-final-rival{width:48px;right:-6px}}
+@media(max-width:760px){.deck-rival .deck-quote{position:relative;left:auto;bottom:auto;margin-top:12px;max-width:100%;font-size:12px}.deck-launch .launch-text{font-size:48px}.signal-map .map-board{padding:18px 12px}.map-route-stage{min-height:900px;margin-top:20px}.map-act-labels{position:relative}.map-act-labels h2{font-size:11px}.map-route-nodes{top:50px}.map-connections{top:50px;height:calc(100% - 50px)}.desktop-route{display:none}.phone-route{display:block}.map-route-nodes .map-node{left:var(--mx);top:var(--my);width:120px}.map-route-nodes .map-node>b{font-size:14px;max-width:115px}.map-route-nodes .map-node>button{width:52px;height:52px}.map-route-nodes .map-node.is-current>button{width:64px;height:64px}.map-route-nodes .map-node.is-finale>button{width:62px;height:62px}.map-final-rival{width:50px;right:-6px;top:-25px}.pause-card{padding:40px 18px 20px}.pause-card .pause-stats{gap:5px}.pause-card .pause-stats dd{font-size:24px}.pause-card .pause-stats dt{font-size:8px;letter-spacing:0}.pause-card .pause-resume{font-size:22px}.pause-card .pause-exit{font-size:15px}.pause-card .pause-twist{font-size:12px}.pause-card .pause-actions{gap:10px}}
+@media(max-height:540px) and (min-width:601px){.immersive-flight .flight-paused{padding:20px}.pause-card{width:600px;padding:24px 24px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px 20px}.pause-medallion{display:none}.pause-card .eyebrow{grid-column:1/-1}.pause-card h2{font-size:35px;margin:0}.pause-card .pause-stats{margin:0;align-items:center}.pause-card .pause-twist{grid-column:1/-1;margin:0!important}.pause-card .pause-resume{font-size:19px;margin:0;height:50px}.pause-card .pause-actions{gap:10px}.pause-card .pause-exit{font-size:14px;height:44px}.pause-card .pause-deadline{grid-column:1/-1;margin:0}}
+@media(prefers-reduced-motion:reduce){.deck-rival-bar i{transition:none}.arcade-button{transition:none}.immersive-flight .flight-paused{backdrop-filter:none}}
+
+/* Legacy generic workshop button rules must not erase the reference's purchase contrast. */
+.workshop .salvage-actions .arcade-gold{background:linear-gradient(180deg,#FFF3C4 0%,#FFD166 46%,#F0B33A 54%,#C98A12 100%);color:var(--bg);border:3px solid var(--bg)}
+.workshop .salvage-actions .arcade-steel{background:linear-gradient(180deg,#3A5A64,#27444E 46%,#1A323A 54%,#12252C);color:var(--text);border:3px solid var(--bg)}
+
+/* Let the actual viewport constrain grid children, including 320px phones. */
+@media(max-width:1100px){.flight-deck,.signal-map{grid-template-columns:minmax(0,1fr)}.deck-stage,.deck-loadout{min-width:0}}
+@media(max-width:400px){.deck-loadout-head{flex-wrap:wrap;gap:6px}.deck-mission,.deck-chapter-card{min-width:0;max-width:100%}.deck-chapter-text{min-width:0}.deck-chapter-text small{overflow-wrap:anywhere}.rig-stats{flex-wrap:wrap}.deck-launch .arcade-button{padding-left:18px;padding-right:18px}.deck-rival-head small{font-size:9px;letter-spacing:1px}}
+
+@media(max-width:760px){.deck-chapter{bottom:auto}.deck-rival{height:320px}.deck-rival .deck-quote{position:absolute;left:0;right:0;top:auto;bottom:0;margin:0;max-width:none}}
+@media(max-width:400px){.pause-card .pause-resume{font-size:18px;padding-left:10px;padding-right:10px;gap:5px}.pause-card .pause-exit{font-size:13px;padding:0 8px;letter-spacing:.5px}.pause-card .pause-stats dd{font-size:21px}.pause-card .pause-stats dt .icon{display:none}}
+
+@media(max-width:1100px){.map-act-labels small{margin-right:6px}}
+@media(max-width:760px){.map-act-labels small{display:table;margin-bottom:6px}.map-act-labels h2{line-height:1.35}}

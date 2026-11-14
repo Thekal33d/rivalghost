@@ -1,4 +1,5 @@
 /** Flight Deck brand art: logo, line icons, ships and HOUND, drawn from the Nov 14 redesign. */
+import {JET_WINGS,JET_BODY,JET_PANELS,JET_COCKPIT} from './jet-art';
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 export function LogoMark({ size = 52 }: { size?: number }) {
@@ -75,15 +76,14 @@ export function MedalDiamonds({ mask, className }: { mask: number; className?: s
 
 export function Ship({ color = "#7DF5C0", label, ghost = false, className }: { color?: string; label?: string; ghost?: boolean; className?: string }) {
   const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": true as const };
-  if (ghost) return <svg className={className} viewBox="0 0 134 100" {...a11y}>
-    <path d="M126 50L54 8l10 30H36L22 50l14 12h28L54 92z" fill="rgba(183,156,255,.16)" stroke="#B79CFF" strokeWidth="4" strokeDasharray="8 6" strokeLinejoin="round"/>
-  </svg>;
   return <svg className={className} viewBox="0 0 134 100" {...a11y}>
-    <path d="M24 50L2 38l8 12-8 12z" fill="#FFD166"/>
-    <path d="M126 50L54 8l10 30H36L22 50l14 12h28L54 92z" fill={color} stroke="#0B1418" strokeWidth="5" strokeLinejoin="round"/>
-    <path d="M116 48L62 17l6 19z" fill="#FFFFFF" opacity=".4"/>
-    <path d="M96 50L70 40v20z" fill="#0B1418"/>
-    <path d="M57 24h8v9h-8zM57 67h8v9h-8z" fill="#FF6B4A"/>
+    {ghost?<g fill="#B79CFF22" stroke="#B79CFF" strokeWidth="3" strokeDasharray="5 4" strokeLinejoin="round"><path d={JET_WINGS}/><path d={JET_BODY}/></g>:<>
+      <path d="M28 42 2 50 28 58Z" fill="#FFD166"/><path d="M28 46 10 50 28 54Z" fill="#FFF3C4"/>
+      <g fill={color} stroke="#0B1418" strokeWidth="4" strokeLinejoin="round"><path d={JET_WINGS}/><path d={JET_BODY}/></g>
+      <path d={JET_PANELS} fill="#E4FFF1"/><path d={JET_COCKPIT} fill="#0B1418" stroke="#0B1418" strokeWidth="3"/>
+      <path d="M77 45 97 47 101 50 76 50Z" fill="#A7D8CE"/><path d="m40 44 22-1m-22 13 22 1" stroke="#28766A" strokeWidth="2"/>
+      <path d="M46 29h8v5h-8zM46 66h8v5h-8z" fill="#FF6B4A"/>
+    </>}
   </svg>;
 }
 

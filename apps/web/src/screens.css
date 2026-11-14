@@ -378,3 +378,22 @@
 .flight-rescues>.courier-icons{display:flex;margin:0}
 .flight-rescues>.ghost-gap{color:var(--violet)}
 @media(max-width:600px){.flight-topbar .flight-score{justify-content:center;justify-items:center}}
+
+/* Flight Deck polish: meaningful rival meter, mission card, labeled rig stats */
+.deck-lane{height:36px;opacity:.55}
+.deck-ghost{top:46%}.deck-ship{top:50%}.deck-shots{top:54%}
+.deck-ghost span b{color:var(--text);font-weight:700}
+.deck-rival-meter{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted)}
+.deck-rival-meter b{font:900 italic 20px/1 var(--display);letter-spacing:1px;color:var(--coral);font-variant-numeric:tabular-nums}
+.deck-rival-bar i{transition:width .4s}
+.deck-quote{white-space:normal;max-width:260px;text-transform:uppercase;line-height:1.35}
+.deck-chapter{bottom:118px;align-items:flex-end}
+.deck-mission{display:flex;flex-direction:column;gap:8px;max-width:440px}
+.deck-objective{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text)}
+.deck-objective .icon{color:var(--coral)}
+.deck-medals{list-style:none;margin:0;padding:0;display:flex;gap:6px;flex-wrap:wrap}
+.deck-medals li{display:flex;align-items:center;gap:5px;border-radius:999px;border:1px solid var(--line-strong);background:rgba(11,20,24,.6);padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--dim)}
+.deck-medals li.won{color:var(--bg);background:var(--gold);border-color:var(--gold)}
+.rig-stat-label{width:56px;font-size:9px;font-weight:700;letter-spacing:1.2px;color:var(--muted)}
+.rig-stat i{width:18px}
+@media(max-width:760px){.deck-quote{position:relative;left:auto;bottom:auto;margin-top:auto}.deck-mission{max-width:none}}
