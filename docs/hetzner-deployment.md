@@ -60,3 +60,7 @@ The remaining external blocker is the NEAR Auth provider's callback allowlist. B
 ### Device wallet release — 14 November 2026
 
 Deployed `f3d102c` from main, preserving the live database and existing signing keys. `EMBEDDED_WALLET_ENABLED=true` enables local owner-signature login and sponsored delegated game sessions; original NEAR Auth remains available for existing accounts. The deployment retained a consistent database/config backup and the previous release for rollback. AI and HOUND remain disabled. See [device-wallet.md](device-wallet.md) for the player recovery flow, limits and live testnet receipts.
+
+## November 14: mobile fixes and HOUND activation
+
+The application release `9002c3d` repairs mobile post-boss walkthrough placement and exposes primary phone actions. HOUND was enabled with its existing testnet key, protected separately from the release archive. The live database and all prior gas reservations were retained. The final worker limit is 16 signed actions/day and 0.48 test NEAR of conservative daily gas reservations; eight historical actions had already used the initial allowance. Recurring NEAR AI remains off because the Cloud-to-contract decision path is incomplete. See [validation and operating limits](mobile-and-hound-release.md). Historical sections above describe settings at their original deployment dates.

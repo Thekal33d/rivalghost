@@ -61,7 +61,7 @@ These are browser-local progression gates, not contract security controls. Retur
 | Economic ownership | Live on NEAR testnet: CR, salvage, cosmetics, equipped items, listings, restoration, job/Crown settlement | [Contract](contracts/economy/src/lib.rs), [real transaction evidence](docs/evidence/economy-v3-testnet.json) |
 | Recoverable sign-in | Live device account, encrypted backup, sponsored authorization and signed game actions | [Recovery test + receipts](docs/device-wallet.md) |
 | MOTH | Contract-enforced stock-sensitive exchange, finite funds, reserve and daily budget | [Economy rules](docs/economy.md) |
-| HOUND | Separate account, budgeted Crown/commission logic and verified ghost worker implemented; historical on-chain execution recorded. Recurring worker is **disabled** in the public release | [Policy](packages/game-data/src/hound-policy.ts), [worker](apps/relayer/src/chain-economy.ts) |
+| HOUND | Live bounded testnet worker: verified ghosts, separate account, 16 signed actions/day and a 0.48 test-NEAR gas reserve cap. Daily limits can pause round availability | [Policy](packages/game-data/src/hound-policy.ts), [worker](apps/relayer/src/chain-economy.ts) |
 | NEAR AI Cloud | One successful live inference test; recurring inference **disabled**. No live Cloud-to-contract focus automation | [Usage and latency evidence](docs/evidence/near-ai-first-decision.json) |
 | Stake-to-compute / external item standards | Not active. No staking, NEP-245, NEAR Intents or external NFT marketplace integration | [Current limitations](#trust-and-current-limitations) |
 
@@ -209,7 +209,7 @@ flowchart TD
 - **Economic state is on-chain; gameplay/social state is not.** Campaign medals and best flights stay on the device. Profiles, leaderboards and shared replays use the server. Recovery restores the same account and assets, not campaign progress.
 - **Operator trust remains.** Contract upgrade authority, pause/verifier-key controls, server-operated NPC keys and sponsorship are not decentralized governance. No independent security audit is claimed.
 - **Recovery has a tradeoff.** The encrypted file and original password are both required; there is no password-reset service. A newly authorized device replaces the previous game session. Hosted NEAR Auth exists as an alternate path but its public callback is unresolved; use the device-account flow.
-- **Automation is bounded and currently off.** HOUND is a rule-based replay pilot. One NEAR AI inference test is evidence of an integration, not autonomous live gameplay. No TEE attestation verification, staking, mainnet economy, NEP-245 token standard or external marketplace interoperability is claimed.
+- **HOUND automation is bounded; Cloud inference remains off.** HOUND is a rule-based replay pilot with a 16-action daily limit. See [activation limits and recovery](docs/mobile-and-hound-release.md). One NEAR AI inference test is evidence of an integration, not autonomous live gameplay. No TEE attestation verification, staking, mainnet economy, NEP-245 token standard or external marketplace interoperability is claimed.
 - **This is a hackathon pilot.** Live Crown availability and market stock depend on actual state; empty/expired boards must not be presented as active players. Public load, real-phone performance across devices, moderation and retention need further testing.
 
 ## Further reading
