@@ -1,10 +1,14 @@
 import {Workshop,JobReceipt,WORK_PENDING,type JobLaunch} from './Workshop';
 import {repairStage,type TrailId} from '@rivalghost/game-data';
 import { useCallback, useEffect, useState } from "react";
-import { CAMPAIGN_ACTS, CHAPTERS, DISTRICTS, RIGS, dailySignal, type ChapterId, type Rig, type SocialProfile } from "@rivalghost/game-data";
+import { CHAPTERS, dailySignal, type ChapterId, type Rig, type SocialProfile } from "@rivalghost/game-data";
 import type { ExpeditionConfig, ExpeditionReplay } from "@rivalghost/sim";
 import { ExpeditionArena, type FlightReport } from "./ExpeditionArena";
-import { GuestPilot } from "./GuestPilot";
+import { TopBar, type Screen } from "./TopBar";
+import { PilotAccount } from "./GuestPilot";
+import { isNearAuthReturn } from "./near-auth-return";
+import { FlightDeck } from "./FlightDeck";
+import { SignalMap } from "./SignalMap";
 import {PilotStudio,Leaderboard,ShareFlight,GhostInvitation} from "./SocialHub";
 import {cachedIdentity,IDENTITY_KEY,socialRequest,type SharedGhost} from "./social-client";
 import {CrownPit,PitSettlement,PIT_PENDING,type PitLaunch} from "./CrownPit";
@@ -19,7 +23,7 @@ const chapterNumber=(id:number)=>String(id+1).padStart(2,"0");
 const medalNames=["Break the signal","Rescue 2 couriers","Clear without hull damage"];
 
 export default function App() {
-  const [screen,setScreen]=useState<"lobby"|"run"|"result"|"profile"|"board"|"pit"|"workshop">("lobby");
+  const [screen,setScreen]=useState<Screen>(()=>isNearAuthReturn()||Boolean(sessionStorage.getItem("rivalghost.auth.error"))?"profile":"lobby");
   const [trail,setTrail]=useState<TrailId|null>(null),[districts,setDistricts]=useState<number[]>(Array(10).fill(0));
   const updateWorld=useCallback((trail:TrailId|null,districts:number[])=>{setTrail(trail);setDistricts(districts);},[]);
   useEffect(()=>{void socialRequest("workshop").then(v=>updateWorld(v.pilot?.equipped??null,v.districts)).catch(()=>{});},[updateWorld]);
@@ -39,6 +43,7 @@ export default function App() {
   useEffect(()=>{window.scrollTo(0,0);},[screen]);
   useEffect(()=>{if(screen==="run")return;setDay(dailySignal());const id=setInterval(()=>setDay(dailySignal()),30000);return()=>clearInterval(id);},[screen]);
 
+  const nav=(next:Screen)=>{if(next==="map")setMode("story");setScreen(next);};
   const launch=()=>{
     if(screen==="result"&&(flight?.job||flight?.commission)){setScreen("workshop");return;}
     if(screen==="result"&&flight?.pit){setScreen("pit");return;}
@@ -75,11 +80,11 @@ export default function App() {
   const result=report?.result;
   const playedChapter=result?CHAPTERS[result.chapter]:chapter;
 
-  return <main className={`game-shell screen-${screen}`}>
-    <header className="masthead"><a className="wordmark" href="#" onClick={e=>{e.preventDefault();setScreen("lobby");}} aria-label="RivalGhost hangar"><span className="brand-emblem">R↗</span>RIVAL<span>GHOST</span></a><div className="header-tools"><GuestPilot username={identity?.username} disabled={screen==="run"}/><span className="build-label">{callsign(profile)} / {medalCount(profile)} {medalCount(profile)===1?"MEDAL":"MEDALS"}</span><button className="sound-button" aria-pressed={sound} onClick={()=>setSound(s=>!s)}>SOUND {sound?"ON ♪":"OFF"}</button></div></header>
-    {screen!=="run"&&<nav className="social-nav" aria-label="Game navigation"><button aria-current={screen==="lobby"?"page":undefined} onClick={()=>setScreen("lobby")}>FLIGHT DECK</button><button aria-current={screen==="board"?"page":undefined} onClick={()=>setScreen("board")}>LEADERBOARD <span>↗</span></button><button aria-current={screen==="pit"?"page":undefined} onClick={()=>setScreen("pit")}>CROWN PIT <span>♛</span></button><button aria-current={screen==="workshop"?"page":undefined} onClick={()=>setScreen("workshop")}>WORKSHOP <span>✳</span></button><button className="profile-nav" aria-current={screen==="profile"?"page":undefined} onClick={()=>setScreen("profile")}><span className="nav-avatar"><Pilot avatar={identity?.avatar}/></span><span>{identity?`@${identity.username}`:"YOUR PILOT"}<small>CUSTOMIZE →</small></span></button></nav>}
+  return <main className={`game-shell screen-${screen}`}><div className="deck-backdrop" aria-hidden="true"/>
+    {screen!=="run"&&<TopBar screen={screen} onNav={nav} medals={medalCount(profile)} maxMedals={CHAPTERS.length*3} rank={callsign(profile)} username={identity?.username} avatar={identity?.avatar} sound={sound} onSound={()=>setSound(s=>!s)}/>}
+
     {socialNotice&&screen!=="run"&&<p className="social-error" role="status">{socialNotice}<button className="text-button" onClick={()=>setSocialNotice("")}>DISMISS</button></p>}
-    {screen==="profile"&&<><PilotStudio identity={identity} profile={profile} onSave={saveIdentity}/>{report&&flight&&!flight.job&&!flight.commission&&<ShareFlight key={report.hash} replay={report.replay} mode={flight.mode} day={flight.dailyKey} identity={identity} onProfile={()=>setScreen("profile")}/>}</>}
+    {screen==="profile"&&<><PilotStudio identity={identity} profile={profile} onSave={saveIdentity} account={<PilotAccount username={identity?.username} onDone={()=>setScreen("lobby")}/>}/>{report&&flight&&!flight.job&&!flight.commission&&<ShareFlight key={report.hash} replay={report.replay} mode={flight.mode} day={flight.dailyKey} identity={identity} onProfile={()=>setScreen("profile")}/>}</>}
     {screen==="workshop"&&<Workshop onFly={launchJob} onRace={raceCommission} onWorld={updateWorld}/>}
     {screen==="pit"&&<CrownPit onFly={launchPit} onProfile={()=>setScreen("profile")}/>}
     {screen==="board"&&<Leaderboard identity={identity} profile={profile} initialChapter={chapterId} day={day.key} onRace={raceGhost} onProfile={()=>setScreen("profile")} onPlay={()=>setScreen("lobby")}/>}
@@ -87,29 +92,10 @@ export default function App() {
 
     {screen==="lobby"&&<>
       {invitation&&<GhostInvitation run={invitation} onRace={launchRival} onClose={()=>{setInvitation(null);const url=new URL(location.href);url.searchParams.delete("ghost");history.replaceState(null,"",url);}}/>}
-      <div className="mode-switch" aria-label="Game mode"><button aria-pressed={mode==="story"} onClick={()=>setMode("story")}>GHOST SIGNAL <small>STORY / {CHAPTERS.length} CHAPTERS</small></button><button aria-pressed={mode==="daily"} onClick={()=>setMode("daily")}>DAILY SIGNAL <small>EXPERT / {day.key}</small></button></div>
-      <div className="lobby-grid campaign-lobby">
-        <section className="intro-panel"><p className="eyebrow"><span className="tiny-star">✳</span>{mode==="story"?"YOUR BEST FLIGHT. THEIR DEADLIEST WEAPON.":"ONE SIGNAL. A NEW LINE EVERY DAY."}</p><h1>STEAL YOUR<br/><em>GHOST</em><br/>BACK.</h1><p className="intro-copy">{mode==="story"?"Someone turned your flight recorder into a weapon. Ten districts. Follow the signal. Free the pilots behind the ghosts.":"The Ghost Engine changed its pattern. Same seed for today’s runs. How clean can you fly?"}</p><div className="launch-block"><button className="primary-button" onClick={launch}>{mode==="story"?`FLY CHAPTER ${chapterNumber(chapter.id)}`:"FLY TODAY’S SIGNAL"}<span>↗</span></button><p>60 seconds · {rig.toUpperCase()} rig · Free local play</p></div><div className="personal-best"><span>BEST / THIS RIG</span><strong>{best?number(best.score):"MAKE YOUR MARK"}</strong>{best&&<small>GHOST READY</small>}</div></section>
-        <section className="hangar" aria-label={`${chapter.name} mission`}><div className="hangar-top"><span>INCOMING / HOUND</span><span>{mode==="daily"?"DAILY FREQUENCY":`CHAPTER ${chapterNumber(chapter.id)}`}</span></div><div className="rival-name" aria-hidden="true">GHOST</div><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="rival-portrait"><Pilot rival/></div><div className="rival-quote">{chapter.id===0?"“THAT SIGNAL KNOWS YOU.”":chapter.id===1?"“STAY OUT OF THE RED.”":"“MAKE IT REGRET IT.”"}<span>↙</span></div><div className="pilot-tag">ENCRYPTED TRANSMISSION / HOUND</div><div className="target-panel"><div><small>{chapter.district.toUpperCase()}</small><strong className="chapter-title">{chapter.name}</strong></div><span className="chapter-number">{chapterNumber(chapter.id)}</span></div></section>
-      </div>
-
-      {mode==="story"&&<section className="campaign-map" aria-label="Story chapters">
-        <div className="section-caption"><h2>FOLLOW THE SIGNAL.</h2><span>{profile.medals.filter(mask=>mask&1).length} / {CHAPTERS.length} CLEARED · {medalCount(profile)} / {CHAPTERS.length*3} MEDALS</span></div>
-        {CAMPAIGN_ACTS.map((act,i)=><div className="campaign-act" key={act.name}>
-          <h3><span>ACT {i+1}</span>{act.name}</h3>
-          <div className="chapter-track">{CHAPTERS.slice(act.start,act.end).map(c=><button key={c.id} disabled={!isUnlocked(profile,c.id)} aria-pressed={chapterId===c.id} onClick={()=>setChapterId(c.id)}>
-            <span className="chapter-index">{chapterNumber(c.id)}</span><span><b>{c.name}</b><small>{isUnlocked(profile,c.id)?c.district:`CLEAR ${chapterNumber(c.id-1)} TO UNLOCK`}</small></span>
-            <span className="medal-dots" aria-label={`${[1,2,4].filter(bit=>profile.medals[c.id]&bit).length} of 3 medals`}>{[1,2,4].map(bit=><i key={bit} className={profile.medals[c.id]&bit?"won":""}/>)}</span>
-          </button>)}</div>
-        </div>)}
-      </section>}
-      <section className="mission-brief"><div><p className="eyebrow">{mode==="daily"?"DAILY BRIEF / LOCAL RECORD":"MISSION BRIEF"}</p><h2>{chapter.objective}</h2></div><p>{chapter.briefing}</p></section>
-      <section className="district-brief"><span>CHAPTER TWIST / {DISTRICTS[chapter.id].name}</span><p>{DISTRICTS[chapter.id].twist}</p><small>{DISTRICTS[chapter.id].route.join(" → ")}</small></section>
-      <section className="rig-section" aria-label="Choose a ship rig"><div className="section-caption"><h2>YOUR SHIP. YOUR LINE.</h2><span>ALL RIGS FREE / POWER RESETS EACH RUN</span></div><div className="rig-grid">{RIGS.map(r=><button key={r.id} aria-pressed={rig===r.id} onClick={()=>setRig(r.id)}><span className={`rig-icon rig-${r.id}`} aria-hidden="true">{r.id==="needle"?"↑":r.id==="fan"?"↖↑↗":"◇"}</span><div><b>{r.name}</b><small>{r.title}</small><p>{r.description}</p></div><span className="rig-check">{rig===r.id?"✓":"+"}</span></button>)}</div><button className="loadout-launch" onClick={launch}>LAUNCH {rig.toUpperCase()} / {mode==="daily"?"DAILY SIGNAL":`CHAPTER ${chapterNumber(chapter.id)}`} ↗</button></section>
-      <section className="mechanics-strip" aria-label="Flight tactics"><div><span className="mechanic-number">01</span><p><b>BREAK FORMATION</b><small>Rescue couriers. Catch cells to evolve your guns.</small></p></div><div><span className="mechanic-number">02</span><p><b>TURN DANGER INTO POWER</b><small>{chapter.id===7?3:4} grazes → Surge. Chain kills up to ×5.</small></p></div><div><span className="mechanic-number">03</span><p><b>MAKE AN EXIT</b><small>Space / tap Pulse clears nearby fire.</small></p></div></section>
-      <footer className="lobby-footer"><span>BEST GHOSTS & MEDALS SAVED ON THIS DEVICE</span><button className="text-button" aria-expanded={help} onClick={()=>setHelp(v=>!v)}>{help?"CLOSE FLIGHT MANUAL −":"FLIGHT MANUAL +"}</button></footer>
-      {help&&<aside className="flight-manual"><h2>Don’t just survive. Make a better flight.</h2><p>Drag, WASD, or arrows to steer and aim. Your guns fire right in landscape and up in portrait. The white center is your vulnerable core; wings are cosmetic. Pass near bullets while moving to charge a repeatable Surge. Keep killing to maintain your chain. Hull damage breaks your chain and Surge.</p><p>Gold cells upgrade your gun every two pickups, up to level three. Mint courier pods give 500 points and repair 15 hull. Guard also regains its shield. Pulse clears nearby bullets and damages nearby enemies; it recharges every eight seconds. Yellow lane warnings turn into damaging red beams.</p><p>Defeat the boss and survive the short extraction to clear a chapter. Earn separate medals for clearing, rescuing two couriers, and clearing without hull damage. Your best replay returns as a pale, non-colliding ghost. Daily records are separate from story progression. Escape or Pause stops a flight; switching windows pauses it automatically. These are local records, not verified leaderboards or on-chain rewards.</p></aside>}
+      <FlightDeck mode={mode} onMode={setMode} chapter={chapter} medals={profile.medals[chapter.id]??0} rig={rig} onRig={setRig} best={best?.score} ghostReady={Boolean(best)} locked={mode==="story"&&!isUnlocked(profile,chapter.id)} grazes={chapter.id===7?3:4} onLaunch={launch} onMap={()=>nav("map")} onManual={()=>setHelp(v=>!v)} manualOpen={help} dailyKey={day.key}/>
+      {help&&<aside className="flight-manual" id="flight-manual"><h2>Don’t just survive. Make a better flight.</h2><p>Drag, WASD, or arrows to steer and aim. Your guns fire right in landscape and up in portrait. The white center is your vulnerable core; wings are cosmetic. Pass near bullets while moving to charge a repeatable Surge. Keep killing to maintain your chain. Hull damage breaks your chain and Surge.</p><p>Gold cells upgrade your gun every two pickups, up to level three. Mint courier pods give 500 points and repair 15 hull. Guard also regains its shield. Pulse clears nearby bullets and damages nearby enemies; it recharges every eight seconds. Yellow lane warnings turn into damaging red beams.</p><p>Defeat the boss and survive the short extraction to clear a chapter. Earn separate medals for clearing, rescuing two couriers, and clearing without hull damage. Your best replay returns as a pale, non-colliding ghost. Daily records are separate from story progression. Escape or Pause stops a flight; switching windows pauses it automatically. These are local records, not verified leaderboards or on-chain rewards.</p><p className="manual-footnote">BEST GHOSTS & MEDALS SAVED ON THIS DEVICE</p></aside>}
     </>}
+    {screen==="map"&&<SignalMap selected={chapterId} onSelect={setChapterId} unlocked={id=>isUnlocked(profile,id as ChapterId)} medals={profile.medals} rig={rig} onLaunch={launch} cleared={profile.medals.filter(m=>m&1).length} medalTotal={medalCount(profile)}/>}
 
     {screen==="run"&&flight&&<ExpeditionArena trail={flight.trail??trail} restorationStage={flight.stage??0} jobLabel={flight.job?JOBS_LABEL(flight.job.kind):undefined} reservationExpires={flight.pit?.attempt.expires} pilotName={identity?.username} ghostLabel={flight.commission?"COMMISSION":flight.pit?flight.pit.target.holderName:flight.rival?`@${flight.rival.pilot.username}`:undefined} config={flight.config} sound={sound} ghost={flight.ghost} onFinish={finish} onExit={()=>setScreen(flight.pit?"pit":flight.job||flight.commission?"workshop":"lobby")} onSound={()=>setSound(s=>!s)}/>}
 
