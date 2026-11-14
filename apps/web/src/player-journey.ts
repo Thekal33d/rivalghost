@@ -1,15 +1,20 @@
 import type {FlightProfile} from './flight-profile';
 export const JOURNEY_KEY='rivalghost.player-journey.v1';
-export interface Journey {version:1;welcomed:boolean;tutorial:'new'|'skipped'|'complete';legacy:boolean}
-export const newJourney=():Journey=>({version:1,welcomed:false,tutorial:'new',legacy:false});
+/** `tours` lists walkthroughs and unlock announcements already shown; `tips` turns walkthroughs off. */
+export interface Journey {version:1;welcomed:boolean;tutorial:'new'|'skipped'|'complete';legacy:boolean;tours:string[];tips:boolean}
+export const newJourney=():Journey=>({version:1,welcomed:false,tutorial:'new',legacy:false,tours:[],tips:true});
 export function parseJourney(raw:string|null,profile:FlightProfile,previousWallet=false):Journey{
- if(raw){try{const j=JSON.parse(raw);if(j.version===1&&typeof j.welcomed==='boolean'&&typeof j.legacy==='boolean'&&['new','skipped','complete'].includes(j.tutorial))return j;}catch{/* Repair the journey without changing campaign saves. */}}
+ if(raw){try{const j=JSON.parse(raw);if(j.version===1&&typeof j.welcomed==='boolean'&&typeof j.legacy==='boolean'&&['new','skipped','complete'].includes(j.tutorial)){
+  const tours=Array.isArray(j.tours)?j.tours.filter((t:unknown)=>typeof t==='string'&&t.length<=40).slice(0,80):null;
+  // Journeys saved before announcements existed already saw their unlocks in play; never replay them as new.
+  return {version:1,welcomed:j.welcomed,tutorial:j.tutorial,legacy:j.legacy,tips:typeof j.tips==='boolean'?j.tips:true,tours:tours??announcedFor(profile,j.legacy)};
+ }}catch{/* Repair the journey without changing campaign saves. */}}
  const legacy=previousWallet||profile.attempts.some(n=>n>0)||profile.medals.some(n=>n>0)||Object.keys(profile.bests).length>0;
- return {...newJourney(),legacy,welcomed:legacy};
+ return {...newJourney(),legacy,welcomed:legacy,tours:legacy?announcedFor(profile,true):[]};
 }
 export const FEATURES=[
  {id:'rivals',name:'Rival ghosts',clears:0,flight:true,description:'Race other pilots and share your own flight.',reward:'Finish your first story flight'},
- {id:'workshop',name:'MOTH’s Workshop',clears:1,description:'Fly salvage jobs and meet the city’s mechanic.',reward:'Clear Chapter 01'},
+ {id:'workshop',name:'MOTH’s Workshop',clears:0,flight:true,description:'Fly salvage jobs, claim starter CR and trade with the city’s mechanic.',reward:'Finish your first story flight'},
  {id:'needle',name:'Needle rig',clears:1,description:'A precise, hard-hitting alternative to Fan.',reward:'Clear Chapter 01'},
  {id:'daily',name:'Daily signal',clears:2,description:'A fresh expert route with the same seed for every pilot.',reward:'Clear 2 story chapters'},
  {id:'guard',name:'Guard rig',clears:2,description:'A shielded ship for close calls and rescues.',reward:'Clear 2 story chapters'},
@@ -25,3 +30,10 @@ export function clearedChapters(p:FlightProfile){return p.medals.filter(n=>n&1).
 export function featureOpen(id:Feature,p:FlightProfile,j:Journey){const f=FEATURES.find(f=>f.id===id)!;return j.legacy||('flight' in f?p.attempts.some(n=>n>0):clearedChapters(p)>=f.clears);}
 export function newlyUnlocked(before:FlightProfile,after:FlightProfile,j:Journey){return FEATURES.filter(f=>!featureOpen(f.id,before,j)&&featureOpen(f.id,after,j));}
 export const screenFeature={board:'rivals',workshop:'workshop',pit:'pit'} as const;
+
+const announceId=(f:Feature)=>`unlock:${f}`;
+function announcedFor(p:FlightProfile,legacy:boolean){const j={...newJourney(),legacy};return FEATURES.filter(f=>featureOpen(f.id,p,j)).map(f=>announceId(f.id));}
+/** Features the player has earned but has not yet been shown an unlock announcement for. */
+export function unannounced(p:FlightProfile,j:Journey){return FEATURES.filter(f=>featureOpen(f.id,p,j)&&!j.tours.includes(announceId(f.id)));}
+export const markSeen=(j:Journey,...ids:string[]):Journey=>({...j,tours:[...new Set([...j.tours,...ids])].slice(-80)});
+export const markAnnounced=(j:Journey,features:readonly {id:Feature}[])=>markSeen(j,...features.map(f=>announceId(f.id)));

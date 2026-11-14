@@ -35,6 +35,7 @@ const STROKE: Record<string, string> = {
   expand: "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5",
   pause: "M8 5v14M16 5v14",
   chevronLeft: "M15 6l-6 6 6 6",
+  help: "M12 2a10 10 0 110 20 10 10 0 010-20zM9.1 9a3 3 0 015.8 1c0 2-2.9 2.5-2.9 4.5M12 17.5h.01",
   chevronRight: "M9 6l6 6-6 6",
   refresh: "M20 11a8 8 0 10-2.3 5.7M20 4v7h-7",
   cart: "M3 4h3l2.5 11h10L21 7H7M10 20h.01M17 20h.01",
