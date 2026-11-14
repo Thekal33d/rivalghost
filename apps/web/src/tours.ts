@@ -59,6 +59,9 @@ export const TOURS: Record<string, Tour> = {
     { target: ".pit-rules", title: "THE STAKES", body: "Entry is 10 CR. Win: you get your entry back plus the bounty. Lose, tie or run out of time: 8 CR grows the bounty and 2 CR goes to the holder." },
     { target: ".hound-dossier", title: "HOUND FIGHTS BACK", body: "Take a crown and HOUND may fund a defense and come for it with a real replayed flight." },
   ] },
+  commission: { id: "commission", label: "HOUND COMMISSIONS", steps: [
+    { target: '.job-board [data-job="commission"]', title: "SELL YOUR GHOST TO HOUND", body: "Fly this job: 12,000 points without using Pulse. If the server confirms it, HOUND pays salvage plus CR for a non-exclusive copy of your ghost, and other pilots can race it here. HOUND only buys while its budget allows." },
+  ] },
   daily: { id: "daily", label: "DAILY SIGNAL", steps: [
     { target: ".deck-mission", title: "TODAY’S SIGNAL", body: "Expert difficulty, and the same seed for every pilot today. Daily bests live on their own board and reset at UTC midnight." },
   ] },

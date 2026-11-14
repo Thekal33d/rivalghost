@@ -2,7 +2,7 @@ import {WalletWelcome,useWalletWelcome} from './WalletWelcome';
 import {ProcessFeedback} from './ProcessFeedback';
 import {WelcomeBriefing,UnlockGate,JourneyPanel,UnlockRewards} from './Journey';
 import {FEATURES,JOURNEY_KEY,parseJourney,featureOpen,newlyUnlocked,screenFeature,unannounced,markSeen,markAnnounced,type Feature,type Journey} from './player-journey';
-import {Walkthrough,UnlockCelebration} from './Walkthrough';
+import {Walkthrough,UnlockCelebration,EconomyGuide} from './Walkthrough';
 import {TOURS,UNLOCK_DESTINATION} from './tours';
 import {Workshop,JobReceipt,WORK_PENDING,type JobLaunch} from './Workshop';
 import {repairStage,type TrailId} from '@rivalghost/game-data';
@@ -51,7 +51,7 @@ export default function App() {
   const allow=(feature:Feature)=>{if(canUse(feature))return true;setGate(feature);return false;};
   const finishTutorial=useCallback(()=>setJourney(j=>({...j,tutorial:'complete'})),[]);
   const skipTutorial=useCallback(()=>setJourney(j=>({...j,tutorial:j.tutorial==='complete'?'complete':'skipped'})),[]);
-  const [workshopTab,setWorkshopTab]=useState('jobs');
+  const [workshopTab,setWorkshopTab]=useState('jobs'),[economyGuide,setEconomyGuide]=useState(false);
   const [day,setDay]=useState(()=>dailySignal());
   const [flight,setFlight]=useState<Flight|null>(null),[report,setReport]=useState<FlightReport|null>(null);
   const [newBest,setNewBest]=useState(false),[earned,setEarned]=useState(0);
@@ -105,15 +105,18 @@ export default function App() {
   const raceCommission=(ghost:ExpeditionReplay)=>{if(!allow('commission'))return;setFlight({config:ghost,mode:"story",ghost,commission:true,trail,stage:repairStage(districts[ghost.chapter])});setScreen("run");};
   const result=report?.result;
   const otherDialog=showWalletWelcome||gate!==null||(welcome&&walletWelcome.checked&&screen==='lobby');
-  const screenTour=screen==='lobby'?(mode==='daily'?'daily':'deck'):screen==='workshop'?(workshopTab==='jobs'||journey.tours.includes('workshop')===false?'workshop':`workshop:${workshopTab}`):screen==='result'?'result':['map','board','pit','profile'].includes(screen)?screen:null;
+  const screenTour=screen==='lobby'?(mode==='daily'?'daily':'deck'):screen==='workshop'?(!journey.tours.includes('workshop')?'workshop':workshopTab==='jobs'?(canUse('commission')?'commission':null):`workshop:${workshopTab}`):screen==='result'?'result':['map','board','pit','profile'].includes(screen)?screen:null;
   const pendingUnlocks=journey.legacy?[]:unannounced(profile,journey);
   const resultTourFirst=screen==='result'&&journey.tips&&!journey.tours.includes('result');
-  const celebrate=!otherDialog&&screen!=='run'&&!resultTourFirst&&(screen==='result'||screen==='lobby')&&pendingUnlocks.length>0;
-  const activeTour=!otherDialog&&!celebrate&&screen!=='run'&&journey.tips&&journey.welcomed&&screenTour&&TOURS[screenTour]&&!journey.tours.includes(screenTour)?TOURS[screenTour]:null;
+  // Pilots who reach the Workshop without the post-game primer get it once on arrival.
+  const autoGuide=journey.tips&&!otherDialog&&!economyGuide&&(screen==='workshop'||screen==='pit')&&canUse('workshop')&&!journey.tours.includes('economy')&&!pendingUnlocks.some(f=>f.id==='workshop');
+  const showGuide=economyGuide||autoGuide;
+  const celebrate=!showGuide&&!otherDialog&&screen!=='run'&&!resultTourFirst&&(screen==='result'||screen==='lobby')&&pendingUnlocks.length>0;
+  const activeTour=!showGuide&&!otherDialog&&!celebrate&&screen!=='run'&&journey.tips&&journey.welcomed&&screenTour&&TOURS[screenTour]&&!journey.tours.includes(screenTour)?TOURS[screenTour]:null;
   const closeTour=useCallback((id:string)=>setJourney(j=>markSeen(j,id)),[]);
   const tipsOff=useCallback((id:string)=>setJourney(j=>({...markSeen(j,id),tips:false})),[]);
   const showTips=()=>{if(!screenTour)return;setJourney(j=>({...j,tips:true,welcomed:true,tours:j.tours.filter(t=>t!==screenTour)}));};
-  const goUnlock=(f:Feature)=>{setJourney(j=>markAnnounced(j,pendingUnlocks));const dest=UNLOCK_DESTINATION[f]??'lobby';if(f==='daily')setMode('daily');if(f==='needle'||f==='guard'){setRig(f);setMode('story');}setScreen(dest);};
+  const goUnlock=(f:Feature)=>{setJourney(j=>markSeen(markAnnounced(j,pendingUnlocks),...(pendingUnlocks.some(f=>f.id==='workshop')?['economy']:[])));const dest=UNLOCK_DESTINATION[f]??'lobby';if(f==='daily')setMode('daily');if(f==='needle'||f==='guard'){setRig(f);setMode('story');}setScreen(dest);};
   const playedChapter=result?CHAPTERS[result.chapter]:chapter;
 
   return <main className={`game-shell screen-${screen}`}><div className="deck-backdrop" aria-hidden="true"/>
@@ -121,8 +124,8 @@ export default function App() {
 
     {socialNotice&&screen!=="run"&&<p className="social-error" role="status">{socialNotice}<button className="text-button" onClick={()=>setSocialNotice("")}>DISMISS</button></p>}
     {screen==="profile"&&<><PilotStudio identity={identity} profile={profile} onSave={saveIdentity} account={<PilotAccount focusWallet={walletFocus} username={identity?.username} onDone={()=>setScreen("lobby")}/>}/>{report&&flight&&!flight.job&&!flight.commission&&<ShareFlight key={report.hash} replay={report.replay} mode={flight.mode} day={flight.dailyKey} identity={identity} onProfile={()=>setScreen("profile")}/>}</>}
-    {screen==="workshop"&&<Workshop onTab={setWorkshopTab} canUse={canUse} onLocked={setGate} chapterAllowed={id=>isUnlocked(profile,id as ChapterId)} onFly={launchJob} onRace={raceCommission} onWorld={updateWorld}/>}
-    {screen==="pit"&&<CrownPit onFly={launchPit} onProfile={()=>setScreen("profile")}/>}
+    {screen==="workshop"&&<Workshop onEconomyGuide={()=>setEconomyGuide(true)} onTab={setWorkshopTab} canUse={canUse} onLocked={setGate} chapterAllowed={id=>isUnlocked(profile,id as ChapterId)} onFly={launchJob} onRace={raceCommission} onWorld={updateWorld}/>}
+    {screen==="pit"&&<CrownPit onEconomyGuide={()=>setEconomyGuide(true)} onFly={launchPit} onProfile={()=>setScreen("profile")}/>}
     {screen==="board"&&<Leaderboard identity={identity} profile={profile} initialChapter={chapterId} day={day.key} onRace={raceGhost} onProfile={()=>setScreen("profile")} onPlay={()=>setScreen("lobby")}/>}
     {saveError&&<p role="status" className="save-notice">This browser couldn’t save your flight. Progress stays available here until you close or reload. You can download the replay from the result.</p>}
 
@@ -141,7 +144,8 @@ export default function App() {
     {showWalletWelcome&&<WalletWelcome onConnect={connectFromWelcome} onPlay={walletWelcome.dismiss}/>}
     {welcome&&walletWelcome.checked&&!showWalletWelcome&&!gate&&screen==='lobby'&&<WelcomeBriefing onStart={startTutorial} onSkip={()=>{setWelcome(false);setJourney(j=>({...j,welcomed:true,tutorial:j.tutorial==='complete'?'complete':'skipped'}));}}/>}
     {gate&&<UnlockGate feature={gate} onClose={()=>setGate(null)} onFlight={nextMission}/>}
-    {celebrate&&<UnlockCelebration key={pendingUnlocks.map(f=>f.id).join()} features={pendingUnlocks.map(f=>f.id)} onGo={goUnlock} onClose={()=>setJourney(j=>markAnnounced(j,pendingUnlocks))}/>}
+    {celebrate&&<UnlockCelebration key={pendingUnlocks.map(f=>f.id).join()} features={pendingUnlocks.map(f=>f.id)} onGo={goUnlock} onClose={()=>setJourney(j=>markSeen(markAnnounced(j,pendingUnlocks),...(pendingUnlocks.some(f=>f.id==='workshop')?['economy']:[])))}/>}
+    {showGuide&&<EconomyGuide onClose={()=>{setEconomyGuide(false);setJourney(j=>markSeen(j,'economy'));}}/>}
     {activeTour&&<Walkthrough key={activeTour.id} tour={activeTour} onDone={()=>closeTour(activeTour.id)} onTipsOff={()=>tipsOff(activeTour.id)}/>}
   </main>;
 }

@@ -10,7 +10,7 @@ interface Receipt {settled?:boolean;explorer?:string;transactionHash?:string;id:
 interface PitView {mode:'local-demo'|'onchain';balance:number|null;joined:boolean;houndBalance:number;reserve:number;total:number;spentToday:number;now:number;crowns:PitTarget[];attempt:Attempt|null;events:{id:string;kind:string;text:string;at:number;explorer?:string}[]}
 interface Lab {days:{day:number;player:number;hound:number;bounties:number;total:number;npcSpent:number}[];events:{id:string;kind:string;text:string}[]}
 export const PIT_PENDING='rivalghost.pit.pending.v1';
-export function CrownPit({onFly,onProfile}:{onFly:(flight:PitLaunch)=>void;onProfile:()=>void}){
+export function CrownPit({onFly,onProfile,onEconomyGuide}:{onFly:(flight:PitLaunch)=>void;onProfile:()=>void;onEconomyGuide?:()=>void}){
   const [data,setData]=useState<PitView|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[lab,setLab]=useState<Lab|null>(null),[notice,setNotice]=useState('');
   const [pending,setPending]=useState<{id:string;replay:ExpeditionReplay}|null>(()=>{try{const value=JSON.parse(localStorage.getItem(PIT_PENDING)??'null');return typeof value?.id==='string'&&value?.replay?value:null;}catch{return null;}});
   async function refresh(){setData(await socialRequest('economy'));}
@@ -29,7 +29,7 @@ export function CrownPit({onFly,onProfile}:{onFly:(flight:PitLaunch)=>void;onPro
           <span className="wallet-pill"><span className="wallet-coin is-hound"><Icon name="coin" size={18}/></span><b>{data?.houndBalance??'—'}</b><small>HOUND</small></span>
           {data&&!data.joined&&<ArcadeButton size="sm" tone="coral" className="arcade-gold" disabled={busy} onClick={()=>void action(async()=>{await socialRequest('economy/join',{});await refresh();})}>{onchain?'ACTIVATE ON-CHAIN PILOT':'CLAIM 100 DEMO CR'}</ArcadeButton>}
         </div>
-        {data?.joined&&<p className="pit-grant-note">One grant per {onchain?'NEAR account':'browser pilot'}. No automatic refills. Practice flights stay free.</p>}
+        {onEconomyGuide&&<button className="economy-guide-button" onClick={onEconomyGuide}><Icon name="help" size={18}/>HOW THE ECONOMY WORKS</button>}{data?.joined&&<p className="pit-grant-note">One grant per {onchain?'NEAR account':'browser pilot'}. No automatic refills. Practice flights stay free.</p>}
       </div>
     </header>
     {error&&<p className="social-error" role="alert">{error}</p>}{notice&&<p className="social-success" role="status">{notice}</p>}

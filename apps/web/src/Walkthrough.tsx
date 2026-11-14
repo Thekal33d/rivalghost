@@ -91,6 +91,25 @@ const ECONOMY_SLIDES = [
   { icon: "shield" as const, title: "A FINITE ECONOMY.", body: "There are only 100,100 CR in total, and nobody can mint more. Crafting, repairs and entry fees move CR between players and the reserve. Nothing you buy gives combat power." },
 ];
 
+/** The economy primer on its own, reopenable from the Workshop and Crown Pit. */
+export function EconomyGuide({ onClose }: { onClose: () => void }) {
+  const [slide, setSlide] = useState(0), ref = useRef<HTMLDialogElement>(null), titleId = useId();
+  useEffect(() => { const d = ref.current!, prev = document.activeElement as HTMLElement | null; d.showModal(); return () => { d.close(); prev?.focus?.(); }; }, []);
+  const cur = ECONOMY_SLIDES[slide], last = slide === ECONOMY_SLIDES.length - 1;
+  return <dialog ref={ref} className="game-dialog unlock-celebration" aria-labelledby={titleId} onCancel={e => { e.preventDefault(); onClose(); }}>
+    <button className="dialog-close" aria-label="Close" onClick={onClose}>×</button>
+    <p className="eyebrow">HOW THE ECONOMY WORKS · {slide + 1} OF {ECONOMY_SLIDES.length}</p>
+    <span className="unlock-burst" aria-hidden="true"><Icon name={cur.icon} size={40}/></span>
+    <h2 id={titleId}>{cur.title}</h2>
+    <p>{cur.body}</p>
+    <div className="walkthrough-dots" aria-hidden="true">{ECONOMY_SLIDES.map((_, i) => <i key={i} className={i === slide ? "on" : i < slide ? "done" : ""}/>)}</div>
+    <div className="unlock-actions">
+      <ArcadeButton size="sm" onClick={() => last ? onClose() : setSlide(n => n + 1)}>{last ? "GOT IT" : <>NEXT<Icon name="chevronRight" size={18}/></>}</ArcadeButton>
+      {slide > 0 && <button className="text-button" onClick={() => setSlide(n => n - 1)}>BACK</button>}
+    </div>
+  </dialog>;
+}
+
 /** Announces newly earned features. When the Workshop is among them, first explains the economy. */
 export function UnlockCelebration({ features, onGo, onClose }: { features: Feature[]; onGo: (f: Feature) => void; onClose: () => void }) {
   const economy = features.includes("workshop");
