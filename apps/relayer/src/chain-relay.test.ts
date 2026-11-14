@@ -12,6 +12,18 @@ function setup(){
  return {store,rpc,relay,build,final};
 }
 describe('persisted NEAR sponsor relay',()=>{
+ it('resumes the exact pending NPC bytes without signing again or charging the budget twice',async()=>{
+  const x=setup();try{
+   const send=vi.spyOn(x.rpc,'sendTransactionUntil').mockRejectedValueOnce(new Error('network lost')).mockResolvedValue(x.final);
+   await expect(x.relay.change('npc-seed:1','seed_crown',{certificate:'original'})).rejects.toThrow('pending');
+   vi.spyOn(x.rpc,'viewTransactionStatus').mockRejectedValue(new Error('unknown transaction'));
+   expect(await x.relay.resumePending()).toBe(1);
+   expect(Buffer.from(send.mock.calls[0][0].encode())).toEqual(Buffer.from(send.mock.calls[1][0].encode()));
+   expect(x.build).toHaveBeenCalledTimes(1);
+   expect(x.store.db.prepare('SELECT count(*) n FROM chain_transactions').get()!.n).toBe(1);
+   expect(await x.relay.resumePending()).toBe(0);
+  }finally{x.store.close();}
+ });
  it('persists before submission, reconciles an uncertain result and never signs twice',async()=>{
   const x=setup();try{
    const send=vi.spyOn(x.rpc,'sendTransactionUntil').mockImplementation(async()=>{expect(x.store.db.prepare('SELECT count(*) n FROM chain_transactions').get()!.n).toBe(1);throw new Error('timeout');});

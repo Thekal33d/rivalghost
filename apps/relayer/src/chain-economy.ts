@@ -10,7 +10,8 @@ export class ChainEconomy {
  private nextAttack=Date.now()+120000;
  constructor(readonly relay:ChainRelay,readonly verifierKey:CryptoKey,readonly npc?:ChainRelay,private readonly now=Date.now){
   relay.store.db.exec(`CREATE TABLE IF NOT EXISTS economy_replays(hash TEXT PRIMARY KEY,body TEXT NOT NULL,actor TEXT NOT NULL,score INTEGER NOT NULL,commission INTEGER NOT NULL,at INTEGER NOT NULL);
-   CREATE TABLE IF NOT EXISTS economy_settlements(id TEXT PRIMARY KEY,fingerprint TEXT NOT NULL,certificate TEXT NOT NULL,context TEXT NOT NULL,response TEXT);`);
+   CREATE TABLE IF NOT EXISTS economy_settlements(id TEXT PRIMARY KEY,fingerprint TEXT NOT NULL,certificate TEXT NOT NULL,context TEXT NOT NULL,response TEXT);
+   CREATE TABLE IF NOT EXISTS economy_npc_flights(id TEXT PRIMARY KEY,body TEXT NOT NULL);`);
  }
  world(){return this.relay.view<ChainWorld>('get_world');}
  pilot(actor:string){return this.relay.view<ChainPilot|null>('get_pilot',{actor});}
@@ -35,7 +36,7 @@ export class ChainEconomy {
  async view(guest:Guest|null){
   const [w,p]=await Promise.all([this.world(),guest?.accountId?this.pilot(guest.accountId):null]);const h=await this.pilot(w.hound);
   const crowns=w.crowns.map((c,i)=>{const replay=c?this.readReplay(c.replay_hash):null;return {id:i,name:['PUP','HOUND','ALPHA'][i],chapter:c?.chapter??i,style:HOUND_STYLES[i],holder:c?.holder??w.hound,holderName:c?.holder===w.hound?'HOUND':c?.holder?c.holder.slice(0,6)+'…'+c.holder.slice(-4):'HOUND',you:!!c&&c.holder===guest?.accountId,score:c?.score??0,replay:replay??flyHound({rulesVersion:3,chapter:i as ChapterId,rig:'fan',seed:CHAPTERS[i].seed},HOUND_STYLES[i]).replay,bounty:c?.bounty??0,expires:c?.expires??0,active:!!c&&!!replay&&c.expires>this.now(),defended:c?.defended??false,lock:c?.lock??null,decision:!c?'Waiting for HOUND to fund a new round.':!replay?'The on-chain ghost is awaiting its replay file. Entries are paused.':'This purse and ghost are recorded on NEAR testnet.'};});
-  return {mode:'onchain',contractId:this.relay.config.contractId,balance:p?.cr??null,joined:!!p,houndBalance:h!.cr,reserve:w.reserve,total:w.total_cr,spentToday:w.hound_spent,policy:HOUND_POLICY,now:this.now(),crowns,attempt:p?.run?.kind===0?{id:String(p.run.id),crown:p.run.slot,expires:p.run.expires,status:p.run.expires>this.now()?'live':'forfeited'}:null,events:this.events()};
+  return {mode:'onchain',automation:{enabled:!!this.npc,logic:'deterministic',dailyTransactionLimit:this.npc?.config.maxDailyRequests??0,dailyGasReserveYocto:this.npc?.config.dailyBudget.toString()??'0',inferenceEnabled:false},contractId:this.relay.config.contractId,balance:p?.cr??null,joined:!!p,houndBalance:h!.cr,reserve:w.reserve,total:w.total_cr,spentToday:w.hound_spent,policy:HOUND_POLICY,now:this.now(),crowns,attempt:p?.run?.kind===0?{id:String(p.run.id),crown:p.run.slot,expires:p.run.expires,status:p.run.expires>this.now()?'live':'forfeited'}:null,events:this.events()};
  }
  async execute(guest:Guest,intent:EconomyIntent,requestId:unknown){
   const actor=this.actor(guest);if(intent?.actor!==actor||typeof requestId!=='string'||!/^[a-f0-9-]{36}$/.test(requestId))throw new ChainError('Invalid game intent');
@@ -76,7 +77,21 @@ export class ChainEconomy {
  }
  /** Explicit bounded NPC tick; no paid inference or invented scores. */
  async tick(){
-  if(!this.npc)return;let w=await this.world();if(w.paused)return;
+  if(!this.npc)return;
+  await this.npc.resumePending();
+  let w=await this.world();if(w.paused)return;
+  // A restart or lost settlement response must finish the existing flight before buying another entry.
+  const activeHound=await this.pilot(w.hound);
+  if(activeHound?.run){
+   const run=activeHound.run;
+   if(run.expires<=this.now())await this.relay.change(`expire:${w.hound}:${run.id}`,'expire',{actor:w.hound});
+   else if(run.kind===0){
+    const saved=this.relay.store.db.prepare('SELECT body FROM economy_npc_flights WHERE id=?').get(`npc-entry:${activeHound.nonce}`);
+    const replay=saved?JSON.parse(String(saved.body)) as ExpeditionReplay:HOUND_STYLES.map(style=>flyHound({rulesVersion:3,chapter:run.chapter as ChapterId,rig:'fan',seed:run.seed},style)).sort((a,b)=>b.result.score-a.result.score)[0].replay;
+    await this.settle({accountId:w.hound} as Guest,String(run.id),replay);
+   }
+   return;
+  }
   for(let slot=0;slot<3;slot++){
    let c=w.crowns[slot];
    if(c?.lock){const p=await this.pilot(c.lock);if(p?.run&&p.run.expires<=this.now())await this.relay.change(`expire:${c.lock}:${p.run.id}`,'expire',{actor:c.lock});else continue;w=await this.world();c=w.crowns[slot];}
@@ -101,6 +116,7 @@ export class ChainEconomy {
     if(best.result.score<=c.score)continue;
     const intent:EconomyIntent={actor:w.hound,nonce:h.nonce+1,epoch:h.session_epoch,deadline:this.now()+300000,op:10,a:slot,b:0,signature:[]};
     this.nextAttack=this.now()+120000;
+    this.relay.store.db.prepare('INSERT OR IGNORE INTO economy_npc_flights VALUES(?,?)').run(`npc-entry:${h.nonce+1}`,canonicalExpeditionReplayJson(best.replay));
     await this.npc.change(`npc-entry:${h.nonce+1}`,'execute',{intent});
     const active=await this.pilot(w.hound);if(active?.run)await this.settle({accountId:w.hound} as Guest,String(active.run.id),best.replay);return;
    }

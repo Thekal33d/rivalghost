@@ -18,6 +18,12 @@ export class ChainRelay {
  private exclusive<T>(fn:()=>Promise<T>):Promise<T>{const result=this.queue.then(fn,fn);this.queue=result.catch(()=>{});return result;}
  async view<T>(method:string,args:Record<string,unknown>={}):Promise<T>{const value=await this.rpc.callFunction({contractId:this.config.contractId,method,args,blockQuery:{finality:'final'}});if(value===undefined)throw new ChainError('NEAR returned no state');return value as T;}
  async check(){if(await this.rpc.getNetworkId()!=='testnet')throw new ChainError('Testnet required');if(BigInt((await this.rpc.viewGasPrice()).gas_price)>this.config.gasPriceCap)throw new ChainError('Sponsorship paused while gas is high');}
+ /** Recover already-authorized bytes before generating another NPC decision. No new nonce or budget reservation. */
+ resumePending(){return this.exclusive(async()=>{
+  const rows=this.store.db.prepare("SELECT * FROM chain_transactions WHERE signer=? AND state='pending' ORDER BY rowid").all(this.config.accountId);
+  for(const row of rows)await this.reconcile(row,true);
+  return rows.length;
+ });}
  change<T>(id:string,method:string,args:Record<string,unknown>):Promise<ChainReceipt<T>>{
   if(!['execute','settle','expire','close_crown','seed_crown','configure'].includes(method))throw new ChainError('Relay method denied');
   return this.submit<T>(id,this.config.contractId,[actions.functionCall(method,args,this.config.gas,0n)],0n);
