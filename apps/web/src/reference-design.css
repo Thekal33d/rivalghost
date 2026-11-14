@@ -56,3 +56,5 @@
 
 @media(max-width:1100px){.map-act-labels small{margin-right:6px}}
 @media(max-width:760px){.map-act-labels small{display:table;margin-bottom:6px}.map-act-labels h2{line-height:1.35}}
+
+@media(max-width:760px){.deck-loadout{grid-template-columns:minmax(0,1fr)}.deck-loadout>*{min-width:0}.deck-loadout-head{height:auto;min-height:28px}.deck-launch{width:calc(100% - 20px)}}
