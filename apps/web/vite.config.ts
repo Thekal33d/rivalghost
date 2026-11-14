@@ -1,8 +1,9 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import {nearSdkResolution} from "../../tools/near-sdk-resolution.mts";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [nearSdkResolution(),react()],
   server: {host:"127.0.0.1",port:3000,strictPort:true,proxy: {"/api/guest": {target:"http://127.0.0.1:8788"}}},
   resolve: {
     alias: {

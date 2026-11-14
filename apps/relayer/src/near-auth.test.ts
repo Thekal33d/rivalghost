@@ -122,3 +122,21 @@ describe('OIDC identity login with separate economy consent',()=>{
   }finally{x.store.close();}
  });
 });
+
+describe('Official SDK identity binding',()=>{
+ it('rejects an account switch between SDK login and the server OIDC handshake',async()=>{
+  const x=setup();try{
+   const other=new PublicKey({keyType:KeyType.ED25519,data:Buffer.alloc(32,5)}).toString();
+   const f=x.service.beginIdentity('signin','','sdk',other),q=new URL(f.challenge.authorizationUrl).searchParams;
+   await expect(x.service.completeIdentity(f.challenge.id,f.binding,'',JSON.stringify({sub:'subject',nonce:q.get('nonce')}),q.get('state'))).rejects.toThrow('different accounts');
+   expect(x.store.db.prepare('SELECT count(*) n FROM sessions').get()!.n).toBe(0);expect(x.calls()).toBe(0);
+  }finally{x.store.close();}
+ });
+ it('accepts matching SDK and independently verified OIDC accounts without a signing charge',async()=>{
+  const x=setup();try{const f=x.service.beginIdentity('signin','','sdk',x.key),q=new URL(f.challenge.authorizationUrl).searchParams;
+   const result=await x.service.completeIdentity(f.challenge.id,f.binding,'',JSON.stringify({sub:'subject',nonce:q.get('nonce')}),q.get('state'));
+   expect(result.guest.accountId).toBe(x.account);expect(x.calls()).toBe(0);
+  }finally{x.store.close();}
+ });
+ it('rejects malformed SDK keys before creating a login flow',()=>{const x=setup();try{expect(()=>x.service.beginIdentity('signin','','sdk','not-a-key')).toThrow('Invalid SDK');expect(x.store.db.prepare('SELECT count(*) n FROM near_login_flows').get()!.n).toBe(0);}finally{x.store.close();}});
+});

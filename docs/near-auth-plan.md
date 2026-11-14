@@ -1,6 +1,8 @@
 # RivalGhost — NEAR Auth integration checkpoint
 
-November 13, 2026
+November 14, 2026
+
+**Current implementation:** the official Browser SDK and JavaScript provider now handle browser login and delegated signing. Server-held PKCE still verifies the API identity. The November 13 live receipts below validate the previous flow; a fresh human end-to-end test of the SDK flow remains required. Hosted sign-in remains disabled until the provider accepts the public callback.
 
 The funded testnet integration now separates **OIDC identity login** from **signed game-session authorization**. Use **http://localhost:3000** exactly. Personal login and subsequent MPC delegate approval now completed successfully on testnet. The pilot has 100 starter CR and session epoch 1, confirmed at finalized block 277563686.
 
@@ -65,3 +67,24 @@ References:
 - https://docs.auth.near.org/home/apply
 - https://github.com/Peersyst/fast-auth/blob/main/packages/providers/javascript/src/provider.ts
 - https://support.auth0.com/center/s/article/Callback-URL-Mismatch-Error-Is-Not-in-the-List-of-Allowed-Callback-URLs
+
+## Official SDK migration — November 14
+
+This follows the tutorial's JavaScript/Browser SDK integration: `@fast-auth-near/browser-sdk` 1.4.2 with `@fast-auth-near/javascript-provider` 1.4.1. The existing React UI calls the Browser SDK directly; this is not a conversion to the React SDK's context/hooks.
+
+- `FastAuthClient.login()` starts the provider's default popup. The SDK derives the pilot's MPC public key.
+- A subsequent server-held PKCE redirect establishes the HttpOnly API session. Its verified identity must derive the same public key as the SDK login. The browser's claim alone cannot establish identity. Provider SSO may avoid another credential prompt, but this remains a separate handshake.
+- The server returns a bounded delegate descriptor. The browser reconstructs it with the SDK's transaction encoder, checks the account, contract, device key and expiry, and requires byte-for-byte equality with the server payload.
+- `requestDelegateActionSignature()` starts the official signing redirect. The callback obtains the SDK signature request; server verification and sponsored broadcast remain authoritative. Identity login alone still grants no spending.
+
+Compatibility fixes are intentionally scoped. The Browser SDK's NEAR 2.x dependencies are pinned to 2.0.2; a resolver selects those packages' CommonJS entry points because their published ESM barrels export erased types. The relayer retains its independent NEAR 7.x dependencies. Buffer/global shims load only with the SDK. Auth code is lazy-loaded so free play does not require the SDK download.
+
+A tracked pnpm patch makes the provider's signing-token lookup cache-only with the exact `transaction:sign` scope. It fails when the approved token is absent instead of silently requesting a replacement token. Keep this patch until an upstream version provides equivalent behavior. Tests exercise the installed patched method.
+
+Validation: all 145 tests across 28 files pass with `pnpm exec vitest run --maxWorkers=4`; full workspace typechecking/build passed before the final browser shim, and the web build/typecheck passed after it. The initial unrestricted test run exceeded the five-second limit in one campaign simulation test; reduced concurrency passed without changing the test or gameplay. Coverage includes SDK/server account mismatch, changed delegate payload, wrong issuer, missing approval token and the real SDK/server encoders agreeing. Contract code is unchanged.
+
+The hosted prerequisite remains: allow `https://rivalghost.xyz` and `https://rivalghost.xyz/auth/callback` as callbacks, and `https://rivalghost.xyz` as a web origin in the shared testnet provider application. The SDK does not bypass this provider setting. Public auth and on-chain spending remain disabled until that check passes and the live environment is configured.
+
+Official references: https://docs.near.org/web3-apps/tutorials/near-auth and https://docs.auth.near.org/sdks/browser-sdk.
+
+Production-browser verification: an isolated Chromium run served the compiled web bundle at localhost:3000, clicked the real sign-in control, and reached `https://login.testnet.fast-auth.com/u/login/identifier` (Log in | Example) with no page errors. No credentials were entered and no authorization or transaction was submitted. Complete SDK login and session approval still require a fresh human test after provider configuration.

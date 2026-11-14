@@ -1,3 +1,13 @@
 packages:
   - apps/*
   - packages/*
+patchedDependencies:
+  '@fast-auth-near/javascript-provider@1.4.1': patches/@fast-auth-near__javascript-provider@1.4.1.patch
+
+# The published Auth SDKs depend on NEAR 5 and 2.0-era modular packages.
+# Later 2.x packages dropped bundled peers and otherwise resolve against NEAR 5's incompatible peers.
+overrides:
+  '@fast-auth-near/browser-sdk>@near-js/accounts': 2.0.2
+  '@fast-auth-near/browser-sdk>@near-js/transactions': 2.0.2
+  '@fast-auth-near/javascript-provider>@near-js/accounts': 2.0.2
+  '@fast-auth-near/javascript-provider>@near-js/transactions': 2.0.2

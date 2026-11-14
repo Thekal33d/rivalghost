@@ -1,0 +1,32 @@
+diff --git a/dist/index.js b/dist/index.js
+index 096d00c4acf6c3530a3271d6851e481fd04070d3..2c82caf80ea8a71e7dcd24296e22fb41856166eb 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -302,8 +302,10 @@ var JavascriptProvider = class {
+    */
+   async getSignatureRequest() {
+     const token = await this.client.getTokenSilently({
+-      authorizationParams: { audience: this.options.signingAudience }
++      cacheMode: "cache-only",
++      authorizationParams: { audience: this.options.signingAudience, scope: "transaction:sign" }
+     });
++    if (!token) throw new Error("NEAR Auth returned no approved signing token. Start a fresh authorization.");
+     const decoded = (0, import_jwt_decode.default)(token);
+     const signatureRequest = {
+       guardId: `jwt#https://${this.options.domain}/`,
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 83b44cebd61ad2220f76751b1574e472cf1b3059..adcd69a6d137fc7cb68d19326bb17a0369ef446c 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -268,8 +268,10 @@ var JavascriptProvider = class {
+    */
+   async getSignatureRequest() {
+     const token = await this.client.getTokenSilently({
+-      authorizationParams: { audience: this.options.signingAudience }
++      cacheMode: "cache-only",
++      authorizationParams: { audience: this.options.signingAudience, scope: "transaction:sign" }
+     });
++    if (!token) throw new Error("NEAR Auth returned no approved signing token. Start a fresh authorization.");
+     const decoded = jwt_decode(token);
+     const signatureRequest = {
+       guardId: `jwt#https://${this.options.domain}/`,

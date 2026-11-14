@@ -89,9 +89,10 @@ export class NearAuthService {
     }catch(error){this.store.db.prepare("UPDATE near_login_flows SET state='failed' WHERE id=?").run(id);if(error instanceof NearAuthError)throw error;throw new NearAuthError('NEAR sign-in could not finish. Your local pilot is unchanged. Try a new sign-in.');}
   }
 
-  beginIdentity(mode:unknown,session:string,ip:string){
+  beginIdentity(mode:unknown,session:string,ip:string,expectedPublicKey?:unknown){
+    if(expectedPublicKey!==undefined&&(typeof expectedPublicKey!=='string'||!/^ed25519:[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(expectedPublicKey)))throw new NearAuthError('Invalid SDK account key');
     const flow=this.begin(mode,session,ip),state=randomBytes(32).toString('base64url'),verifier=randomBytes(32).toString('base64url');
-    const challenge={...flow.challenge,proofMode:'oidc',state,verifier};
+    const challenge={...flow.challenge,proofMode:'oidc',state,verifier,...(expectedPublicKey?{expectedPublicKey}:{})};
     this.store.db.prepare('UPDATE near_login_flows SET challenge=? WHERE id=?').run(JSON.stringify(challenge),challenge.id);
     const query=new URLSearchParams({client_id:AUTH_CLIENT,response_type:'code',redirect_uri:challenge.callbackUrl,scope:'openid',state,nonce:challenge.nonce,code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'});
     return {binding:flow.binding,challenge:{id:challenge.id,proofMode:'oidc',authorizationUrl:`https://${AUTH_DOMAIN}/authorize?${query}`}};
@@ -108,6 +109,7 @@ export class NearAuthService {
       const publicKey=await this.network.deriveKey(`${guard}#${claims.sub}`),key=PublicKey.fromString(publicKey);
       if(!publicKey.startsWith('ed25519:')||key.data.length!==32)throw new NearAuthError('Unsupported account key.');
       const accountId=Buffer.from(key.data).toString('hex');
+      if(c.expectedPublicKey&&c.expectedPublicKey!==publicKey)throw new NearAuthError('The SDK login and server login used different accounts. Start again with the same account.');
       if(!await this.network.ownsImplicitAccount(accountId,publicKey))throw new NearAuthError('Account ownership changed. Reconnect NEAR.');
       this.flow(id,binding,session);
       return this.issueSession(id,String(row.mode),row.guest_id===null?null:String(row.guest_id),accountId);

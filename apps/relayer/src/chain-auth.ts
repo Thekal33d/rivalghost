@@ -22,7 +22,7 @@ export class ChainSessionAuth {
   const descriptor={actor,nonce:String(delegate.nonce),maxBlockHeight:String(delegate.maxBlockHeight),publicKey:ownerKey.toString(),deviceKey:publicKey,until};
   this.relay.store.db.prepare("DELETE FROM economy_auth_flows WHERE expires<? AND state='open'").run(this.now());
   this.relay.store.db.prepare("INSERT INTO economy_auth_flows VALUES(?,?,?,?,?,?,'open',NULL)").run(id,hash(session),actor,JSON.stringify(payload),JSON.stringify(descriptor),this.now()+300000);
-  return {id,payload,contractId:this.relay.config.contractId,until,rights:'Claim starter CR and authorize this browser for RivalGhost CR, salvage, items, jobs, trades and Crown entries for 12 hours. No NEAR transfer is authorized.'};
+  return {id,payload,descriptor,contractId:this.relay.config.contractId,until,rights:'Claim starter CR and authorize this browser for RivalGhost CR, salvage, items, jobs, trades and Crown entries for 12 hours. No NEAR transfer is authorized.'};
  }
  async complete(guest:Guest,session:string,id:unknown,jwt:unknown){
   if(typeof id!=='string'||typeof jwt!=='string'||jwt.length>7168)throw new NearAuthError('Invalid authorization');

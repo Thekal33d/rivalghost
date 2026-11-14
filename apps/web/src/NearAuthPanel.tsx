@@ -17,7 +17,7 @@ export function NearAuthPanel({hasPilot,connected=false,onChanged}:{hasPilot:boo
  useEffect(()=>{const tick=setInterval(()=>setClock(Date.now()),1000),refresh=()=>{setClock(Date.now());setRevision(v=>v+1);};window.addEventListener('focus',refresh);return()=>{clearInterval(tick);window.removeEventListener('focus',refresh);};},[]);
  const active=connected&&gameSession.state==='ready'&&Number(gameSession.until)>clock;
 
- useEffect(()=>{let alive=true;void socialRequest('near-auth/config').then(c=>{if(alive){setEnabled(c.enabled);if(!sessionStorage.getItem('rivalghost.auth.error')&&!isNearAuthReturn())setMessage(c.enabled?(connected?'Step 1 complete: signed in with NEAR.':'Step 1: sign in with NEAR. Then authorize your game session below.'):'Testnet sponsor setup is pending. Free play and your local pilot are available.');}}).catch(()=>{if(alive)setMessage('Sign-in service is unavailable. Keep playing locally.');});return()=>{alive=false;};},[connected]);
+ useEffect(()=>{let alive=true;void socialRequest('near-auth/config').then(c=>{if(alive){setEnabled(c.enabled);if(!sessionStorage.getItem('rivalghost.auth.error')&&!isNearAuthReturn())setMessage(c.enabled?(connected?'Step 1 complete: signed in with NEAR.':'Step 1: sign in with NEAR. Then authorize your game session below.'):'NEAR sign-in is not enabled on this site yet. Free play and your local pilot are available.');}}).catch(()=>{if(alive)setMessage('Sign-in service is unavailable. Keep playing locally.');});return()=>{alive=false;};},[connected]);
  useEffect(()=>{
   if(!isNearAuthReturn())return;
   let alive=true;setBusy(true);setMessage('Verifying your account…');
@@ -30,7 +30,7 @@ export function NearAuthPanel({hasPilot,connected=false,onChanged}:{hasPilot:boo
   }).catch(e=>{if(alive)setMessage(e.message);}).finally(()=>{if(alive)setBusy(false);});
   return()=>{alive=false;};
  },[onChanged]);
- async function connect(mode:'link'|'signin'){setBusy(true);setMessage('Opening NEAR Auth…');try{await(await import('./near-auth-client')).beginNearLogin(mode);}catch(e){setMessage((e as Error).message);setBusy(false);}}
+ async function connect(mode:'link'|'signin'){setBusy(true);setMessage('Opening NEAR Auth. After the popup, we’ll verify your pilot securely…');try{await(await import('./near-auth-client')).beginNearLogin(mode);}catch(e){setMessage((e as Error).message);setBusy(false);}}
  return <div className="near-auth-panel">
   <p className="eyebrow">NEAR AUTH / TESTNET</p><p role="status">{message}</p>
   {hasPilot&&<button className="pilot-save" disabled={!enabled||busy} onClick={()=>void connect('link')}>LINK THIS PILOT TO NEAR ↗</button>}
