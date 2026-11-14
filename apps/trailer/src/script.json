@@ -1,0 +1,9 @@
+[
+ {"id":"hook","at":0.3,"until":4.4,"text":"They took your Crown. They left you a ghost."},
+ {"id":"action","at":7.7,"until":17.7,"text":"Sixty seconds. Graze danger. Trigger your surge. Break the boss. Dare a friend to beat your ghost."},
+ {"id":"economy","at":18.2,"until":31.7,"text":"Every flight fuels the next. Recover salvage. Trade with MOTH. Craft your look. Sell to other pilots. Bring the city back to life."},
+ {"id":"crown","at":32.2,"until":41.8,"text":"Challenge HOUND. Ten credits in. Beat the ghost. Take the bounty. Miss, and the next challenge gets bigger."},
+ {"id":"hound","at":42.1,"until":44.4,"text":"I want my Crown back."},
+ {"id":"proof","at":44.7,"until":52.6,"text":"A real game economy. Fixed supply. Replay-verified rewards. Your style changes. Your firepower doesn’t."},
+ {"id":"outro","at":53.3,"until":57.5,"text":"Your ghost. Their problem. Play RivalGhost."}
+]

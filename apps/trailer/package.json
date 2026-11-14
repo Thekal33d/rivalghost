@@ -1,0 +1,32 @@
+{
+  "name": "@rivalghost/trailer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts RivalGhost trailer.mp4 --codec=h264 --crf=17 --concurrency=2",
+    "still": "remotion still src/index.ts RivalGhost",
+    "typecheck": "tsc --noEmit",
+    "audio:preflight": "node tools/elevenlabs.mjs preflight",
+    "audio:voice": "node tools/elevenlabs.mjs voice",
+    "audio:music": "node tools/elevenlabs.mjs music",
+    "audio:score": "python3 tools/score.py",
+    "audio:plan": "node tools/elevenlabs.mjs plan"
+  },
+  "dependencies": {
+    "remotion": "4.0.543",
+    "@remotion/cli": "4.0.543",
+    "@remotion/media": "4.0.543",
+    "@remotion/fonts": "4.0.543",
+    "@rivalghost/game-data": "workspace:*",
+    "@rivalghost/sim": "workspace:*",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3"
+  }
+}

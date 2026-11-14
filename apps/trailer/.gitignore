@@ -1,0 +1,6 @@
+*.mp4
+*.webm
+public/audio/*.wav
+public/audio/*.mp3
+public/footage/*
+!public/footage/.gitkeep
