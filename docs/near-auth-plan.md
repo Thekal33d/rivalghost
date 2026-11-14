@@ -88,3 +88,5 @@ The hosted prerequisite remains: allow `https://rivalghost.xyz` and `https://riv
 Official references: https://docs.near.org/web3-apps/tutorials/near-auth and https://docs.auth.near.org/sdks/browser-sdk.
 
 Production-browser verification: an isolated Chromium run served the compiled web bundle at localhost:3000, clicked the real sign-in control, and reached `https://login.testnet.fast-auth.com/u/login/identifier` (Log in | Example) with no page errors. No credentials were entered and no authorization or transaction was submitted. Complete SDK login and session approval still require a fresh human test after provider configuration.
+
+Deployment: release `13c1da5` is installed at https://rivalghost.xyz. API health and HTTPS return successfully, with public auth/on-chain economy disabled as expected. The existing preview database was backed up and retained; no live keys were migrated. The local API was restarted with its existing configuration to expose the new descriptor/account-binding checks.
