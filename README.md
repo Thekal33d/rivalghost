@@ -62,7 +62,7 @@ These are browser-local progression gates, not contract security controls. Retur
 | Recoverable sign-in | Live device account, encrypted backup, sponsored authorization and signed game actions | [Recovery test + receipts](docs/device-wallet.md) |
 | MOTH | Contract-enforced stock-sensitive exchange, finite funds, reserve and daily budget | [Economy rules](docs/economy.md) |
 | HOUND | Live bounded testnet worker: verified ghosts, separate account, 16 signed actions/day and a 0.48 test-NEAR gas reserve cap. Daily limits can pause round availability | [Activation receipts](docs/evidence/hound-activation-2026-11-14.json), [worker and limits](docs/mobile-and-hound-release.md) |
-| NEAR AI Cloud | One successful live inference test; recurring inference **disabled**. No live Cloud-to-contract focus automation | [Usage and latency evidence](docs/evidence/near-ai-first-decision.json) |
+| NEAR AI Cloud | **Live:** MOTH selects Recovery/Courier; a restricted key confirms the focus on NEAR. Four requests/day, $1 total reservation cap | [Decision → finalized receipt](docs/near-ai-live-focus.md) |
 | Stake-to-compute / external item standards | Not active. No staking, NEP-245, NEAR Intents or external NFT marketplace integration | [Current limitations](#trust-and-current-limitations) |
 
 This is built for [Games With Real Economies](https://github.com/nearai/near-hackathon-prompt-examples/blob/main/tracks/09-games.md): an arcade loop connected to NPC budgets, player trading and shared restoration. The table above distinguishes that implementation from optional/example integrations in the track prompt.
@@ -100,7 +100,7 @@ CR circulates; salvage has sources and consumption. Neither balance is a promise
 | Evidence | Result | Source |
 | --- | ---: | --- |
 | Source checks in independent fresh clone | **167 JavaScript tests** across 33 files; **20 native Rust tests**; types/builds pass | [Fresh-clone rehearsal](docs/evidence/revised-readme-audit.md) |
-| Deployed Wasm, read directly from finalized NEAR state | **98,677 bytes**; 1,323 bytes below the strict 100,000-byte limit | [Public bytecode snapshot](docs/evidence/public-runtime-2026-11-14.json) |
+| Deployed Wasm, read directly from finalized NEAR state | **99,054 bytes**; 946 bytes below the strict 100,000-byte limit | [Finalized bytecode and AI receipt](docs/evidence/near-ai-live-focus-2026-11-14.json) |
 | Deployed SHA-256 | `f80add454965b8c1edef65ce9ce45f1ba6c1d1ffa4654be0be43e940d986a090` | Same snapshot; matches [recorded artifact](docs/evidence/economy-v3-local.json) |
 | Total CR in contract state | **100,100** | Finalized `get_world`, block 277659654 |
 | Historical verified job reward | **2.550 Tgas**, approximately **0.00023269 test NEAR** burnt | [Reward receipt](https://testnet.nearblocks.io/txns/D39zHBgkkHTRq5ToCZzpVVUXodktSepaAZenEFn66RRD) |
@@ -190,7 +190,7 @@ flowchart TD
   Relay --> NEAR[NEAR v3 economy contract]
   NEAR --> UI[Finalized balances, inventory and receipts]
   UI --> Browser
-  Cloud[Optional NEAR AI Cloud adapter] -. disabled in public release .-> API
+  Cloud[NEAR AI Cloud: Recovery or Courier] -->|bounded decision| API
 ```
 
 | Location | Responsibility |
@@ -209,7 +209,7 @@ flowchart TD
 - **Economic state is on-chain; gameplay/social state is not.** Campaign medals and best flights stay on the device. Profiles, leaderboards and shared replays use the server. Recovery restores the same account and assets, not campaign progress.
 - **Operator trust remains.** Contract upgrade authority, pause/verifier-key controls, server-operated NPC keys and sponsorship are not decentralized governance. No independent security audit is claimed.
 - **Recovery has a tradeoff.** The encrypted file and original password are both required; there is no password-reset service. A newly authorized device replaces the previous game session. Hosted NEAR Auth exists as an alternate path but its public callback is unresolved; use the device-account flow.
-- **HOUND automation is bounded; Cloud inference remains off.** HOUND is a rule-based replay pilot with a 16-action daily limit. See [activation limits and recovery](docs/mobile-and-hound-release.md). One NEAR AI inference test is evidence of an integration, not autonomous live gameplay. No TEE attestation verification, staking, mainnet economy, NEP-245 token standard or external marketplace interoperability is claimed.
+- **Two bounded NPC loops are live.** HOUND is a rule-based replay pilot with a 16-action daily limit. NEAR AI selects MOTH’s featured job through a method-restricted key, with four requests/day and a $1 total reservation ceiling. See [HOUND limits](docs/mobile-and-hound-release.md) and [AI decision, contract receipt and recovery](docs/near-ai-live-focus.md). No TEE attestation verification, staking, mainnet economy, NEP-245 token standard or external marketplace interoperability is claimed.
 - **This is a hackathon pilot.** Live Crown availability and market stock depend on actual state; empty/expired boards must not be presented as active players. Public load, real-phone performance across devices, moderation and retention need further testing.
 
 ## Further reading

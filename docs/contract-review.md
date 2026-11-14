@@ -1,3 +1,5 @@
+> November 14 addendum: the deployed contract is now **99,054 bytes** after adding MOTH-only `set_focus`. No state fields changed. See [authority, tests and live upgrade evidence](near-ai-live-focus.md). The 98,677-byte review below describes the previous build.
+
 # RivalGhost v3 economy contract review
 
 > Contract findings and receipts below were recorded November 13, 2026. Later public deployment and device-account recovery are covered in [current status](development-status.md) and [device-wallet.md](device-wallet.md). Historical login gates and test counts below are not current release status.

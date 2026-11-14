@@ -41,7 +41,9 @@ The live worker uses `hound.rivalghost-ops-thekal33d.testnet`, separate from pla
 
 The live service is the sole HOUND worker. The local environment remains disabled. The live database, replay journal and budget history were preserved, with a protected rollback backup before deployment. No new contract deployment, mainnet transaction, AI charge, or staking action was performed.
 
-## Why NEAR AI remains off
+## Why NEAR AI was off at this checkpoint
+
+**Superseded later November 14:** [bounded Cloud-to-contract updates are now live](near-ai-live-focus.md). The following describes the gap before that release.
 
 The separately tested NEAR AI Cloud adapter currently updates the local-demo economy only. In on-chain mode, the heartbeat runs `ChainEconomy.tick()` and returns before the Cloud decision path. A live model decision still needs validated, journaled operator-authorized contract configuration, budget/retry handling and evidence of the resulting state change. Merely enabling the API key would not implement that path.
 

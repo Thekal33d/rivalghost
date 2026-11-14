@@ -1,5 +1,7 @@
 # RivalGhost — funded AI pilot preparation
 
+**Current status, November 14:** recurring bounded inference and MOTH contract focus updates are now live. See [activation, receipt and controls](near-ai-live-focus.md). The November 13 preparation and one-shot results below are historical; production no longer has inference disabled.
+
 November 13, 2026
 
 The creator confirms at least $1 of usable NEAR AI Cloud credits. The API key is saved in the ignored, owner-only `apps/relayer/.env`; it was not printed or committed. Paid inference remains **disabled**. Reading the model catalog does not prove an authenticated, paid inference request will succeed.
@@ -17,7 +19,7 @@ NEAR hosting is provider-reported. RivalGhost still reports `attestationVerified
 - At most **four attempts per UTC day**, at least six hours apart. A $1 reservation allowance permits at most 333 attempts. Multiple service instances using the same database cannot reserve the same available allowance concurrently.
 - Before every inference request, re-read the model catalog. Block if the model/hosting/readiness changes, prices exceed the reviewed ceilings, a request surcharge appears, the context exceeds 16,384, reasoning is introduced, or the output-token cap is unsupported. Pricing failure uses the local policy, without a paid POST.
 - Request at most **64 output tokens**, without streaming or automatic retries. At the reviewed ceilings, even a full 16,384-token input plus 64 output tokens costs $0.0024928, below the $0.003 reservation. Actual prompts are much smaller. Only bounded aggregate stock/restoration data is sent.
-- The model can choose only recovery or courier focus; it cannot set prices, mint credits, transfer funds, change rewards or execute tools. Gameplay continues with the local fallback on failure.
+- The model can choose only recovery or courier focus; it cannot set prices, mint credits, transfer funds, change rewards or execute tools. The local demo uses its fallback on failure; the live contract bridge retains the last confirmed focus without submitting the fallback.
 
 This is a conservative **application reservation limit**, not a provider balance or invoice meter. It relies on the provider honoring published prices and token limits. It cannot cap separate clients using the same key/account or spending after an operator deletes/replaces the database. Keep the dedicated key private, preserve the database/backups and retain provider-side prepaid/no-top-up controls. Actual charged usage must be checked after the first live request.
 

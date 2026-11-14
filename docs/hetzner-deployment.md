@@ -1,6 +1,6 @@
 # RivalGhost deployment
 
-**Current status (November 14):** public testnet sign-in and on-chain economy are enabled at https://rivalghost.xyz after the approved live-state cutover. The provider callback is still rejected, so human login/session approval is not yet verified on the public domain. AI and autonomous HOUND spending remain disabled. Earlier preview checkpoints below are historical.
+**Current status (November 14):** device sign-in, on-chain spending, bounded HOUND and bounded NEAR AI → MOTH focus updates are live at https://rivalghost.xyz. See [device-wallet.md](device-wallet.md), [HOUND limits](mobile-and-hound-release.md) and [AI activation](near-ai-live-focus.md). Earlier cutover/callback/disabled-worker checkpoints below are historical.
 
 RivalGhost can run as one persistent Node 24 API service with a static web frontend and Caddy. The supplied systemd templates run it as an unprivileged user with resource limits. SQLite, replay records and transaction journals require persistent storage.
 

@@ -1,3 +1,7 @@
+# Current live update — November 14
+
+[NEAR AI → MOTH contract focus](near-ai-live-focus.md) is live in `0a8e3c8`, alongside bounded HOUND automation. Deployed WASM is 99,054 bytes. The historical snapshot and disabled-worker statements below describe earlier checkpoints.
+
 # RivalGhost development status
 
 **November 14, 2026 — playable public testnet pilot.** Application revision `9ea48ac` is live at [rivalghost.xyz](https://rivalghost.xyz/). This update reconciles earlier November 13 checkpoints; it does not claim production readiness.
