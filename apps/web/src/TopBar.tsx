@@ -12,10 +12,10 @@ const TABS: { id: Screen; label: string; icon: IconName }[] = [
   { id: "workshop", label: "WORKSHOP", icon: "wrench" },
 ];
 
-export function TopBar({ screen, onNav, locked={}, medals, maxMedals, rank, username, avatar, sound, onSound }: {
+export function TopBar({ screen, onNav, locked={}, medals, maxMedals, rank, username, avatar, sound, onSound, onHelp }: {
   screen: Screen; onNav: (s: Screen) => void; medals: number; maxMedals: number; rank: string;
   locked?:Partial<Record<Screen,string>>;
-  username?: string; avatar?: PilotAvatar; sound: boolean; onSound: () => void;
+  username?: string; avatar?: PilotAvatar; sound: boolean; onSound: () => void; onHelp?: () => void;
 }) {
   const go = (s: Screen) => (e: React.MouseEvent) => { e.preventDefault(); onNav(s); };
   return <header className="top-bar">
@@ -33,6 +33,7 @@ export function TopBar({ screen, onNav, locked={}, medals, maxMedals, rank, user
         <span className="pilot-chip-avatar"><Pilot avatar={avatar}/></span>
         <span className="pilot-chip-text"><b>{username ? `@${username}` : rank}</b><small>CUSTOMIZE</small></span>
       </a>
+      {onHelp && <button className="round-button top-help" aria-label="Show tips for this screen" title="Show tips for this screen" onClick={onHelp}><Icon name="help" size={20}/></button>}
       <button className="round-button" aria-pressed={sound} aria-label={sound ? "Sound is on, turn off" : "Sound is off, turn on"} onClick={onSound}><Icon name={sound ? "soundOn" : "soundOff"} size={20}/></button>
     </div>
   </header>;

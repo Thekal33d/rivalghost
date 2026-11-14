@@ -36,5 +36,16 @@ export async function saveIdentity(username:string,avatar:PilotAvatar):Promise<S
   validateUsername(username);validateAvatar(avatar);await ensurePilotSession();return (await socialRequest('social/profile',{username,avatar})).profile;
 }
 export async function publishFlight(replay:ExpeditionReplay,mode:'story'|'daily',day?:string):Promise<SharedGhost>{await ensurePilotSession();return socialRequest('social/publish',{replay,mode,day});}
+export const AUTOPOST_KEY='rivalghost.autopost.v1';
+/** Finished flights post to the board automatically unless the pilot turns it off on this device. */
+export function autoPostEnabled(){try{return localStorage.getItem(AUTOPOST_KEY)!=='off';}catch{return true;}}
+export function setAutoPost(on:boolean){try{localStorage.setItem(AUTOPOST_KEY,on?'on':'off');}catch{/* The toggle falls back to on for this session. */}}
+const autoPosts=new Map<string,Promise<SharedGhost>>();
+/** Publishes a finished flight at most once per key, so remounts never post it twice. A failed post can be retried. */
+export function publishOnce(key:string,replay:ExpeditionReplay,mode:'story'|'daily',day?:string){
+ let job=autoPosts.get(key);
+ if(!job){job=publishFlight(replay,mode,day);autoPosts.set(key,job);job.catch(()=>autoPosts.delete(key));}
+ return job;
+}
 export const blankAvatar=()=>({...DEFAULT_AVATAR});
 export const ghostLink=(id:string)=>`${location.origin}/?ghost=${encodeURIComponent(id)}`;
