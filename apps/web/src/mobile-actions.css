@@ -85,7 +85,7 @@
  .pilot-account-panel,.pilot-account-panel .pilot-account,.pilot-account-panel .device-wallet-panel{min-width:0;max-width:100%;width:100%;box-sizing:border-box}
  .pilot-account-panel button,.pilot-account-panel input{max-width:100%;min-width:0;box-sizing:border-box;white-space:normal}
  .pilot-account-panel .pilot-account{padding-bottom:90px}
- .pilot-account-panel .device-wallet-panel>.pilot-save{position:fixed;z-index:65;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom));width:calc(100% - 32px);min-height:50px;margin:0;box-shadow:0 0 0 12px var(--bg),0 -16px 30px var(--bg)}
+ .pilot-account-panel .device-wallet-panel>.pilot-save,.pilot-account-panel .device-wallet-recovery>.pilot-save{position:fixed;z-index:65;left:16px;right:16px;bottom:calc(12px + env(safe-area-inset-bottom));width:calc(100% - 32px);min-height:50px;margin:0;box-shadow:0 0 0 12px var(--bg),0 -16px 30px var(--bg)}
 }
 @media(max-width:760px){
  .screen-profile .pilot-studio{padding-bottom:100px}

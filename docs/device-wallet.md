@@ -55,3 +55,19 @@ Recovery files, passwords, browser profiles and server credentials are deliberat
 File selection previously attempted decryption immediately with the shared password field, which could already be cleared or hidden after wallet creation. That could incorrectly show a wrong-password/damaged-file message for a valid backup. Recovery now retains the selected file and requires a separate original-backup password plus an explicit Restore Wallet action. An empty password is reported separately from failed decryption. Wrong-password retries retain the file; cancelled restoration leaves the existing vault intact.
 
 Validated with TypeScript/build checks, encrypted-vault regression tests, and Chromium scenarios covering selection without a password, wrong-password retry without re-upload, re-upload while unlocked, and restoration in another browser. No encryption format, stored wallet or on-chain behavior changes.
+
+## Mobile file selection and signup hardening — November 14
+
+An iPhone Chrome report showed “Unsupported or damaged testnet recovery file” after selecting a file, while an account was already stored on the device. The screenshot's 445-byte download size matches a normal backup. Fresh 445-byte files also passed the previous parser in Chromium and WebKit; the exact rejected file was not inspected, so its cause is not established.
+
+The revised flow separates signup from restore. After creating an account, save the downloaded file, confirm it is saved, and sign in using the encrypted account already on the device. There is no mandatory upload. Restore is a separate, collapsed option with an explicit password step. A rejected selection never replaces or deletes the saved account.
+
+File handling now reads the selected bytes before clearing the picker, accepts a UTF-8 BOM around otherwise-valid JSON, checks actual byte limits and UTF-8 decoding, and keeps the download URL alive for 60 seconds with an attached download anchor. Errors identify invalid format/version/encryption settings or the damaged field without exposing any field values. Encryption parameters, authenticated metadata, account-key matching and the backup format remain unchanged. No arbitrary key sizes or KDF parameters are accepted.
+
+Validation: 4 vault tests; web typecheck/build; mobile economic-action layout checks; real browser encryption/download/recovery/signature checks in Chromium and WebKit at 390 × 844. The browser check covers rejection followed by saved-device sign-in, recovery in a fresh browser context, wrong-password retry without selecting the file again, and restoring a Chromium-created backup in WebKit. API responses are isolated fixtures; signatures are cryptographically verified. This does not reproduce the iPhone Files provider or establish that every physical-phone issue is resolved.
+
+```sh
+PLAYWRIGHT_MODULE=/absolute/path/to/playwright CHECK_URL=http://127.0.0.1:4192 node tools/check-device-recovery.cjs
+```
+
+For an existing account, reload the page without clearing site data. Finish saving the recovery download in Files/Downloads, check “I saved my recovery file and password,” enter the original password if prompted, and select **Sign in**. Never ask users to share their password or backup to diagnose a format error; the revised non-secret error text identifies the validation stage.

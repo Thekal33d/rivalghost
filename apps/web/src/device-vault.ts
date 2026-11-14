@@ -6,10 +6,26 @@ const encoder=new TextEncoder();
 function aad(v:WalletBackup){return encoder.encode(JSON.stringify([v.format,v.version,v.network,v.accountId,v.kdf,v.iterations,v.salt,v.iv]));}
 export function parseBackup(text:string):WalletBackup {
  if(text.length>4096)throw new Error('Recovery file is too large.');
- let v:WalletBackup;try{v=JSON.parse(text);}catch{throw new Error('Choose a RivalGhost recovery JSON file.');}
- if(!v||v.format!=='rivalghost-device-wallet'||v.version!==1||v.network!=='testnet'||v.kdf!=='PBKDF2-SHA256'||v.iterations!==600000||!/^([a-f0-9]{64})$/.test(v.accountId)||!/^[a-f0-9]{32}$/.test(v.salt)||!/^[a-f0-9]{24}$/.test(v.iv)||typeof v.ciphertext!=='string'||!/^[a-f0-9]{128}$/.test(v.ciphertext))throw new Error('Unsupported or damaged testnet recovery file.');
+ let v:WalletBackup;try{v=JSON.parse(text.replace(/^\uFEFF/,''));}catch{throw new Error('This file could not be read as a recovery file. Finish saving the download in Files or Downloads, then select the .json file.');}
+ if(!v||typeof v!=='object'||Array.isArray(v)||v.format!=='rivalghost-device-wallet')throw new Error('This is not a RivalGhost recovery file. Choose the rivalghost-testnet-… .json download. Your saved account is unchanged.');
+ if(v.version!==1||v.network!=='testnet')throw new Error('This recovery file uses an unsupported version or network. Your saved account is unchanged.');
+ if(v.kdf!=='PBKDF2-SHA256'||v.iterations!==600000)throw new Error('This recovery file has unsupported encryption settings. Your saved account is unchanged.');
+ for(const [field,length] of [['accountId',64],['salt',32],['iv',24],['ciphertext',128]] as const){
+  if(typeof v[field]!=='string'||v[field].length!==length||!/^[a-f0-9]+$/.test(v[field]))throw new Error(`Recovery file is incomplete or damaged (${field}). Finish saving the original download, then select it again. Your saved account is unchanged.`);
+ }
  return {format:v.format,version:v.version,network:v.network,accountId:v.accountId,kdf:v.kdf,iterations:v.iterations,salt:v.salt,iv:v.iv,ciphertext:v.ciphertext};
 }
+/** Read before resetting the picker: mobile file providers may still be resolving the selected file. */
+export async function readBackupFile(file:File):Promise<WalletBackup>{
+ if(file.size>4096)throw new Error('Recovery file is too large. Choose the RivalGhost .json download.');
+ let data:ArrayBuffer;
+ try{data=await file.arrayBuffer();}catch{throw new Error('The file could not be opened. Save it in Files or Downloads first, then select it again. Your saved account is unchanged.');}
+ if(!data.byteLength)throw new Error('The selected file is empty. Finish saving the download, then select it again.');
+ if(data.byteLength>4096)throw new Error('Recovery file is too large.');
+ let text:string;try{text=new TextDecoder('utf-8',{fatal:true}).decode(data);}catch{throw new Error('Choose the original RivalGhost .json download; this file is not readable text.');}
+ return parseBackup(text);
+}
+
 async function wrappingKey(password:string,v:WalletBackup){
  if(!password||password.length>1024)throw new Error('Enter your recovery password (up to 1024 characters).');
  const material=await crypto.subtle.importKey('raw',encoder.encode(password),'PBKDF2',false,['deriveKey']);
